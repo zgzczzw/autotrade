@@ -17,11 +17,12 @@
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 创建后端目录结构 | `backend/` | 创建 `app/`、`app/routers/`、`app/engine/`、`app/services/` 目录 |
-| 2 | 编写 requirements.txt | `backend/requirements.txt` | 依赖：`fastapi`, `uvicorn[standard]`, `sqlalchemy`, `apscheduler`, `httpx`, `pydantic`, `python-dotenv`, `aiosqlite` |
+| 2 | 编写 requirements.txt | `backend/requirements.txt` | 依赖：`fastapi`, `uvicorn[standard]`, `sqlalchemy[asyncio]`, `apscheduler`, `httpx`, `pydantic`, `python-dotenv`, `aiosqlite` |
 | 3 | 创建环境变量模板 | `backend/.env.example` | 包含 `DATABASE_URL=sqlite:///./autotrade.db`、`FEISHU_WEBHOOK_URL=`、`SIMULATED_INITIAL_BALANCE=100000` |
 | 4 | 编写 FastAPI 入口 | `backend/app/main.py` | 创建 FastAPI app 实例，配置 CORS（允许前端 `localhost:3000`），注册生命周期事件（启动时初始化数据库和调度器），挂载路由占位 |
 | 5 | 编写数据库连接模块 | `backend/app/database.py` | SQLAlchemy async engine + sessionmaker，提供 `get_db` 依赖注入函数，`init_db()` 建表函数 |
 | 6 | 创建空路由文件 | `backend/app/routers/__init__.py` | 空 `__init__.py`，后续阶段填充 |
+| 7 | 配置日志模块 | `backend/app/logger.py` | 配置 Python logging：INFO 级别，同时输出到控制台（StreamHandler）和文件（`backend/logs/autotrade.log`，TimedRotatingFileHandler 按天轮转）。提供 `get_logger(name)` 工厂函数 |
 
 #### 1.2 前端项目初始化
 
@@ -63,7 +64,7 @@
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
-| 1 | 定义 SQLAlchemy 模型 | `backend/app/models.py` | 实现 5 个模型：`Strategy`, `TriggerLog`, `Position`, `NotificationLog`, `SimAccount`，字段严格按设计文档 |
+| 1 | 定义 SQLAlchemy 模型 | `backend/app/models.py` | 实现 5 个模型：`Strategy`（含 `position_size_type` 字段）, `TriggerLog`, `Position`, `NotificationLog`, `SimAccount`，字段严格按设计文档 |
 | 2 | 定义 Pydantic schema | `backend/app/schemas.py` | 为每个模型创建 `Create`、`Update`、`Response` schema，用于请求验证和响应序列化 |
 | 3 | 初始化种子数据 | `backend/app/database.py` | 在 `init_db()` 中检查 SimAccount 表是否为空，为空则创建默认模拟账户（初始余额 100,000 USDT） |
 
@@ -82,7 +83,7 @@
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
-| 1 | 账户路由 | `backend/app/routers/account.py` | `GET /api/account` - 返回模拟账户信息 |
+| 1 | 账户路由 | `backend/app/routers/account.py` | `GET /api/account` - 返回模拟账户信息；`POST /api/account/reset` - 重置模拟账户（停止所有运行中策略、清空持仓和触发记录、恢复初始余额） |
 | 2 | 持仓路由 | `backend/app/routers/account.py` | `GET /api/positions` - 返回当前未平仓持仓列表（支持 strategy_id 筛选） |
 
 #### 2.4 触发日志 API
@@ -126,7 +127,7 @@
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
-| 1 | 实现模拟 K 线生成器 | `backend/app/engine/market_data.py` | 基于随机游走模型生成模拟 K 线数据（open, high, low, close, volume），支持指定 symbol 和 timeframe。为每个 symbol 维护一个价格序列以保持连续性。提供 `get_klines(symbol, timeframe, limit)` 接口 |
+| 1 | 实现模拟 K 线生成器 | `backend/app/engine/market_data.py` | 基于随机游走 + 周期性趋势（正弦波）+ 均值回归生成模拟 K 线数据（open, high, low, close, volume），使数据具备趋势和震荡特征。启动时预生成 200 根历史 K 线。为每个 symbol 维护独立价格序列以保持连续性。提供 `get_klines(symbol, timeframe, limit)` 接口 |
 | 2 | 实现技术指标计算 | `backend/app/engine/indicators.py` | 纯 Python 实现基础指标：RSI、SMA/EMA（移动平均线）、布林带（Bollinger Bands）。输入为 K 线数组，输出为指标值数组 |
 
 #### 3.2 策略基类与上下文
@@ -140,7 +141,7 @@
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
-| 1 | 实现可视化策略执行器 | `backend/app/engine/executor.py` | 解析 `config_json` 中的条件配置，获取市场数据，计算指标，评估条件组合，产生交易信号。支持的条件类型：RSI 阈值（上穿/下穿）、均线交叉、布林带突破 |
+| 1 | 实现可视化策略执行器 | `backend/app/engine/executor.py` | 解析 `config_json`（按设计文档定义的 schema），获取市场数据，计算指标，按 `logic`（AND/OR）评估条件组合，产生交易信号。支持的条件类型：RSI 阈值、MA_CROSS 均线交叉（golden/death）、BOLLINGER 布林带突破（above_upper/below_lower） |
 | 2 | 实现执行结果记录 | `backend/app/engine/executor.py` | 策略执行后写入 TriggerLog 记录，包含信号类型、详情、执行操作、价格、数量、模拟盈亏 |
 | 3 | 实现止盈止损检查 | `backend/app/engine/executor.py` | 每次执行时检查现有持仓是否触及止盈/止损线，触及则自动平仓 |
 
@@ -148,7 +149,7 @@
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
-| 1 | 实现调度管理器 | `backend/app/engine/scheduler.py` | 封装 APScheduler，提供 `start_strategy(strategy_id)` 和 `stop_strategy(strategy_id)` 方法。根据策略的 timeframe 设置 cron 触发间隔（1m/5m/1h/1d）。应用启动时恢复所有 running 状态的策略 |
+| 1 | 实现调度管理器 | `backend/app/engine/scheduler.py` | 使用 APScheduler 的 **AsyncIOScheduler**（非 BackgroundScheduler），使 job 直接支持 async/await。提供 `start_strategy(strategy_id)` 和 `stop_strategy(strategy_id)` 方法。根据策略的 timeframe 设置 interval 触发间隔（1m/5m/1h/1d）。应用启动时恢复所有 running 状态的策略 |
 | 2 | 对接策略启停 API | `backend/app/routers/strategies.py` | 更新 start/stop 端点，调用 scheduler 的 `start_strategy` / `stop_strategy`，失败时设置策略状态为 error |
 
 #### 3.5 应用生命周期
@@ -182,7 +183,7 @@
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 安装 shadcn/ui 组件 | - | `npx shadcn@latest add button card table badge switch tabs input select dialog toast separator` |
-| 2 | API hooks 封装 | `frontend/src/lib/api.ts` | 使用 React Query 封装所有 API 调用：`useStrategies()`, `useStrategy(id)`, `useDashboard()`, `useTriggers()`, `useAccount()`, `usePositions()` |
+| 2 | API hooks 封装 | `frontend/src/lib/api.ts` | 使用 React Query 封装所有 API 调用：`useStrategies()`, `useStrategy(id)`, `useDashboard()`, `useTriggers()`, `useAccount()`, `usePositions()`。仪表盘和策略详情 hooks 设置 `refetchInterval: 10000`（10秒），策略列表设置 `refetchInterval: 30000`（30秒） |
 | 3 | 类型定义 | `frontend/src/lib/types.ts` | 定义 TypeScript 接口：`Strategy`, `TriggerLog`, `Position`, `SimAccount`, `DashboardData` |
 | 4 | React Query Provider | `frontend/src/app/providers.tsx` | 创建 QueryClientProvider 包裹应用 |
 | 5 | 更新 layout | `frontend/src/app/layout.tsx` | 引入 providers，完善侧边栏导航样式（图标、活跃状态高亮） |
@@ -208,7 +209,7 @@
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 基础配置表单组件 | `frontend/src/components/strategy-form-base.tsx` | 通用字段：策略名称、交易对选择（BTC/USDT, ETH/USDT 等）、时间周期、仓位大小、止盈止损、通知开关 |
-| 2 | 可视化配置组件 | `frontend/src/components/visual-config.tsx` | 条件配置器：选择指标类型（RSI/MA/Bollinger）-> 填写参数 -> 设置买入/卖出条件。支持添加多个条件组合。配置结果序列化为 JSON |
+| 2 | 可视化配置组件 | `frontend/src/components/visual-config.tsx` | 条件配置器：分别配置买入条件和卖出条件，每组条件选择组合逻辑（AND/OR），然后添加规则：选择指标类型（RSI/MA_CROSS/BOLLINGER）-> 填写参数 -> 设置比较运算和阈值。配置结果按设计文档定义的 config_json schema 序列化为 JSON |
 | 3 | 代码编辑器占位 | `frontend/src/components/code-editor-placeholder.tsx` | 本阶段用 textarea 占位，第六阶段替换为 Monaco Editor |
 | 4 | 创建策略页面 | `frontend/src/app/strategies/new/page.tsx` | Tabs 切换"可视化配置"和"代码编写"，底部提交按钮，成功后跳转策略列表 |
 
@@ -340,6 +341,8 @@
 | 代码编辑器 | Monaco Editor | VS Code 同款引擎，Python 支持完善 |
 | 技术指标计算 | 自行实现 | 仅需 RSI/MA/Bollinger 三种，避免引入 TA-Lib 等重依赖 |
 | 代码沙箱 | RestrictedPython + exec | 单用户场景安全性要求适中，容器隔离过重 |
+| 调度器 | APScheduler AsyncIOScheduler | 与 FastAPI async 生态兼容，job 中可直接使用 async session |
+| 日志 | Python logging + TimedRotatingFileHandler | 按天轮转，同时输出控制台和文件 |
 
 ### 完整文件清单
 

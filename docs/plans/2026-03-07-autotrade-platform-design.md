@@ -46,6 +46,7 @@
 | symbol | TEXT | 交易对，如 BTC/USDT |
 | timeframe | TEXT | 时间周期：1m/5m/1h/1d |
 | position_size | REAL | 仓位大小 |
+| position_size_type | TEXT | 仓位模式：fixed（固定金额）/ percent（账户百分比） |
 | stop_loss | REAL | 止损百分比 |
 | take_profit | REAL | 止盈百分比 |
 | notify_enabled | BOOLEAN | 是否开启飞书通知 |
@@ -60,9 +61,9 @@
 | id | INTEGER PK | 主键 |
 | strategy_id | INTEGER FK | 关联策略 |
 | triggered_at | DATETIME | 触发时间 |
-| signal_type | TEXT | 信号类型（buy/sell） |
-| signal_detail | TEXT | 信号详情（如 RSI=28） |
-| action | TEXT | 执行操作（buy/sell/hold） |
+| signal_type | TEXT | 策略产生的信号（buy/sell/error） |
+| signal_detail | TEXT | 信号详情（如 RSI=28，低于阈值 30） |
+| action | TEXT | 实际执行操作（buy/sell/hold）。信号与操作可能不同，如信号为 buy 但余额不足则 action=hold |
 | price | REAL | 触发时价格 |
 | quantity | REAL | 交易数量 |
 | simulated_pnl | REAL | 模拟盈亏 |
@@ -103,6 +104,8 @@
 | total_pnl | REAL | 总盈亏 |
 | updated_at | DATETIME | 更新时间 |
 
+> **并发说明**：多个策略 job 可能同时执行并修改 SimAccount 余额。所有余额变更操作需在数据库事务中完成，使用 `SELECT ... FOR UPDATE` 语义（SQLite 单写者模式下天然串行化，但代码中仍需确保事务完整性）。
+
 ## 策略引擎
 
 ### 可视化策略
@@ -118,6 +121,31 @@
 - 止盈止损
 
 配置以 JSON 格式存储，后端解析并执行。
+
+**config_json schema 定义：**
+
+```json
+{
+  "buy_conditions": {
+    "logic": "AND",
+    "rules": [
+      { "indicator": "RSI", "params": { "period": 14 }, "operator": "<", "value": 30 },
+      { "indicator": "MA_CROSS", "params": { "fast": 5, "slow": 20 }, "operator": "==", "value": "golden" }
+    ]
+  },
+  "sell_conditions": {
+    "logic": "AND",
+    "rules": [
+      { "indicator": "RSI", "params": { "period": 14 }, "operator": ">", "value": 70 }
+    ]
+  }
+}
+```
+
+- `logic`：条件组合方式，`AND`（全部满足）或 `OR`（任一满足）
+- `indicator`：指标类型，可选 `RSI`、`MA_CROSS`（均线交叉）、`BOLLINGER`（布林带突破）
+- `operator`：比较运算符，`<`、`>`、`==`、`<=`、`>=`
+- `value`：阈值。MA_CROSS 的 value 为 `golden`（金叉/买入信号）或 `death`（死叉/卖出信号）；BOLLINGER 的 value 为 `above_upper`（突破上轨）或 `below_lower`（突破下轨）
 
 ### 代码策略
 
@@ -144,10 +172,16 @@ context API 包括：
 
 ### 调度执行
 
-- APScheduler 管理所有策略的定时任务
+- 使用 APScheduler **AsyncIOScheduler**（而非默认的 BackgroundScheduler），使 job 函数可以直接使用 async/await，与 FastAPI 的 async SQLAlchemy session 兼容
 - 策略启动时注册 cron job，停止时移除
 - 每次执行：获取市场数据 -> 运行策略逻辑 -> 记录触发 -> 发送通知
-- 市场数据初期用随机模拟生成，后续可接入 CCXT
+- 市场数据初期用模拟生成，后续可接入 CCXT
+
+### 模拟市场数据
+
+- 基于随机游走模型，但叠加周期性趋势（正弦波）和均值回归，使数据具备一定的趋势和震荡特征
+- 应用启动时预生成 200 根历史 K 线，确保技术指标（如 RSI 需要至少 14 根、MA(20) 需要至少 20 根）有足够数据计算
+- 不同 symbol 维护独立的价格序列，保持连续性
 
 ## 前端页面
 
@@ -160,6 +194,8 @@ context API 包括：
 | 触发日志 | `/triggers` | 全局触发记录表格，支持按策略筛选 |
 
 UI 风格：深色主题仪表盘，shadcn/ui + Recharts。
+
+**数据实时性**：使用 React Query 的 `refetchInterval` 实现自动轮询，仪表盘和策略详情页每 10 秒刷新一次，策略列表页每 30 秒刷新一次。
 
 ## 飞书通知
 
@@ -188,6 +224,16 @@ UI 风格：深色主题仪表盘，shadcn/ui + Recharts。
 | GET | `/api/triggers` | 触发日志（支持 strategy_id 筛选） |
 | GET | `/api/positions` | 当前模拟持仓 |
 | GET | `/api/account` | 模拟账户信息 |
+| POST | `/api/account/reset` | 重置模拟账户（清空持仓、触发记录，恢复初始余额） |
+
+## 日志
+
+使用 Python `logging` 模块，分级别输出：
+- `INFO`：策略启动/停止、交易执行、通知发送
+- `WARNING`：飞书 Webhook 未配置、余额不足跳过交易
+- `ERROR`：策略执行异常、通知发送失败
+
+日志同时输出到控制台和文件（`backend/logs/autotrade.log`），按天轮转。
 
 ## 项目结构
 
