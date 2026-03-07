@@ -30,7 +30,7 @@
 |---|------|---------|------|
 | 1 | 初始化 Next.js 项目 | `frontend/` | `npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir` |
 | 2 | 安装 shadcn/ui | `frontend/` | `npx shadcn@latest init`，选择深色主题 |
-| 3 | 安装核心依赖 | `frontend/package.json` | 追加：`recharts`, `lucide-react`, `@tanstack/react-query` |
+| 3 | 安装核心依赖 | `frontend/package.json` | 追加：`recharts`, `lucide-react`, `@tanstack/react-query`, `date-fns`（日期格式化，shadcn DatePicker 依赖） |
 | 4 | 配置 API 客户端 | `frontend/src/lib/api.ts` | 封装 fetch 工具函数，base URL 读取自环境变量 `NEXT_PUBLIC_API_URL` (默认 `http://localhost:8000`) |
 | 5 | 创建环境变量 | `frontend/.env.local` | `NEXT_PUBLIC_API_URL=http://localhost:8000` |
 | 6 | 创建全局布局 | `frontend/src/app/layout.tsx` | 深色主题，侧边栏导航（仪表盘、策略、触发日志），使用 shadcn/ui 的 `Sidebar` 组件 |
@@ -77,14 +77,14 @@
 |   |  |  | `GET /api/strategies/{id}` - 详情（含关联的 position 和 trigger 统计） |
 |   |  |  | `PUT /api/strategies/{id}` - 更新（仅 stopped 状态可编辑） |
 |   |  |  | `DELETE /api/strategies/{id}` - 删除（同时清理关联数据） |
-| 2 | 策略启停（占位） | `backend/app/routers/strategies.py` | `POST /api/strategies/{id}/start` 和 `stop`，本阶段仅更新 status 字段，调度逻辑在第三阶段实现 |
+| 2 | 策略启停（占位） | `backend/app/routers/strategies.py` | `POST /api/strategies/{id}/start`（允许从 stopped 和 error 状态启动）和 `stop`，本阶段仅更新 status 字段，调度逻辑在第三阶段实现 |
 
 #### 2.3 账户与持仓 API
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 账户路由 | `backend/app/routers/account.py` | `GET /api/account` - 返回模拟账户信息；`POST /api/account/reset` - 重置模拟账户（停止所有运行中策略、清空持仓和触发记录、恢复初始余额） |
-| 2 | 持仓路由 | `backend/app/routers/account.py` | `GET /api/positions` - 返回当前未平仓持仓列表（支持 strategy_id 筛选） |
+| 2 | 持仓路由 | `backend/app/routers/account.py` | `GET /api/positions` - 返回当前未平仓持仓列表（支持 strategy_id 筛选）。浮动盈亏在 API 返回时根据本地缓存的最新 K 线价格实时计算，不持久化到数据库 |
 
 #### 2.4 触发日志 API
 
@@ -128,7 +128,7 @@
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 定义 KlineData 模型 | `backend/app/models.py` | 新增 `KlineData` 模型，字段按设计文档。`(symbol, timeframe, open_time)` 联合唯一索引 |
-| 2 | 实现 Binance K 线客户端 | `backend/app/engine/market_data.py` | 使用 httpx 异步调用 `GET https://api.binance.com/api/v3/klines`。实现 `fetch_klines(symbol, timeframe, start_time, end_time, limit)` 方法，返回标准化 K 线数组。处理 Binance symbol 格式（BTC/USDT -> BTCUSDT） |
+| 2 | 实现 Binance K 线客户端 | `backend/app/engine/market_data.py` | 使用 httpx 异步调用 `GET https://api.binance.com/api/v3/klines`。实现 `fetch_klines(symbol, timeframe, start_time, end_time, limit)` 方法，返回标准化 K 线数组。全系统统一使用 Binance 原生 symbol 格式（BTCUSDT），无需转换 |
 | 3 | 实现本地缓存层 | `backend/app/engine/market_data.py` | 实现 `get_klines(symbol, timeframe, limit)` 接口：先查本地 KlineData 表，缺失则从 Binance 拉取并 upsert 到本地。增量拉取：只请求本地最新 K 线之后的数据 |
 | 4 | 实现批量历史数据拉取 | `backend/app/engine/market_data.py` | 实现 `fetch_historical_klines(symbol, timeframe, start_date, end_date)` 供回测使用。Binance 单次最多 1000 根，需分批请求，间隔 100ms 避免触发限流 |
 | 5 | 降级与错误处理 | `backend/app/engine/market_data.py` | API 请求失败时返回本地缓存的最近数据，记录 WARNING 日志。网络超时设置 10 秒 |
@@ -189,7 +189,7 @@
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 定义 BacktestResult 模型 | `backend/app/models.py` | 新增 `BacktestResult` 模型，字段按设计文档。`equity_curve` 和 `trades` 为 JSON 字段 |
-| 2 | 定义回测 Pydantic schema | `backend/app/schemas.py` | 新增 `BacktestCreate`（请求参数：symbol, timeframe, start_date, end_date, initial_balance）和 `BacktestResponse` schema |
+| 2 | 定义回测 Pydantic schema | `backend/app/schemas.py` | 新增 `BacktestCreate`（请求参数：start_date, end_date, initial_balance；symbol 和 timeframe 取策略自身配置）和 `BacktestResponse` schema |
 | 3 | 实现回测引擎 | `backend/app/engine/backtester.py` | 核心回测逻辑：接收策略 + 历史 K 线数组，创建独立虚拟账户，按时间顺序逐根 K 线调用 executor 逻辑，记录每笔交易，计算统计指标（总盈亏、胜率、最大回撤、平均持仓时间），生成资金曲线数据点。复用 `executor.py` 中的策略评估逻辑 |
 | 4 | 实现最大回撤计算 | `backend/app/engine/backtester.py` | 遍历资金曲线，计算峰值到谷值的最大跌幅百分比 |
 
@@ -197,7 +197,7 @@
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
-| 1 | 回测路由 | `backend/app/routers/backtests.py` | `POST /api/strategies/{id}/backtest` - 发起回测：校验参数，调用 `market_data.fetch_historical_klines` 获取历史数据，调用回测引擎，保存结果到 BacktestResult |
+| 1 | 回测路由 | `backend/app/routers/backtests.py` | `POST /api/strategies/{id}/backtest` - 发起回测：从策略读取 symbol 和 timeframe，校验 start_date/end_date/initial_balance，调用 `market_data.fetch_historical_klines` 获取历史数据，调用回测引擎，保存结果到 BacktestResult |
 |   |  |  | `GET /api/backtests/{id}` - 获取回测结果详情 |
 |   |  |  | `GET /api/strategies/{id}/backtests` - 获取某策略所有回测记录（按时间倒序） |
 | 2 | 注册路由 | `backend/app/main.py` | 挂载 backtests router |
@@ -224,9 +224,9 @@
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
-| 1 | 安装 shadcn/ui 组件 | - | `npx shadcn@latest add button card table badge switch tabs input select dialog toast separator` |
+| 1 | 安装 shadcn/ui 组件 | - | `npx shadcn@latest add button card table badge switch tabs input select dialog toast separator calendar popover`（calendar + popover 用于 DatePicker） |
 | 2 | API hooks 封装 | `frontend/src/lib/api.ts` | 使用 React Query 封装所有 API 调用：`useStrategies()`, `useStrategy(id)`, `useDashboard()`, `useTriggers()`, `useAccount()`, `usePositions()`。仪表盘和策略详情 hooks 设置 `refetchInterval: 10000`（10秒），策略列表设置 `refetchInterval: 30000`（30秒） |
-| 3 | 类型定义 | `frontend/src/lib/types.ts` | 定义 TypeScript 接口：`Strategy`, `TriggerLog`, `Position`, `SimAccount`, `DashboardData` |
+| 3 | 类型定义 | `frontend/src/lib/types.ts` | 定义 TypeScript 接口：`Strategy`, `TriggerLog`, `Position`, `SimAccount`, `DashboardData`, `BacktestResult`, `BacktestCreate`。提供 `formatSymbol(symbol: string)` 工具函数将 BTCUSDT 转为 BTC/USDT 供展示用 |
 | 4 | React Query Provider | `frontend/src/app/providers.tsx` | 创建 QueryClientProvider 包裹应用 |
 | 5 | 更新 layout | `frontend/src/app/layout.tsx` | 引入 providers，完善侧边栏导航样式（图标、活跃状态高亮） |
 

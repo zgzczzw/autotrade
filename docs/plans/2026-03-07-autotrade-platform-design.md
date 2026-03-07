@@ -45,14 +45,14 @@
 | type | TEXT | visual / code |
 | config_json | JSON | 可视化策略的配置（指标、条件、参数） |
 | code | TEXT | 代码策略的 Python 源码 |
-| symbol | TEXT | 交易对，如 BTC/USDT |
+| symbol | TEXT | 交易对，如 BTCUSDT（Binance 原生格式，前端展示时转换为 BTC/USDT） |
 | timeframe | TEXT | 时间周期：1m/5m/1h/1d |
 | position_size | REAL | 仓位大小 |
 | position_size_type | TEXT | 仓位模式：fixed（固定金额）/ percent（账户百分比） |
 | stop_loss | REAL | 止损百分比 |
 | take_profit | REAL | 止盈百分比 |
 | notify_enabled | BOOLEAN | 是否开启飞书通知 |
-| status | TEXT | running / stopped / error |
+| status | TEXT | running / stopped / error（error 状态可直接 start 重新启动） |
 | created_at | DATETIME | 创建时间 |
 | updated_at | DATETIME | 更新时间 |
 
@@ -80,8 +80,8 @@
 | side | TEXT | long / short |
 | entry_price | REAL | 开仓价格 |
 | quantity | REAL | 持仓数量 |
-| current_price | REAL | 当前价格 |
-| pnl | REAL | 浮动盈亏 |
+| current_price | REAL | 最近一次策略执行时的价格（仅平仓时写入最终价格） |
+| pnl | REAL | 已实现盈亏（平仓时计算写入，未平仓时为 NULL，API 返回时实时计算浮动盈亏） |
 | opened_at | DATETIME | 开仓时间 |
 | closed_at | DATETIME | 平仓时间（NULL 表示未平仓） |
 
@@ -229,7 +229,7 @@ context API 包括：
 
 回测复用策略引擎的执行逻辑，仅数据源从实时变为历史：
 
-1. 用户选择策略 + 时间范围 + 初始资金
+1. 用户选择策略 + 时间范围 + 初始资金（symbol 和 timeframe 使用策略自身配置）
 2. 后端从 Binance 批量拉取历史 K 线并缓存到本地
 3. 按时间顺序逐根 K 线执行策略（复用 executor 逻辑）
 4. 使用独立的虚拟账户，不影响模拟盘 SimAccount
@@ -284,7 +284,7 @@ UI 风格：深色主题仪表盘，shadcn/ui + Recharts。
 | GET | `/api/positions` | 当前模拟持仓 |
 | GET | `/api/account` | 模拟账户信息 |
 | POST | `/api/account/reset` | 重置模拟账户（清空持仓、触发记录，恢复初始余额） |
-| POST | `/api/strategies/{id}/backtest` | 发起回测（参数：symbol, timeframe, start_date, end_date, initial_balance） |
+| POST | `/api/strategies/{id}/backtest` | 发起回测（参数：start_date, end_date, initial_balance；symbol 和 timeframe 取策略自身配置） |
 | GET | `/api/backtests/{id}` | 获取回测结果详情 |
 | GET | `/api/strategies/{id}/backtests` | 获取某策略的所有回测记录 |
 
@@ -296,6 +296,10 @@ UI 风格：深色主题仪表盘，shadcn/ui + Recharts。
 - `ERROR`：策略执行异常、通知发送失败
 
 日志同时输出到控制台和文件（`backend/logs/autotrade.log`），按天轮转。
+
+## 数据库迁移
+
+V1 使用 `init_db()` 自动建表，开发阶段可删库重建。后续如需无损变更表结构（加字段、改类型等），引入 Alembic 做数据库迁移管理。
 
 ## 项目结构
 
