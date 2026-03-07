@@ -1,0 +1,513 @@
+{
+  "strategies": [
+    {
+      "name": "RSI 超买超卖",
+      "description": "RSI < 30 超卖买入，RSI > 70 超买卖出",
+      "type": "visual",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "position_size": 100,
+      "position_size_type": "fixed",
+      "stop_loss": 5,
+      "take_profit": 10,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "RSI",
+              "params": {
+                "period": 14
+              },
+              "operator": "<",
+              "value": 30
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "RSI",
+              "params": {
+                "period": 14
+              },
+              "operator": ">",
+              "value": 70
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "双均线金叉死叉",
+      "description": "5/20 均线金叉买入，死叉卖出",
+      "type": "visual",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "position_size": 200,
+      "position_size_type": "fixed",
+      "stop_loss": 8,
+      "take_profit": 15,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "MA_CROSS",
+              "params": {
+                "fast": 5,
+                "slow": 20
+              },
+              "value": "golden"
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "MA_CROSS",
+              "params": {
+                "fast": 5,
+                "slow": 20
+              },
+              "value": "death"
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "布林带均值回归",
+      "description": "跌破布林下轨买入，突破上轨卖出",
+      "type": "visual",
+      "symbol": "ETHUSDT",
+      "timeframe": "1h",
+      "position_size": 150,
+      "position_size_type": "fixed",
+      "stop_loss": 6,
+      "take_profit": 12,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "BOLL",
+              "params": {
+                "period": 20,
+                "std_dev": 2
+              },
+              "value": "below_lower"
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "BOLL",
+              "params": {
+                "period": 20,
+                "std_dev": 2
+              },
+              "value": "above_upper"
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "MACD 趋势跟踪",
+      "description": "MACD 金叉买入，死叉卖出",
+      "type": "visual",
+      "symbol": "BTCUSDT",
+      "timeframe": "1d",
+      "position_size": 200,
+      "position_size_type": "fixed",
+      "stop_loss": 8,
+      "take_profit": 16,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "MACD",
+              "params": {
+                "fast": 12,
+                "slow": 26,
+                "signal": 9
+              },
+              "value": "golden"
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "MACD",
+              "params": {
+                "fast": 12,
+                "slow": 26,
+                "signal": 9
+              },
+              "value": "death"
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "KDJ 摆动策略",
+      "description": "KDJ 金叉买入，死叉卖出",
+      "type": "visual",
+      "symbol": "ETHUSDT",
+      "timeframe": "1h",
+      "position_size": 100,
+      "position_size_type": "fixed",
+      "stop_loss": 5,
+      "take_profit": 10,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "KDJ",
+              "params": {
+                "period": 9
+              },
+              "value": "k_cross_up"
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "KDJ",
+              "params": {
+                "period": 9
+              },
+              "value": "k_cross_down"
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "RSI + MACD 双重确认",
+      "description": "RSI 超卖且 MACD 金叉买入，RSI 超买且 MACD 死叉卖出",
+      "type": "visual",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "position_size": 300,
+      "position_size_type": "fixed",
+      "stop_loss": 6,
+      "take_profit": 14,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "RSI",
+              "params": {
+                "period": 14
+              },
+              "operator": "<",
+              "value": 35
+            },
+            {
+              "type": "rule",
+              "indicator": "MACD",
+              "params": {
+                "fast": 12,
+                "slow": 26,
+                "signal": 9
+              },
+              "value": "golden"
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "RSI",
+              "params": {
+                "period": 14
+              },
+              "operator": ">",
+              "value": 65
+            },
+            {
+              "type": "rule",
+              "indicator": "MACD",
+              "params": {
+                "fast": 12,
+                "slow": 26,
+                "signal": 9
+              },
+              "value": "death"
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "布林带 + 量能确认",
+      "description": "跌破布林下轨且成交量放大买入，突破上轨卖出",
+      "type": "visual",
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "position_size": 200,
+      "position_size_type": "fixed",
+      "stop_loss": 6,
+      "take_profit": 12,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "BOLL",
+              "params": {
+                "period": 20,
+                "std_dev": 2
+              },
+              "value": "below_lower"
+            },
+            {
+              "type": "rule",
+              "indicator": "VOLUME",
+              "params": {
+                "ma_period": 20
+              },
+              "operator": ">",
+              "value": 1.5
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "BOLL",
+              "params": {
+                "period": 20,
+                "std_dev": 2
+              },
+              "value": "above_upper"
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "均线 + RSI 趋势跟踪",
+      "description": "均线金叉且 RSI 处于强势区间买入，均线死叉卖出",
+      "type": "visual",
+      "symbol": "SOLUSDT",
+      "timeframe": "1d",
+      "position_size": 150,
+      "position_size_type": "fixed",
+      "stop_loss": 7,
+      "take_profit": 15,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "MA_CROSS",
+              "params": {
+                "fast": 10,
+                "slow": 30
+              },
+              "value": "golden"
+            },
+            {
+              "type": "rule",
+              "indicator": "RSI",
+              "params": {
+                "period": 14
+              },
+              "operator": ">",
+              "value": 50
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "MA_CROSS",
+              "params": {
+                "fast": 10,
+                "slow": 30
+              },
+              "value": "death"
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "KDJ + RSI 超卖共振",
+      "description": "KDJ 超卖且 RSI 超卖双重共振买入，KDJ 超买且 RSI 超买卖出",
+      "type": "visual",
+      "symbol": "ETHUSDT",
+      "timeframe": "1h",
+      "position_size": 250,
+      "position_size_type": "fixed",
+      "stop_loss": 5,
+      "take_profit": 12,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "KDJ",
+              "params": {
+                "period": 9
+              },
+              "value": "oversold"
+            },
+            {
+              "type": "rule",
+              "indicator": "RSI",
+              "params": {
+                "period": 14
+              },
+              "operator": "<",
+              "value": 35
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "KDJ",
+              "params": {
+                "period": 9
+              },
+              "value": "overbought"
+            },
+            {
+              "type": "rule",
+              "indicator": "RSI",
+              "params": {
+                "period": 14
+              },
+              "operator": ">",
+              "value": 65
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    },
+    {
+      "name": "价格动量 + 量能爆发",
+      "description": "价格上涨超 2% 且成交量放大买入，价格下跌超 2% 卖出",
+      "type": "visual",
+      "symbol": "SOLUSDT",
+      "timeframe": "1h",
+      "position_size": 100,
+      "position_size_type": "fixed",
+      "stop_loss": 4,
+      "take_profit": 8,
+      "notify_enabled": true,
+      "config_json": {
+        "buy_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "PRICE_CHANGE",
+              "params": {},
+              "operator": ">",
+              "value": 2
+            },
+            {
+              "type": "rule",
+              "indicator": "VOLUME",
+              "params": {
+                "ma_period": 20
+              },
+              "operator": ">",
+              "value": 1.5
+            }
+          ]
+        },
+        "sell_conditions": {
+          "type": "group",
+          "logic": "AND",
+          "rules": [
+            {
+              "type": "rule",
+              "indicator": "PRICE_CHANGE",
+              "params": {},
+              "operator": "<",
+              "value": -2
+            }
+          ]
+        }
+      },
+      "sell_size_pct": 100
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+"""
+Pydantic Schema 定义
+"""
+
+from datetime import datetime
+from typing import Any, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+# ==================== 策略相关 ====================
+
+class StrategyBase(BaseModel):
+    """策略基础字段"""
+    name: str = Field(..., min_length=1, max_length=100)
+    type: str = Field(..., pattern="^(visual|code)$")
+    symbol: str = Field(..., min_length=1)
+    timeframe: str = Field(..., pattern="^(1m|5m|1h|1d)$")
+    position_size: float = Field(..., gt=0)
+    position_size_type: str = Field(..., pattern="^(fixed|percent)$")
+    stop_loss: Optional[float] = Field(None, ge=0, le=100)
+    take_profit: Optional[float] = Field(None, ge=0, le=1000)
+    sell_size_pct: float = Field(100.0, gt=0, le=100)
+    notify_enabled: bool = True
+
+
+class StrategyCreate(StrategyBase):
+    """创建策略请求"""
+    config_json: Optional[str] = None  # JSON 字符串
+    code: Optional[str] = None
+
+
+class StrategyUpdate(BaseModel):
+    """更新策略请求（仅 stopped 状态可编辑）"""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    config_json: Optional[str] = None
+    code: Optional[str] = None
+    position_size: Optional[float] = Field(None, gt=0)
+    position_size_type: Optional[str] = Field(None, pattern="^(fixed|percent)$")
+    stop_loss: Optional[float] = Field(None, ge=0, le=100)
+    take_profit: Optional[float] = Field(None, ge=0, le=1000)
+    sell_size_pct: Optional[float] = Field(None, gt=0, le=100)
+    notify_enabled: Optional[bool] = None
+
+
+class StrategyResponse(StrategyBase):
+    """策略响应"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    config_json: Optional[str] = None
+    code: Optional[str] = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    # 统计信息
+    trigger_count: Optional[int] = None
+    position_count: Optional[int] = None
+
+
+class StrategyList(BaseModel):
+    """策略列表响应"""
+    items: List[StrategyResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+# ==================== 代码验证相关 ====================
+
+class CodeValidationRequest(BaseModel):
+    """代码验证请求"""
+    code: str
+
+
+class CodeValidationResponse(BaseModel):
+    """代码验证响应"""
+    valid: bool
+    errors: List[str]
+
+
+# ==================== 触发日志相关 ====================
+
+class TriggerLogResponse(BaseModel):
+    """触发记录响应"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    strategy_id: int
+    strategy_name: Optional[str] = None
+    triggered_at: datetime
+    signal_type: str
+    signal_detail: Optional[str] = None
+    action: Optional[str] = None
+    price: Optional[float] = None
+    quantity: Optional[float] = None
+    simulated_pnl: Optional[float] = None
+
+
+class TriggerLogList(BaseModel):
+    """触发日志列表响应"""
+    items: List[TriggerLogResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+# ==================== 持仓相关 ====================
+
+class PositionResponse(BaseModel):
+    """持仓响应"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    strategy_id: int
+    symbol: str
+    side: str
+    entry_price: float
+    quantity: float
+    current_price: Optional[float] = None
+    pnl: Optional[float] = None
+    unrealized_pnl: Optional[float] = None  # 计算字段
+    opened_at: datetime
+    closed_at: Optional[datetime] = None
+
+
+class PositionList(BaseModel):
+    """持仓列表响应"""
+    items: List[PositionResponse]
+    total: int
+
+
+# ==================== 账户相关 ====================
+
+class AccountResponse(BaseModel):
+    """账户响应"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    initial_balance: float
+    balance: float
+    total_pnl: float
+    updated_at: datetime
+
+
+# ==================== 仪表盘相关 ====================
+
+class DashboardData(BaseModel):
+    """仪表盘数据"""
+    balance: float
+    total_pnl: float
+    running_strategies: int
+    today_triggers: int
+    recent_triggers: List[TriggerLogResponse]
+
+
+# ==================== 回测相关 ====================
+
+class BacktestCreate(BaseModel):
+    """创建回测请求"""
+    start_date: datetime
+    end_date: datetime
+    initial_balance: float = Field(default=100000, gt=0)
+
+
+class BacktestResponse(BaseModel):
+    """回测结果响应"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    strategy_id: int
+    symbol: str
+    timeframe: str
+    start_date: datetime
+    end_date: datetime
+    initial_balance: float
+    final_balance: float
+    total_pnl: float
+    pnl_percent: float
+    win_rate: float
+    max_drawdown: float
+    total_trades: int
+    avg_hold_time: Optional[int] = None
+    equity_curve: str  # JSON 字符串
+    trades: str  # JSON 字符串
+    klines: Optional[str] = None  # JSON 字符串，K线数据
+    created_at: datetime
+
+
+class BacktestList(BaseModel):
+    """回测列表响应"""
+    items: List[BacktestResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+# ==================== 通用 ====================
+
+class MessageResponse(BaseModel):
+    """通用消息响应"""
+    message: str
+
+
+class ErrorResponse(BaseModel):
+    """错误响应"""
+    detail: str
+    code: Optional[str] = None
+
+
+class HealthResponse(BaseModel):
+    """健康检查响应"""
+    status: str
