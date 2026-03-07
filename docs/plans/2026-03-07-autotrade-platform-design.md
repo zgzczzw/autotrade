@@ -2,7 +2,7 @@
 
 ## 概述
 
-个人使用的加密货币自动交易平台，支持可视化配置和代码编写两种策略创建方式，提供前端管理界面查看策略运行状态和触发历史，策略触发时发送飞书通知。初期使用模拟交易，后续可对接真实交易所。
+个人使用的加密货币自动交易平台，支持可视化配置和代码编写两种策略创建方式，提供前端管理界面查看策略运行状态和触发历史，策略触发时发送飞书通知。使用 Binance 真实行情数据进行模拟交易（Paper Trading），支持策略历史回测。
 
 ## 技术栈
 
@@ -12,6 +12,7 @@
 | 前端 | Next.js + React | shadcn/ui 组件库 + Recharts 图表 |
 | 数据库 | SQLite | 单用户场景足够，部署简单 |
 | 任务调度 | APScheduler | 策略定时执行 |
+| 行情数据 | Binance REST API | 公开 API，无需认证即可获取 K 线 |
 | 通知 | 飞书 Webhook | 自定义机器人推送 |
 
 ## 架构
@@ -19,16 +20,17 @@
 单体应用架构：
 
 ```
-┌───────────────┐     ┌───────────────┐
-│   Next.js     │─────│   FastAPI     │
-│   前端页面    │ API │   后端服务    │
-└───────────────┘     └─────┬─────────┘
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│   Next.js     │─────│   FastAPI     │─────│  Binance API  │
+│   前端页面    │ API │   后端服务    │     │  真实行情数据  │
+└───────────────┘     └─────┬─────────┘     └───────────────┘
                             │
                 ┌───────────┼───────────┐
                 │           │           │
            ┌────┴───┐ ┌────┴───┐ ┌─────┴─────┐
            │ SQLite │ │ 策略   │ │ 飞书      │
            │ 数据库 │ │ 引擎   │ │ 通知      │
+           │+ K线缓存│ │+ 回测  │ │           │
            └────────┘ └────────┘ └───────────┘
 ```
 
@@ -104,6 +106,44 @@
 | total_pnl | REAL | 总盈亏 |
 | updated_at | DATETIME | 更新时间 |
 
+### KlineData (K 线缓存)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER PK | 主键 |
+| symbol | TEXT | 交易对（BTCUSDT） |
+| timeframe | TEXT | 时间周期（1m/5m/1h/1d） |
+| open_time | DATETIME | K 线开盘时间 |
+| open | REAL | 开盘价 |
+| high | REAL | 最高价 |
+| low | REAL | 最低价 |
+| close | REAL | 收盘价 |
+| volume | REAL | 成交量 |
+
+`(symbol, timeframe, open_time)` 联合唯一索引，upsert 避免重复。
+
+### BacktestResult (回测结果)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER PK | 主键 |
+| strategy_id | INTEGER FK | 关联策略 |
+| symbol | TEXT | 交易对 |
+| timeframe | TEXT | 时间周期 |
+| start_date | DATETIME | 回测开始时间 |
+| end_date | DATETIME | 回测结束时间 |
+| initial_balance | REAL | 初始资金 |
+| final_balance | REAL | 最终资金 |
+| total_pnl | REAL | 总盈亏 |
+| pnl_percent | REAL | 盈亏百分比 |
+| win_rate | REAL | 胜率 |
+| max_drawdown | REAL | 最大回撤 |
+| total_trades | INTEGER | 总交易笔数 |
+| avg_hold_time | INTEGER | 平均持仓时间（秒） |
+| equity_curve | JSON | 资金曲线 `[{time, balance}]` |
+| trades | JSON | 交易明细 `[{time, side, price, quantity, pnl}]` |
+| created_at | DATETIME | 创建时间 |
+
 > **并发说明**：多个策略 job 可能同时执行并修改 SimAccount 余额。所有余额变更操作需在数据库事务中完成，使用 `SELECT ... FOR UPDATE` 语义（SQLite 单写者模式下天然串行化，但代码中仍需确保事务完整性）。
 
 ## 策略引擎
@@ -175,13 +215,32 @@ context API 包括：
 - 使用 APScheduler **AsyncIOScheduler**（而非默认的 BackgroundScheduler），使 job 函数可以直接使用 async/await，与 FastAPI 的 async SQLAlchemy session 兼容
 - 策略启动时注册 cron job，停止时移除
 - 每次执行：获取市场数据 -> 运行策略逻辑 -> 记录触发 -> 发送通知
-- 市场数据初期用模拟生成，后续可接入 CCXT
 
-### 模拟市场数据
+### 市场数据（Binance API）
 
-- 基于随机游走模型，但叠加周期性趋势（正弦波）和均值回归，使数据具备一定的趋势和震荡特征
-- 应用启动时预生成 200 根历史 K 线，确保技术指标（如 RSI 需要至少 14 根、MA(20) 需要至少 20 根）有足够数据计算
-- 不同 symbol 维护独立的价格序列，保持连续性
+- 使用 Binance 公开 REST API `GET /api/v3/klines` 获取真实 K 线数据，无需 API Key
+- 用 `httpx` 异步请求，与现有技术栈一致
+- **本地缓存**：K 线数据写入 `KlineData` 表，避免重复请求，同时为回测提供历史数据
+- **增量拉取**：每次执行策略时，检查本地最新 K 线时间，仅拉取之后的增量数据
+- **降级策略**：API 请求失败时使用本地缓存的最近数据，记录 WARNING 日志
+- **请求限制**：Binance API 限制 1200 次/分钟，单次最多返回 1000 根 K 线。回测拉取大量历史数据时需分批请求，间隔 100ms
+
+### 策略回测
+
+回测复用策略引擎的执行逻辑，仅数据源从实时变为历史：
+
+1. 用户选择策略 + 时间范围 + 初始资金
+2. 后端从 Binance 批量拉取历史 K 线并缓存到本地
+3. 按时间顺序逐根 K 线执行策略（复用 executor 逻辑）
+4. 使用独立的虚拟账户，不影响模拟盘 SimAccount
+5. 记录每笔虚拟交易，计算统计指标，保存到 BacktestResult
+
+**回测结果指标：**
+- 总盈亏、盈亏百分比
+- 胜率（盈利交易数 / 总交易数）
+- 最大回撤（峰值到谷值的最大跌幅）
+- 总交易笔数、平均持仓时间
+- 资金曲线数据点（供前端绘图）
 
 ## 前端页面
 
@@ -190,7 +249,7 @@ context API 包括：
 | 仪表盘 | `/` | 模拟账户总览（余额、盈亏、运行中策略数）、最近触发记录 |
 | 策略列表 | `/strategies` | 策略卡片，显示名称、状态、盈亏、启停开关 |
 | 创建策略 | `/strategies/new` | 两个 Tab：可视化配置 / 代码编辑器 |
-| 策略详情 | `/strategies/:id` | 触发历史时间线、模拟持仓、盈亏曲线 |
+| 策略详情 | `/strategies/:id` | 触发历史时间线、模拟持仓、盈亏曲线、回测 Tab |
 | 触发日志 | `/triggers` | 全局触发记录表格，支持按策略筛选 |
 
 UI 风格：深色主题仪表盘，shadcn/ui + Recharts。
@@ -225,6 +284,9 @@ UI 风格：深色主题仪表盘，shadcn/ui + Recharts。
 | GET | `/api/positions` | 当前模拟持仓 |
 | GET | `/api/account` | 模拟账户信息 |
 | POST | `/api/account/reset` | 重置模拟账户（清空持仓、触发记录，恢复初始余额） |
+| POST | `/api/strategies/{id}/backtest` | 发起回测（参数：symbol, timeframe, start_date, end_date, initial_balance） |
+| GET | `/api/backtests/{id}` | 获取回测结果详情 |
+| GET | `/api/strategies/{id}/backtests` | 获取某策略的所有回测记录 |
 
 ## 日志
 
@@ -253,7 +315,8 @@ autotrade/
 │   │   │   ├── scheduler.py     # APScheduler 调度
 │   │   │   ├── executor.py      # 策略执行器
 │   │   │   ├── base_strategy.py # 策略基类
-│   │   │   └── market_data.py   # 市场数据（模拟）
+│   │   │   ├── market_data.py   # Binance K 线数据获取与缓存
+│   │   │   └── backtester.py    # 回测引擎
 │   │   └── services/
 │   │       ├── feishu.py        # 飞书通知
 │   │       └── simulator.py     # 模拟交易引擎

@@ -116,19 +116,23 @@
 
 ---
 
-## 第三阶段：策略引擎（调度、执行、市场数据模拟）
+## 第三阶段：策略引擎（调度、执行、真实市场数据）
 
 ### 目标
-实现策略的定时调度执行，包括市场数据模拟生成、可视化策略解析执行、模拟交易（开仓/平仓/盈亏计算）。
+实现策略的定时调度执行，包括 Binance 真实 K 线数据获取与缓存、可视化策略解析执行、模拟交易（开仓/平仓/盈亏计算）。
 
 ### 任务清单
 
-#### 3.1 市场数据模拟
+#### 3.1 市场数据（Binance API）
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
-| 1 | 实现模拟 K 线生成器 | `backend/app/engine/market_data.py` | 基于随机游走 + 周期性趋势（正弦波）+ 均值回归生成模拟 K 线数据（open, high, low, close, volume），使数据具备趋势和震荡特征。启动时预生成 200 根历史 K 线。为每个 symbol 维护独立价格序列以保持连续性。提供 `get_klines(symbol, timeframe, limit)` 接口 |
-| 2 | 实现技术指标计算 | `backend/app/engine/indicators.py` | 纯 Python 实现基础指标：RSI、SMA/EMA（移动平均线）、布林带（Bollinger Bands）。输入为 K 线数组，输出为指标值数组 |
+| 1 | 定义 KlineData 模型 | `backend/app/models.py` | 新增 `KlineData` 模型，字段按设计文档。`(symbol, timeframe, open_time)` 联合唯一索引 |
+| 2 | 实现 Binance K 线客户端 | `backend/app/engine/market_data.py` | 使用 httpx 异步调用 `GET https://api.binance.com/api/v3/klines`。实现 `fetch_klines(symbol, timeframe, start_time, end_time, limit)` 方法，返回标准化 K 线数组。处理 Binance symbol 格式（BTC/USDT -> BTCUSDT） |
+| 3 | 实现本地缓存层 | `backend/app/engine/market_data.py` | 实现 `get_klines(symbol, timeframe, limit)` 接口：先查本地 KlineData 表，缺失则从 Binance 拉取并 upsert 到本地。增量拉取：只请求本地最新 K 线之后的数据 |
+| 4 | 实现批量历史数据拉取 | `backend/app/engine/market_data.py` | 实现 `fetch_historical_klines(symbol, timeframe, start_date, end_date)` 供回测使用。Binance 单次最多 1000 根，需分批请求，间隔 100ms 避免触发限流 |
+| 5 | 降级与错误处理 | `backend/app/engine/market_data.py` | API 请求失败时返回本地缓存的最近数据，记录 WARNING 日志。网络超时设置 10 秒 |
+| 6 | 实现技术指标计算 | `backend/app/engine/indicators.py` | 纯 Python 实现基础指标：RSI、SMA/EMA（移动平均线）、布林带（Bollinger Bands）。输入为 K 线数组，输出为指标值数组 |
 
 #### 3.2 策略基类与上下文
 
@@ -161,7 +165,9 @@
 ### 验收标准
 
 - [ ] 创建一个可视化策略（如 RSI < 30 买入、RSI > 70 卖出），启动后调度器按 timeframe 定时执行
-- [ ] 策略执行时能获取模拟 K 线数据、计算指标、产生交易信号
+- [ ] 策略执行时从 Binance API 获取真实 K 线数据、缓存到本地、计算指标、产生交易信号
+- [ ] K 线数据正确写入 KlineData 表，重复数据不会插入
+- [ ] Binance API 不可用时，使用本地缓存数据继续执行
 - [ ] 交易信号触发后正确创建 TriggerLog 记录
 - [ ] 模拟买入后 Position 表有记录，SimAccount 余额减少
 - [ ] 模拟卖出（平仓）后 Position 标记已关闭，SimAccount 余额更新，盈亏正确计算
@@ -171,14 +177,50 @@
 
 ---
 
-## 第四阶段：前端页面实现
+## 第四阶段：策略回测
+
+### 目标
+实现策略历史回测功能，用户可选择时间范围回测策略表现，查看盈亏指标和资金曲线。
+
+### 任务清单
+
+#### 4.1 回测引擎
+
+| # | 任务 | 文件路径 | 说明 |
+|---|------|---------|------|
+| 1 | 定义 BacktestResult 模型 | `backend/app/models.py` | 新增 `BacktestResult` 模型，字段按设计文档。`equity_curve` 和 `trades` 为 JSON 字段 |
+| 2 | 定义回测 Pydantic schema | `backend/app/schemas.py` | 新增 `BacktestCreate`（请求参数：symbol, timeframe, start_date, end_date, initial_balance）和 `BacktestResponse` schema |
+| 3 | 实现回测引擎 | `backend/app/engine/backtester.py` | 核心回测逻辑：接收策略 + 历史 K 线数组，创建独立虚拟账户，按时间顺序逐根 K 线调用 executor 逻辑，记录每笔交易，计算统计指标（总盈亏、胜率、最大回撤、平均持仓时间），生成资金曲线数据点。复用 `executor.py` 中的策略评估逻辑 |
+| 4 | 实现最大回撤计算 | `backend/app/engine/backtester.py` | 遍历资金曲线，计算峰值到谷值的最大跌幅百分比 |
+
+#### 4.2 回测 API
+
+| # | 任务 | 文件路径 | 说明 |
+|---|------|---------|------|
+| 1 | 回测路由 | `backend/app/routers/backtests.py` | `POST /api/strategies/{id}/backtest` - 发起回测：校验参数，调用 `market_data.fetch_historical_klines` 获取历史数据，调用回测引擎，保存结果到 BacktestResult |
+|   |  |  | `GET /api/backtests/{id}` - 获取回测结果详情 |
+|   |  |  | `GET /api/strategies/{id}/backtests` - 获取某策略所有回测记录（按时间倒序） |
+| 2 | 注册路由 | `backend/app/main.py` | 挂载 backtests router |
+
+### 验收标准
+
+- [ ] 通过 API 发起回测，指定 BTC/USDT 最近 30 天的数据，回测成功完成
+- [ ] 回测结果包含正确的统计指标：总盈亏、胜率、最大回撤、交易笔数
+- [ ] 资金曲线数据点数量与 K 线数量一致
+- [ ] 回测使用独立虚拟账户，不影响模拟盘 SimAccount
+- [ ] 历史 K 线数据正确缓存，重复回测同一时间段不会重复请求 Binance
+- [ ] 回测记录持久化，可通过 API 查询历史回测结果
+
+---
+
+## 第五阶段：前端页面实现
 
 ### 目标
 实现全部 5 个前端页面，与后端 API 完成联调，用户可通过 Web 界面完整管理策略。
 
 ### 任务清单
 
-#### 4.1 前置组件与工具
+#### 5.1 前置组件与工具
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -188,7 +230,7 @@
 | 4 | React Query Provider | `frontend/src/app/providers.tsx` | 创建 QueryClientProvider 包裹应用 |
 | 5 | 更新 layout | `frontend/src/app/layout.tsx` | 引入 providers，完善侧边栏导航样式（图标、活跃状态高亮） |
 
-#### 4.2 仪表盘页面
+#### 5.2 仪表盘页面
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -196,7 +238,7 @@
 | 2 | 最近触发列表组件 | `frontend/src/components/recent-triggers.tsx` | 表格形式展示最近触发记录 |
 | 3 | 仪表盘页面 | `frontend/src/app/page.tsx` | 布局：顶部 4 个统计卡片（余额、总盈亏、运行策略数、今日触发数）+ 下方最近触发列表 |
 
-#### 4.3 策略列表页面
+#### 5.3 策略列表页面
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -204,26 +246,27 @@
 | 2 | 策略列表页面 | `frontend/src/app/strategies/page.tsx` | 卡片网格布局，顶部有"创建策略"按钮和状态筛选，点击卡片跳转详情 |
 | 3 | 启停开关逻辑 | `frontend/src/app/strategies/page.tsx` | Switch 切换时调用 start/stop API，乐观更新 + 错误回滚 |
 
-#### 4.4 创建策略页面
+#### 5.4 创建策略页面
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 基础配置表单组件 | `frontend/src/components/strategy-form-base.tsx` | 通用字段：策略名称、交易对选择（BTC/USDT, ETH/USDT 等）、时间周期、仓位大小、止盈止损、通知开关 |
 | 2 | 可视化配置组件 | `frontend/src/components/visual-config.tsx` | 条件配置器：分别配置买入条件和卖出条件，每组条件选择组合逻辑（AND/OR），然后添加规则：选择指标类型（RSI/MA_CROSS/BOLLINGER）-> 填写参数 -> 设置比较运算和阈值。配置结果按设计文档定义的 config_json schema 序列化为 JSON |
-| 3 | 代码编辑器占位 | `frontend/src/components/code-editor-placeholder.tsx` | 本阶段用 textarea 占位，第六阶段替换为 Monaco Editor |
+| 3 | 代码编辑器占位 | `frontend/src/components/code-editor-placeholder.tsx` | 本阶段用 textarea 占位，第七阶段替换为 Monaco Editor |
 | 4 | 创建策略页面 | `frontend/src/app/strategies/new/page.tsx` | Tabs 切换"可视化配置"和"代码编写"，底部提交按钮，成功后跳转策略列表 |
 
-#### 4.5 策略详情页面
+#### 5.5 策略详情页面
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 盈亏曲线图组件 | `frontend/src/components/pnl-chart.tsx` | Recharts 折线图，展示策略累计盈亏随时间变化 |
 | 2 | 触发历史时间线组件 | `frontend/src/components/trigger-timeline.tsx` | 时间线形式展示触发记录：时间、信号、操作、价格 |
 | 3 | 持仓信息组件 | `frontend/src/components/position-info.tsx` | 展示当前策略的模拟持仓：方向、开仓价、数量、浮动盈亏 |
-| 4 | 策略详情页面 | `frontend/src/app/strategies/[id]/page.tsx` | 顶部：策略信息卡片（名称、状态、配置摘要、启停按钮、编辑按钮）。中部：盈亏曲线图。下部：Tab 切换"触发历史"和"持仓信息" |
+| 4 | 策略详情页面 | `frontend/src/app/strategies/[id]/page.tsx` | 顶部：策略信息卡片（名称、状态、配置摘要、启停按钮、编辑按钮）。中部：盈亏曲线图。下部：Tab 切换"触发历史"、"持仓信息"和"回测" |
 | 5 | 策略编辑页面 | `frontend/src/app/strategies/[id]/edit/page.tsx` | 复用创建页面的表单组件，预填数据，提交调用 PUT API |
+| 6 | 回测面板组件 | `frontend/src/components/backtest-panel.tsx` | 回测配置表单（时间范围日期选择器、初始资金输入、发起回测按钮）+ 结果展示：统计指标卡片（总盈亏、胜率、最大回撤、交易笔数）+ 资金曲线图（Recharts）+ 交易明细表格。支持查看历史回测记录列表 |
 
-#### 4.6 触发日志页面
+#### 5.6 触发日志页面
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -234,7 +277,9 @@
 - [ ] 仪表盘正确显示账户余额、总盈亏、运行策略数量、最近触发记录
 - [ ] 策略列表以卡片形式展示所有策略，启停 Switch 可实时切换策略状态
 - [ ] 可通过可视化配置表单创建策略，JSON 配置正确保存到后端
-- [ ] 策略详情页展示盈亏曲线（Recharts）、触发历史时间线、持仓信息
+- [ ] 策略详情页展示盈亏曲线（Recharts）、触发历史时间线、持仓信息、回测面板
+- [ ] 回测面板可配置时间范围和初始资金，发起回测后展示统计指标和资金曲线
+- [ ] 可查看历史回测记录列表
 - [ ] 触发日志页面支持策略筛选和分页
 - [ ] 所有页面在深色主题下视觉一致
 - [ ] 页面间导航流畅，侧边栏活跃状态正确高亮
@@ -242,14 +287,14 @@
 
 ---
 
-## 第五阶段：飞书通知集成
+## 第六阶段：飞书通知集成
 
 ### 目标
 实现策略触发时自动发送飞书富文本卡片通知，通知记录可追溯。
 
 ### 任务清单
 
-#### 5.1 飞书通知服务
+#### 6.1 飞书通知服务
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -257,13 +302,13 @@
 | 2 | 通知记录持久化 | `backend/app/services/feishu.py` | 发送后写入 NotificationLog 表，记录 status（sent/failed）和 error_message |
 | 3 | 异常处理与重试 | `backend/app/services/feishu.py` | Webhook 请求超时（5秒）、失败时记录错误但不中断策略执行，可选重试 1 次 |
 
-#### 5.2 集成到策略执行流程
+#### 6.2 集成到策略执行流程
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
 | 1 | 执行器中调用通知 | `backend/app/engine/executor.py` | 策略触发交易信号后，检查 `notify_enabled`，若开启则异步调用飞书通知服务 |
 
-#### 5.3 通知配置管理
+#### 6.3 通知配置管理
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -282,14 +327,14 @@
 
 ---
 
-## 第六阶段：代码策略支持
+## 第七阶段：代码策略支持
 
 ### 目标
 实现前端 Monaco Editor 代码编辑器和后端沙箱执行环境，用户可用 Python 代码编写自定义策略。
 
 ### 任务清单
 
-#### 6.1 前端代码编辑器
+#### 7.1 前端代码编辑器
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -298,7 +343,7 @@
 | 3 | 替换占位编辑器 | `frontend/src/app/strategies/new/page.tsx` | 将 textarea 占位组件替换为 Monaco Editor 组件 |
 | 4 | 策略模板 | `frontend/src/lib/strategy-template.ts` | 导出默认策略代码模板字符串，包含完整的 BaseStrategy 示例和 context API 使用说明注释 |
 
-#### 6.2 后端沙箱执行
+#### 7.2 后端沙箱执行
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -307,7 +352,7 @@
 | 3 | 代码策略的 StrategyContext | `backend/app/engine/base_strategy.py` | 确保 StrategyContext 在沙箱中正确传递，代码策略通过 `self.ctx` 调用所有 API |
 | 4 | 更新 requirements.txt | `backend/requirements.txt` | 添加 `RestrictedPython`（如选用） |
 
-#### 6.3 代码验证与错误处理
+#### 7.3 代码验证与错误处理
 
 | # | 任务 | 文件路径 | 说明 |
 |---|------|---------|------|
@@ -360,7 +405,8 @@ autotrade/
 │   │   │   ├── strategies.py
 │   │   │   ├── triggers.py
 │   │   │   ├── dashboard.py
-│   │   │   └── account.py
+│   │   │   ├── account.py
+│   │   │   └── backtests.py
 │   │   ├── engine/
 │   │   │   ├── __init__.py
 │   │   │   ├── scheduler.py
@@ -368,6 +414,7 @@ autotrade/
 │   │   │   ├── base_strategy.py
 │   │   │   ├── market_data.py
 │   │   │   ├── indicators.py
+│   │   │   ├── backtester.py
 │   │   │   └── sandbox.py
 │   │   └── services/
 │   │       ├── __init__.py
@@ -401,7 +448,8 @@ autotrade/
 │   │   │   ├── code-editor.tsx
 │   │   │   ├── pnl-chart.tsx
 │   │   │   ├── trigger-timeline.tsx
-│   │   │   └── position-info.tsx
+│   │   │   ├── position-info.tsx
+│   │   │   └── backtest-panel.tsx
 │   │   └── lib/
 │   │       ├── api.ts
 │   │       ├── types.ts
