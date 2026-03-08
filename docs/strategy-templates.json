@@ -2,15 +2,7 @@
   "strategies": [
     {
       "name": "RSI 超买超卖",
-      "description": "RSI < 30 超卖买入，RSI > 70 超买卖出",
       "type": "visual",
-      "symbol": "BTCUSDT",
-      "timeframe": "1h",
-      "position_size": 100,
-      "position_size_type": "fixed",
-      "stop_loss": 5,
-      "take_profit": 10,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -43,19 +35,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "position_size": 100.0,
+      "position_size_type": "fixed",
+      "stop_loss": 5.0,
+      "take_profit": 10.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "双均线金叉死叉",
-      "description": "5/20 均线金叉买入，死叉卖出",
       "type": "visual",
-      "symbol": "BTCUSDT",
-      "timeframe": "1h",
-      "position_size": 200,
-      "position_size_type": "fixed",
-      "stop_loss": 8,
-      "take_profit": 15,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -88,19 +81,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "position_size": 200.0,
+      "position_size_type": "fixed",
+      "stop_loss": 8.0,
+      "take_profit": 15.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "布林带均值回归",
-      "description": "跌破布林下轨买入，突破上轨卖出",
       "type": "visual",
-      "symbol": "ETHUSDT",
-      "timeframe": "1h",
-      "position_size": 150,
-      "position_size_type": "fixed",
-      "stop_loss": 6,
-      "take_profit": 12,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -133,19 +127,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "ETHUSDT",
+      "timeframe": "1h",
+      "position_size": 50.0,
+      "position_size_type": "percent",
+      "stop_loss": 100.0,
+      "take_profit": 100.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "MACD 趋势跟踪",
-      "description": "MACD 金叉买入，死叉卖出",
       "type": "visual",
-      "symbol": "BTCUSDT",
-      "timeframe": "1d",
-      "position_size": 200,
-      "position_size_type": "fixed",
-      "stop_loss": 8,
-      "take_profit": 16,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -180,19 +175,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "BTCUSDT",
+      "timeframe": "1d",
+      "position_size": 200.0,
+      "position_size_type": "fixed",
+      "stop_loss": 8.0,
+      "take_profit": 16.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "KDJ 摆动策略",
-      "description": "KDJ 金叉买入，死叉卖出",
       "type": "visual",
-      "symbol": "ETHUSDT",
-      "timeframe": "1h",
-      "position_size": 100,
-      "position_size_type": "fixed",
-      "stop_loss": 5,
-      "take_profit": 10,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -223,19 +219,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "ETHUSDT",
+      "timeframe": "1h",
+      "position_size": 100.0,
+      "position_size_type": "fixed",
+      "stop_loss": 5.0,
+      "take_profit": 10.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "RSI + MACD 双重确认",
-      "description": "RSI 超卖且 MACD 金叉买入，RSI 超买且 MACD 死叉卖出",
       "type": "visual",
-      "symbol": "BTCUSDT",
-      "timeframe": "1h",
-      "position_size": 300,
-      "position_size_type": "fixed",
-      "stop_loss": 6,
-      "take_profit": 14,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -288,19 +285,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "position_size": 300.0,
+      "position_size_type": "fixed",
+      "stop_loss": 6.0,
+      "take_profit": 14.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "布林带 + 量能确认",
-      "description": "跌破布林下轨且成交量放大买入，突破上轨卖出",
       "type": "visual",
-      "symbol": "BTCUSDT",
-      "timeframe": "1h",
-      "position_size": 200,
-      "position_size_type": "fixed",
-      "stop_loss": 6,
-      "take_profit": 12,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -342,19 +340,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "BTCUSDT",
+      "timeframe": "1h",
+      "position_size": 200.0,
+      "position_size_type": "fixed",
+      "stop_loss": 6.0,
+      "take_profit": 12.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "均线 + RSI 趋势跟踪",
-      "description": "均线金叉且 RSI 处于强势区间买入，均线死叉卖出",
       "type": "visual",
-      "symbol": "SOLUSDT",
-      "timeframe": "1d",
-      "position_size": 150,
-      "position_size_type": "fixed",
-      "stop_loss": 7,
-      "take_profit": 15,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -396,19 +395,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "SOLUSDT",
+      "timeframe": "1d",
+      "position_size": 150.0,
+      "position_size_type": "fixed",
+      "stop_loss": 7.0,
+      "take_profit": 15.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "KDJ + RSI 超卖共振",
-      "description": "KDJ 超卖且 RSI 超卖双重共振买入，KDJ 超买且 RSI 超买卖出",
       "type": "visual",
-      "symbol": "ETHUSDT",
-      "timeframe": "1h",
-      "position_size": 250,
-      "position_size_type": "fixed",
-      "stop_loss": 5,
-      "take_profit": 12,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -457,19 +457,20 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "ETHUSDT",
+      "timeframe": "1h",
+      "position_size": 250.0,
+      "position_size_type": "fixed",
+      "stop_loss": 5.0,
+      "take_profit": 12.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     },
     {
       "name": "价格动量 + 量能爆发",
-      "description": "价格上涨超 2% 且成交量放大买入，价格下跌超 2% 卖出",
       "type": "visual",
-      "symbol": "SOLUSDT",
-      "timeframe": "1h",
-      "position_size": 100,
-      "position_size_type": "fixed",
-      "stop_loss": 4,
-      "take_profit": 8,
-      "notify_enabled": true,
       "config_json": {
         "buy_conditions": {
           "type": "group",
@@ -507,7 +508,31 @@
           ]
         }
       },
-      "sell_size_pct": 100
+      "code": null,
+      "symbol": "SOLUSDT",
+      "timeframe": "1h",
+      "position_size": 100.0,
+      "position_size_type": "fixed",
+      "stop_loss": 4.0,
+      "take_profit": 8.0,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
+    },
+    {
+      "name": "布林带突破策略",
+      "type": "code",
+      "config_json": null,
+      "code": "class BollingerBurstStrategy(BaseStrategy):\n    \"\"\"\n    布林带突破策略\n    \n    参数：\n        rise_threshold: 涨幅阈值，默认2%\n        bollinger_period: 布林带周期，默认20\n        bollinger_std: 布林带标准差倍数，默认2.0\n    \"\"\"\n    \n    def __init__(self, context):\n        super().__init__(context)\n        self.rise_threshold = 2.0  # 3分钟涨幅阈值(%)\n        self.bollinger_period = 20\n        self.bollinger_std = 2.0\n        \n        # 缓存不同时间周期的K线数据\n        self.klines_3m: List[dict] = []\n        self.klines_15m: List[dict] = []\n        self.klines_4h: List[dict] = []\n        \n        # 持仓状态\n        self.has_position = False\n        \n    def on_start(self):\n        \"\"\"策略启动时初始化数据\"\"\"\n        # 从上下文获取历史数据\n        if hasattr(self.ctx, 'get_historical_klines'):\n            symbol = self.ctx.symbol\n            # 获取各周期历史数据\n            self.klines_3m = self.ctx.get_historical_klines(symbol, \"3m\", limit=100)\n            self.klines_15m = self.ctx.get_historical_klines(symbol, \"15m\", limit=100)\n            self.klines_4h = self.ctx.get_historical_klines(symbol, \"4h\", limit=100)\n    \n    def on_tick(self, data: dict) -> Optional[str]:\n        \"\"\"\n        每个周期调用\n        \n        Args:\n            data: 包含当前K线数据\n                {\n                    \"symbol\": str,\n                    \"timeframe\": str,\n                    \"price\": float,\n                    \"klines\": List[dict],\n                }\n        \n        Returns:\n            \"buy\", \"sell\", 或 None\n        \"\"\"\n        timeframe = data.get(\"timeframe\")\n        klines = data.get(\"klines\", [])\n        current_price = data.get(\"price\", 0)\n        \n        if not klines or current_price == 0:\n            return None\n        \n        # 根据时间周期更新对应的K线缓存\n        if timeframe == \"3m\":\n            self.klines_3m = klines\n        elif timeframe == \"15m\":\n            self.klines_15m = klines\n        elif timeframe == \"4h\":\n            self.klines_4h = klines\n        else:\n            # 如果不是关注的周期，只更新价格\n            pass\n        \n        # 检查持仓状态\n        self.has_position = self._check_position()\n        \n        # 如果有持仓，检查卖出条件\n        if self.has_position:\n            if self._should_sell(current_price):\n                return \"sell\"\n        else:\n            # 没有持仓，检查买入条件\n            if self._should_buy(current_price):\n                return \"buy\"\n        \n        return None\n    \n    def _check_position(self) -> bool:\n        \"\"\"检查是否有持仓\"\"\"\n        if hasattr(self.ctx, 'get_position'):\n            position = self.ctx.get_position()\n            return position is not None and position.get(\"side\") == \"long\"\n        return False\n    \n    def _should_buy(self, current_price: float) -> bool:\n        \"\"\"\n        检查是否满足买入条件\n        \n        条件：\n        1. 3分钟内涨幅超过2%\n        2. 当前价格没有碰到4小时布林带上轨\n        \"\"\"\n        # 检查条件1：3分钟涨幅\n        if not self._check_3m_rise():\n            return False\n        \n        # 检查条件2：未触及4小时布林带上轨\n        if self._is_touching_4h_upper(current_price):\n            return False\n        \n        return True\n    \n    def _should_sell(self, current_price: float) -> bool:\n        \"\"\"\n        检查是否满足卖出条件\n        \n        条件：价格碰到15分钟布林带上轨\n        \"\"\"\n        return self._is_touching_15m_upper(current_price)\n    \n    def _check_3m_rise(self) -> bool:\n        \"\"\"\n        检查3分钟内是否涨幅超过阈值\n        \n        逻辑：获取3分钟前和当前的价格，计算涨幅\n        \"\"\"\n        if len(self.klines_3m) < 2:\n            return False\n        \n        # 获取最新价格（当前K线的close）\n        current_price = self.klines_3m[-1][\"close\"]\n        \n        # 向前查找约3分钟前的K线（3分钟周期，找前1根即可）\n        # 实际需要看3分钟内的涨幅，可能是同一根K线内\n        # 这里用前一根K线的open和当前close比较\n        \n        # 获取前一根K线\n        prev_kline = self.klines_3m[-2]\n        prev_price = prev_kline[\"open\"]  # 使用前一根的开盘价\n        \n        # 计算涨幅\n        if prev_price == 0:\n            return False\n        \n        rise_pct = (current_price - prev_price) / prev_price * 100\n        \n        return rise_pct >= self.rise_threshold\n    \n    def _is_touching_4h_upper(self, current_price: float) -> bool:\n        \"\"\"\n        检查是否触及4小时布林带上轨\n        \"\"\"\n        if len(self.klines_4h) < self.bollinger_period:\n            return False\n        \n        closes = [k[\"close\"] for k in self.klines_4h]\n        bands = calculate_bollinger_bands(closes, self.bollinger_period, self.bollinger_std)\n        \n        if not bands:\n            return False\n        \n        upper = bands[\"upper\"]\n        # 触及上轨的定义：当前价格 >= 上轨 * 0.995 (允许0.5%误差)\n        return current_price >= upper * 0.995\n    \n    def _is_touching_15m_upper(self, current_price: float) -> bool:\n        \"\"\"\n        检查是否触及15分钟布林带上轨\n        \"\"\"\n        if len(self.klines_15m) < self.bollinger_period:\n            return False\n        \n        closes = [k[\"close\"] for k in self.klines_15m]\n        bands = calculate_bollinger_bands(closes, self.bollinger_period, self.bollinger_std)\n        \n        if not bands:\n            return False\n        \n        upper = bands[\"upper\"]\n        # 触及上轨的定义：当前价格 >= 上轨 * 0.995 (允许0.5%误差)\n        return current_price >= upper * 0.995\n    \n    def get_status(self) -> Dict:\n        \"\"\"获取策略当前状态信息（用于调试和监控）\"\"\"\n        status = {\n            \"has_position\": self.has_position,\n            \"rise_threshold\": self.rise_threshold,\n        }\n        \n        # 计算当前各周期布林带状态\n        if len(self.klines_3m) >= 2:\n            current = self.klines_3m[-1][\"close\"]\n            prev = self.klines_3m[-2][\"open\"]\n            status[\"current_3m_rise_pct\"] = (current - prev) / prev * 100 if prev else 0\n        \n        if len(self.klines_4h) >= self.bollinger_period:\n            closes = [k[\"close\"] for k in self.klines_4h]\n            bands = calculate_bollinger_bands(closes, self.bollinger_period, self.bollinger_std)\n            if bands:\n                status[\"bb_4h_upper\"] = bands[\"upper\"]\n                status[\"bb_4h_middle\"] = bands[\"middle\"]\n                status[\"bb_4h_lower\"] = bands[\"lower\"]\n        \n        if len(self.klines_15m) >= self.bollinger_period:\n            closes = [k[\"close\"] for k in self.klines_15m]\n            bands = calculate_bollinger_bands(closes, self.bollinger_period, self.bollinger_std)\n            if bands:\n                status[\"bb_15m_upper\"] = bands[\"upper\"]\n                status[\"bb_15m_middle\"] = bands[\"middle\"]\n                status[\"bb_15m_lower\"] = bands[\"lower\"]\n        \n        return status\n",
+      "symbol": "BTCUSDT",
+      "timeframe": "3m,15m,4h",
+      "position_size": 100.0,
+      "position_size_type": "fixed",
+      "stop_loss": null,
+      "take_profit": null,
+      "notify_enabled": true,
+      "status": "stopped",
+      "sell_size_pct": 100.0
     }
   ]
 }
