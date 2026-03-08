@@ -6,7 +6,7 @@
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert
@@ -16,6 +16,13 @@ from app.database import async_session
 from app.engine.data_sources import DataSource, BinanceSource, create_data_source
 from app.logger import get_logger
 from app.models import KlineData
+
+# timeframe → 秒数（用于缓存新鲜度判断）
+_TF_SECONDS: Dict[str, int] = {
+    "1m": 60, "3m": 180, "5m": 300, "15m": 900, "30m": 1800,
+    "1h": 3600, "2h": 7200, "4h": 14400, "6h": 21600, "8h": 28800,
+    "12h": 43200, "1d": 86400, "3d": 259200, "1w": 604800,
+}
 
 logger = get_logger(__name__)
 
@@ -81,7 +88,13 @@ class MarketDataService:
         cached_data = await self._get_cached_klines(symbol, primary_tf, limit)
 
         if len(cached_data) >= limit:
-            return cached_data[-limit:]
+            # 新鲜度检查：最新缓存 bar 的时间不能超过 2 个周期
+            newest = cached_data[-1]["open_time"]
+            tf_seconds = _TF_SECONDS.get(primary_tf, 3600)
+            staleness = (datetime.now() - newest).total_seconds()
+            if staleness <= tf_seconds * 2:
+                return cached_data[-limit:]
+            # 缓存过期，继续走增量拉取流程
 
         # 缓存不足，从数据源拉取增量数据
         try:

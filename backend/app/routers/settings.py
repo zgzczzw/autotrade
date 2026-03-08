@@ -6,12 +6,12 @@ POST /api/settings/test — 测试数据源连接
 """
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import SystemSetting
+from app.models import KlineData, SystemSetting
 from app.schemas import (
     SettingsResponse,
     SettingsUpdate,
@@ -46,10 +46,19 @@ async def update_settings(
     payload: SettingsUpdate,
     db: AsyncSession = Depends(get_db),
 ):
+    # 检查数据源是否变更
+    current_source = await _get_setting("data_source", "binance", db)
+    source_changed = current_source != payload.data_source
+
     await _upsert_setting("data_source", payload.data_source, db)
 
     api_key = payload.cryptocompare_api_key or ""
     await _upsert_setting("cryptocompare_api_key", api_key, db)
+
+    # 数据源切换时清空 KlineData 缓存，避免旧数据污染新数据源
+    if source_changed:
+        await db.execute(delete(KlineData))
+
     await db.commit()
 
     # 立即切换全局数据源（无需重启）

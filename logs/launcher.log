@@ -23813,3 +23813,200 @@
 2026-03-08 17:38:24 [INFO] [前端] ✓ Compiled in 37ms
 2026-03-08 17:38:30 [INFO] [后端] 2026-03-08 17:38:30 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
 2026-03-08 17:38:30 [INFO] [后端] INFO:     127.0.0.1:52308 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:38:54 [INFO] [后端] INFO:     127.0.0.1:52499 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 17:38:58 [INFO] [后端] INFO:     127.0.0.1:52525 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=1h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:38:59 [INFO] [后端] 2026-03-08 17:38:59 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:38:59 [INFO] [后端] INFO:     127.0.0.1:52499 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:39:17 [INFO] [前端]  GET /market 200 in 291ms (compile: 88ms, render: 203ms)
+2026-03-08 17:39:17 [INFO] [后端] INFO:     127.0.0.1:52572 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=1h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:39:19 [INFO] [后端] 2026-03-08 17:39:19 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:39:19 [INFO] [后端] INFO:     127.0.0.1:52571 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:39:48 [INFO] [后端] 2026-03-08 17:39:48 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:39:48 [INFO] [后端] INFO:     127.0.0.1:52696 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:39:54 [INFO] [后端] INFO:     127.0.0.1:52710 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 17:40:17 [INFO] [后端] INFO:     127.0.0.1:52880 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=1h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:40:19 [INFO] [后端] 2026-03-08 17:40:19 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:40:19 [INFO] [后端] INFO:     127.0.0.1:52879 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:40:42 [INFO] [后端] 2026-03-08 17:40:42 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/v2/histohour?fsym=BTC&tsym=USDT&limit=12 "HTTP/1.1 200 OK"
+2026-03-08 17:40:42 [INFO] [后端] INFO:     127.0.0.1:52969 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=4h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:40:42 [INFO] [后端] 2026-03-08 17:40:42 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:40:42 [INFO] [后端] INFO:     127.0.0.1:52968 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:40:54 [INFO] [后端] INFO:     127.0.0.1:52997 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 17:41:12 [INFO] [后端] 2026-03-08 17:41:12 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:41:12 [INFO] [后端] INFO:     127.0.0.1:53076 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:41:42 [INFO] [后端] 2026-03-08 17:41:42 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:41:42 [INFO] [后端] INFO:     127.0.0.1:53167 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:41:43 [INFO] [后端] 2026-03-08 17:41:43 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/v2/histohour?fsym=BTC&tsym=USDT&limit=12 "HTTP/1.1 200 OK"
+2026-03-08 17:41:43 [INFO] [后端] INFO:     127.0.0.1:53169 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=4h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:41:54 [INFO] [后端] INFO:     127.0.0.1:53352 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 17:42:12 [INFO] [后端] 2026-03-08 17:42:12 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:42:12 [INFO] [后端] INFO:     127.0.0.1:53402 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:42:42 [INFO] [后端] 2026-03-08 17:42:42 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/v2/histohour?fsym=BTC&tsym=USDT&limit=12 "HTTP/1.1 200 OK"
+2026-03-08 17:42:42 [INFO] [后端] INFO:     127.0.0.1:53525 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=4h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:42:43 [INFO] [后端] 2026-03-08 17:42:43 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:42:43 [INFO] [后端] INFO:     127.0.0.1:53524 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:42:54 [INFO] [后端] INFO:     127.0.0.1:53579 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 17:43:12 [INFO] [后端] 2026-03-08 17:43:12 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:43:12 [INFO] [后端] INFO:     127.0.0.1:53622 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:43:44 [INFO] [后端] 2026-03-08 17:43:44 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/v2/histohour?fsym=BTC&tsym=USDT&limit=12 "HTTP/1.1 200 OK"
+2026-03-08 17:43:44 [INFO] [后端] INFO:     127.0.0.1:53873 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=4h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:43:44 [INFO] [后端] 2026-03-08 17:43:44 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:43:44 [INFO] [后端] INFO:     127.0.0.1:53872 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:43:54 [INFO] [后端] INFO:     127.0.0.1:53904 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 17:44:13 [INFO] [后端] 2026-03-08 17:44:13 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:44:13 [INFO] [后端] INFO:     127.0.0.1:53983 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:44:43 [INFO] [后端] 2026-03-08 17:44:43 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/v2/histohour?fsym=BTC&tsym=USDT&limit=12 "HTTP/1.1 200 OK"
+2026-03-08 17:44:43 [INFO] [后端] INFO:     127.0.0.1:54067 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=4h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:44:54 [INFO] [后端] INFO:     127.0.0.1:54233 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 17:44:56 [INFO] [后端] 2026-03-08 17:44:56 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:44:56 [INFO] [后端] INFO:     127.0.0.1:54231 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+2026-03-08 17:45:02 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/market_data.py'. Reloading...
+2026-03-08 17:45:02 [INFO] [后端] INFO:     Shutting down
+2026-03-08 17:45:02 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 17:45:02 [INFO] [后端] 2026-03-08 17:45:02 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 17:45:02 [INFO] [后端] 2026-03-08 17:45:02 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 17:45:02 [INFO] [后端] 2026-03-08 17:45:02 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 17:45:02 [INFO] [后端] 2026-03-08 17:45:02 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 17:45:02 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 17:45:02 [INFO] [后端] INFO:     Finished server process [87261]
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 17:45:03 [INFO] [后端] INFO:     Started server process [91724]
+2026-03-08 17:45:03 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.logger: ============================================================
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.logger: 日志级别: INFO
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.logger: 日志格式: text
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.logger: ============================================================
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.engine.market_data: Data source switched to: cryptocompare
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.main: ✅ 数据源初始化完成: cryptocompare
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 17:45:03 [INFO] [后端] 2026-03-08 17:45:03 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 17:45:03 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 17:45:13 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/market_data.py'. Reloading...
+2026-03-08 17:45:13 [INFO] [后端] INFO:     Shutting down
+2026-03-08 17:45:14 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 17:45:14 [INFO] [后端] 2026-03-08 17:45:14 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 17:45:14 [INFO] [后端] 2026-03-08 17:45:14 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 17:45:14 [INFO] [后端] 2026-03-08 17:45:14 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 17:45:14 [INFO] [后端] 2026-03-08 17:45:14 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 17:45:14 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 17:45:14 [INFO] [后端] INFO:     Finished server process [91724]
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 17:45:15 [INFO] [后端] INFO:     Started server process [91729]
+2026-03-08 17:45:15 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.logger: ============================================================
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.logger: 日志级别: INFO
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.logger: 日志格式: text
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.logger: ============================================================
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.engine.market_data: Data source switched to: cryptocompare
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.main: ✅ 数据源初始化完成: cryptocompare
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 17:45:15 [INFO] [后端] 2026-03-08 17:45:15 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 17:45:15 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 17:45:21 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/market_data.py'. Reloading...
+2026-03-08 17:45:21 [INFO] [后端] INFO:     Shutting down
+2026-03-08 17:45:21 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 17:45:21 [INFO] [后端] 2026-03-08 17:45:21 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 17:45:21 [INFO] [后端] 2026-03-08 17:45:21 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 17:45:21 [INFO] [后端] 2026-03-08 17:45:21 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 17:45:21 [INFO] [后端] 2026-03-08 17:45:21 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 17:45:21 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 17:45:21 [INFO] [后端] INFO:     Finished server process [91729]
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 17:45:22 [INFO] [后端] INFO:     Started server process [91733]
+2026-03-08 17:45:22 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.logger: ============================================================
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.logger: 日志级别: INFO
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.logger: 日志格式: text
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.logger: ============================================================
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.engine.market_data: Data source switched to: cryptocompare
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.main: ✅ 数据源初始化完成: cryptocompare
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 17:45:22 [INFO] [后端] 2026-03-08 17:45:22 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 17:45:22 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 17:45:31 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/routers/settings.py'. Reloading...
+2026-03-08 17:45:31 [INFO] [后端] INFO:     Shutting down
+2026-03-08 17:45:31 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 17:45:31 [INFO] [后端] 2026-03-08 17:45:31 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 17:45:31 [INFO] [后端] 2026-03-08 17:45:31 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 17:45:31 [INFO] [后端] 2026-03-08 17:45:31 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 17:45:31 [INFO] [后端] 2026-03-08 17:45:31 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 17:45:31 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 17:45:31 [INFO] [后端] INFO:     Finished server process [91733]
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 17:45:32 [INFO] [后端] INFO:     Started server process [91736]
+2026-03-08 17:45:32 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.logger: ============================================================
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.logger: 日志级别: INFO
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.logger: 日志格式: text
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.logger: ============================================================
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.engine.market_data: Data source switched to: cryptocompare
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.main: ✅ 数据源初始化完成: cryptocompare
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 17:45:32 [INFO] [后端] 2026-03-08 17:45:32 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 17:45:32 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 17:45:40 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/routers/settings.py'. Reloading...
+2026-03-08 17:45:40 [INFO] [后端] INFO:     Shutting down
+2026-03-08 17:45:40 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 17:45:40 [INFO] [后端] 2026-03-08 17:45:40 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 17:45:40 [INFO] [后端] 2026-03-08 17:45:40 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 17:45:40 [INFO] [后端] 2026-03-08 17:45:40 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 17:45:40 [INFO] [后端] 2026-03-08 17:45:40 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 17:45:40 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 17:45:40 [INFO] [后端] INFO:     Finished server process [91736]
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 17:45:41 [INFO] [后端] INFO:     Started server process [91737]
+2026-03-08 17:45:41 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.logger: ============================================================
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.logger: 日志级别: INFO
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.logger: 日志格式: text
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.logger: ============================================================
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.engine.market_data: Data source switched to: cryptocompare
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.main: ✅ 数据源初始化完成: cryptocompare
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 17:45:41 [INFO] [后端] 2026-03-08 17:45:41 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 17:45:41 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 17:45:43 [INFO] [后端] 2026-03-08 17:45:43 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/v2/histohour?fsym=BTC&tsym=USDT&limit=12 "HTTP/1.1 200 OK"
+2026-03-08 17:45:43 [INFO] [后端] INFO:     127.0.0.1:54414 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=4h&limit=200 HTTP/1.1" 200 OK
+2026-03-08 17:45:54 [INFO] [后端] INFO:     127.0.0.1:54470 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 17:45:55 [INFO] [后端] 2026-03-08 17:45:55 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC&tsyms=USDT "HTTP/1.1 200 OK"
+2026-03-08 17:45:55 [INFO] [后端] INFO:     127.0.0.1:54469 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
