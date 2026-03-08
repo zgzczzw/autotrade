@@ -12,7 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.database import init_db
 from app.engine.scheduler import scheduler
 from app.logger import get_access_logger, get_logger, log_startup
-from app.routers import account, backtests, dashboard, logs, settings, strategies, triggers
+from app.routers import account, backtests, dashboard, logs, market, settings, strategies, triggers
 from app.schemas import HealthResponse
 
 logger = get_logger(__name__)
@@ -125,6 +125,7 @@ app.include_router(account.router, prefix="/api")
 app.include_router(backtests.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+app.include_router(market.router, prefix="/api")
 
 
 @app.get("/", response_model=HealthResponse)

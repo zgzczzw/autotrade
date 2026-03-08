@@ -181,6 +181,14 @@ class MarketDataService:
                 await session.execute(stmt)
             await session.commit()
 
+    async def get_symbols(self, query: str = "") -> list:
+        """搜索交易对列表"""
+        return await self._source.fetch_symbols(query)
+
+    async def get_ticker(self, symbol: str) -> dict:
+        """获取 24h 行情摘要"""
+        return await self._source.fetch_ticker(symbol)
+
     async def close(self):
         """关闭底层 HTTP 客户端（如有）"""
         if hasattr(self._source, "close"):

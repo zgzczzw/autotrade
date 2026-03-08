@@ -22465,3 +22465,859 @@
 2026-03-08 11:02:00 [INFO] [后端] INFO:     127.0.0.1:50324 - "GET /api/strategies/11 HTTP/1.1" 200 OK
 2026-03-08 11:02:10 [INFO] [后端] INFO:     127.0.0.1:50335 - "GET /api/strategies/11 HTTP/1.1" 200 OK
 2026-03-08 11:02:10 [INFO] [后端] INFO:     127.0.0.1:50335 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:02:20 [INFO] [后端] INFO:     127.0.0.1:50405 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:02:20 [INFO] [后端] INFO:     127.0.0.1:50405 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:02:21 [INFO] [前端]  GET /settings 200 in 697ms (compile: 670ms, render: 27ms)
+2026-03-08 11:02:21 [INFO] [后端] INFO:     127.0.0.1:50405 - "GET /api/settings HTTP/1.1" 200 OK
+2026-03-08 11:02:21 [INFO] [后端] INFO:     127.0.0.1:50405 - "GET /api/settings HTTP/1.1" 200 OK
+2026-03-08 11:02:30 [INFO] [后端] INFO:     127.0.0.1:50447 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:02:40 [INFO] [后端] INFO:     127.0.0.1:50468 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:02:54 [INFO] [后端] INFO:     127.0.0.1:50476 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:03:54 [INFO] [后端] INFO:     127.0.0.1:50730 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:04:46 [INFO] [后端] INFO:     127.0.0.1:50926 - "OPTIONS /api/settings/test HTTP/1.1" 200 OK
+2026-03-08 11:04:48 [INFO] [后端] 2026-03-08 11:04:48 [INFO] httpx: HTTP Request: GET https://min-api.cryptocompare.com/data/v2/histohour?fsym=BTC&tsym=USDT&limit=1 "HTTP/1.1 200 OK"
+2026-03-08 11:04:48 [INFO] [后端] INFO:     127.0.0.1:50926 - "POST /api/settings/test HTTP/1.1" 200 OK
+2026-03-08 11:04:54 [INFO] [后端] INFO:     127.0.0.1:50928 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:05:54 [INFO] [后端] INFO:     127.0.0.1:51053 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:06:54 [INFO] [后端] INFO:     127.0.0.1:51286 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:07:54 [INFO] [后端] INFO:     127.0.0.1:51609 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:08:54 [INFO] [后端] INFO:     127.0.0.1:51783 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:09:54 [INFO] [后端] INFO:     127.0.0.1:52029 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:10:54 [INFO] [后端] INFO:     127.0.0.1:52259 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:11:54 [INFO] [后端] INFO:     127.0.0.1:52383 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:12:54 [INFO] [后端] INFO:     127.0.0.1:52824 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:13:54 [INFO] [后端] INFO:     127.0.0.1:53108 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:14:38 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/base.py'. Reloading...
+2026-03-08 11:14:38 [INFO] [后端] INFO:     Shutting down
+2026-03-08 11:14:39 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 11:14:39 [INFO] [后端] 2026-03-08 11:14:39 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 11:14:39 [INFO] [后端] 2026-03-08 11:14:39 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 11:14:39 [INFO] [后端] 2026-03-08 11:14:39 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 11:14:39 [INFO] [后端] 2026-03-08 11:14:39 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 11:14:39 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 11:14:39 [INFO] [后端] INFO:     Finished server process [86920]
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:14:40 [INFO] [后端] INFO:     Started server process [87225]
+2026-03-08 11:14:40 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.logger: ============================================================
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.logger: 日志格式: text
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.logger: ============================================================
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.engine.market_data: Data source switched to: mock
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.main: ✅ 数据源初始化完成: mock
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 11:14:40 [INFO] [后端] 2026-03-08 11:14:40 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 11:14:40 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 11:14:45 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/base.py'. Reloading...
+2026-03-08 11:14:45 [INFO] [后端] INFO:     Shutting down
+2026-03-08 11:14:45 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 11:14:45 [INFO] [后端] 2026-03-08 11:14:45 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 11:14:45 [INFO] [后端] 2026-03-08 11:14:45 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 11:14:45 [INFO] [后端] 2026-03-08 11:14:45 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 11:14:45 [INFO] [后端] 2026-03-08 11:14:45 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 11:14:45 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 11:14:45 [INFO] [后端] INFO:     Finished server process [87225]
+2026-03-08 11:14:46 [INFO] [后端] Process SpawnProcess-37:
+2026-03-08 11:14:46 [INFO] [后端] Traceback (most recent call last):
+2026-03-08 11:14:46 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+2026-03-08 11:14:46 [INFO] [后端]     self.run()
+2026-03-08 11:14:46 [INFO] [后端]     ~~~~~~~~^^
+2026-03-08 11:14:46 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+2026-03-08 11:14:46 [INFO] [后端]     self._target(*self._args, **self._kwargs)
+2026-03-08 11:14:46 [INFO] [后端]     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+2026-03-08 11:14:46 [INFO] [后端]     target(sockets=sockets)
+2026-03-08 11:14:46 [INFO] [后端]     ~~~~~~^^^^^^^^^^^^^^^^^
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 66, in run
+2026-03-08 11:14:46 [INFO] [后端]     return asyncio.run(self.serve(sockets=sockets))
+2026-03-08 11:14:46 [INFO] [后端]            ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:14:46 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+2026-03-08 11:14:46 [INFO] [后端]     return runner.run(main)
+2026-03-08 11:14:46 [INFO] [后端]            ~~~~~~~~~~^^^^^^
+2026-03-08 11:14:46 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+2026-03-08 11:14:46 [INFO] [后端]     return self._loop.run_until_complete(task)
+2026-03-08 11:14:46 [INFO] [后端]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+2026-03-08 11:14:46 [INFO] [后端]   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 70, in serve
+2026-03-08 11:14:46 [INFO] [后端]     await self._serve(sockets)
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 77, in _serve
+2026-03-08 11:14:46 [INFO] [后端]     config.load()
+2026-03-08 11:14:46 [INFO] [后端]     ~~~~~~~~~~~^^
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 435, in load
+2026-03-08 11:14:46 [INFO] [后端]     self.loaded_app = import_from_string(self.app)
+2026-03-08 11:14:46 [INFO] [后端]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-03-08 11:14:46 [INFO] [后端]     module = importlib.import_module(module_str)
+2026-03-08 11:14:46 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-03-08 11:14:46 [INFO] [后端]     return _bootstrap._gcd_import(name[level:], package, level)
+2026-03-08 11:14:46 [INFO] [后端]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:14:46 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+2026-03-08 11:14:46 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+2026-03-08 11:14:46 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+2026-03-08 11:14:46 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-03-08 11:14:46 [INFO] [后端]   File "<frozen importlib._bootstrap_external>", line 1023, in exec_module
+2026-03-08 11:14:46 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 13, in <module>
+2026-03-08 11:14:46 [INFO] [后端]     from app.engine.scheduler import scheduler
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/scheduler.py", line 18, in <module>
+2026-03-08 11:14:46 [INFO] [后端]     from app.engine.executor import executor
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/executor.py", line 17, in <module>
+2026-03-08 11:14:46 [INFO] [后端]     from app.engine.market_data import market_data_service
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 191, in <module>
+2026-03-08 11:14:46 [INFO] [后端]     market_data_service = MarketDataService()
+2026-03-08 11:14:46 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 27, in __init__
+2026-03-08 11:14:46 [INFO] [后端]     self._source: DataSource = BinanceSource()
+2026-03-08 11:14:46 [INFO] [后端]                                ~~~~~~~~~~~~~^^
+2026-03-08 11:14:46 [INFO] [后端] TypeError: Can't instantiate abstract class BinanceSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:14:53 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/binance.py'. Reloading...
+2026-03-08 11:14:54 [INFO] [后端] Process SpawnProcess-38:
+2026-03-08 11:14:54 [INFO] [后端] Traceback (most recent call last):
+2026-03-08 11:14:54 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+2026-03-08 11:14:54 [INFO] [后端]     self.run()
+2026-03-08 11:14:54 [INFO] [后端]     ~~~~~~~~^^
+2026-03-08 11:14:54 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+2026-03-08 11:14:54 [INFO] [后端]     self._target(*self._args, **self._kwargs)
+2026-03-08 11:14:54 [INFO] [后端]     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+2026-03-08 11:14:54 [INFO] [后端]     target(sockets=sockets)
+2026-03-08 11:14:54 [INFO] [后端]     ~~~~~~^^^^^^^^^^^^^^^^^
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 66, in run
+2026-03-08 11:14:54 [INFO] [后端]     return asyncio.run(self.serve(sockets=sockets))
+2026-03-08 11:14:54 [INFO] [后端]            ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:14:54 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+2026-03-08 11:14:54 [INFO] [后端]     return runner.run(main)
+2026-03-08 11:14:54 [INFO] [后端]            ~~~~~~~~~~^^^^^^
+2026-03-08 11:14:54 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+2026-03-08 11:14:54 [INFO] [后端]     return self._loop.run_until_complete(task)
+2026-03-08 11:14:54 [INFO] [后端]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+2026-03-08 11:14:54 [INFO] [后端]   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 70, in serve
+2026-03-08 11:14:54 [INFO] [后端]     await self._serve(sockets)
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 77, in _serve
+2026-03-08 11:14:54 [INFO] [后端]     config.load()
+2026-03-08 11:14:54 [INFO] [后端]     ~~~~~~~~~~~^^
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 435, in load
+2026-03-08 11:14:54 [INFO] [后端]     self.loaded_app = import_from_string(self.app)
+2026-03-08 11:14:54 [INFO] [后端]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-03-08 11:14:54 [INFO] [后端]     module = importlib.import_module(module_str)
+2026-03-08 11:14:54 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-03-08 11:14:54 [INFO] [后端]     return _bootstrap._gcd_import(name[level:], package, level)
+2026-03-08 11:14:54 [INFO] [后端]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:14:54 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+2026-03-08 11:14:54 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+2026-03-08 11:14:54 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+2026-03-08 11:14:54 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-03-08 11:14:54 [INFO] [后端]   File "<frozen importlib._bootstrap_external>", line 1023, in exec_module
+2026-03-08 11:14:54 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 13, in <module>
+2026-03-08 11:14:54 [INFO] [后端]     from app.engine.scheduler import scheduler
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/scheduler.py", line 18, in <module>
+2026-03-08 11:14:54 [INFO] [后端]     from app.engine.executor import executor
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/executor.py", line 17, in <module>
+2026-03-08 11:14:54 [INFO] [后端]     from app.engine.market_data import market_data_service
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 191, in <module>
+2026-03-08 11:14:54 [INFO] [后端]     market_data_service = MarketDataService()
+2026-03-08 11:14:54 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 27, in __init__
+2026-03-08 11:14:54 [INFO] [后端]     self._source: DataSource = BinanceSource()
+2026-03-08 11:14:54 [INFO] [后端]                                ~~~~~~~~~~~~~^^
+2026-03-08 11:14:54 [INFO] [后端] TypeError: Can't instantiate abstract class BinanceSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:15:00 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/binance.py'. Reloading...
+2026-03-08 11:15:01 [INFO] [后端] Process SpawnProcess-39:
+2026-03-08 11:15:01 [INFO] [后端] Traceback (most recent call last):
+2026-03-08 11:15:01 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+2026-03-08 11:15:01 [INFO] [后端]     self.run()
+2026-03-08 11:15:01 [INFO] [后端]     ~~~~~~~~^^
+2026-03-08 11:15:01 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/process.py", line 108, in run
+2026-03-08 11:15:01 [INFO] [后端]     self._target(*self._args, **self._kwargs)
+2026-03-08 11:15:01 [INFO] [后端]     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+2026-03-08 11:15:01 [INFO] [后端]     target(sockets=sockets)
+2026-03-08 11:15:01 [INFO] [后端]     ~~~~~~^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 66, in run
+2026-03-08 11:15:01 [INFO] [后端]     return asyncio.run(self.serve(sockets=sockets))
+2026-03-08 11:15:01 [INFO] [后端]            ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:01 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 195, in run
+2026-03-08 11:15:01 [INFO] [后端]     return runner.run(main)
+2026-03-08 11:15:01 [INFO] [后端]            ~~~~~~~~~~^^^^^^
+2026-03-08 11:15:01 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+2026-03-08 11:15:01 [INFO] [后端]     return self._loop.run_until_complete(task)
+2026-03-08 11:15:01 [INFO] [后端]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+2026-03-08 11:15:01 [INFO] [后端]   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 70, in serve
+2026-03-08 11:15:01 [INFO] [后端]     await self._serve(sockets)
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/server.py", line 77, in _serve
+2026-03-08 11:15:01 [INFO] [后端]     config.load()
+2026-03-08 11:15:01 [INFO] [后端]     ~~~~~~~~~~~^^
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/config.py", line 435, in load
+2026-03-08 11:15:01 [INFO] [后端]     self.loaded_app = import_from_string(self.app)
+2026-03-08 11:15:01 [INFO] [后端]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-03-08 11:15:01 [INFO] [后端]     module = importlib.import_module(module_str)
+2026-03-08 11:15:01 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-03-08 11:15:01 [INFO] [后端]     return _bootstrap._gcd_import(name[level:], package, level)
+2026-03-08 11:15:01 [INFO] [后端]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:01 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+2026-03-08 11:15:01 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+2026-03-08 11:15:01 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+2026-03-08 11:15:01 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-03-08 11:15:01 [INFO] [后端]   File "<frozen importlib._bootstrap_external>", line 1023, in exec_module
+2026-03-08 11:15:01 [INFO] [后端]   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 13, in <module>
+2026-03-08 11:15:01 [INFO] [后端]     from app.engine.scheduler import scheduler
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/scheduler.py", line 18, in <module>
+2026-03-08 11:15:01 [INFO] [后端]     from app.engine.executor import executor
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/executor.py", line 17, in <module>
+2026-03-08 11:15:01 [INFO] [后端]     from app.engine.market_data import market_data_service
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 191, in <module>
+2026-03-08 11:15:01 [INFO] [后端]     market_data_service = MarketDataService()
+2026-03-08 11:15:01 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 27, in __init__
+2026-03-08 11:15:01 [INFO] [后端]     self._source: DataSource = BinanceSource()
+2026-03-08 11:15:01 [INFO] [后端]                                ~~~~~~~~~~~~~^^
+2026-03-08 11:15:01 [INFO] [后端] TypeError: Can't instantiate abstract class BinanceSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:15:11 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/binance.py'. Reloading...
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:15:12 [INFO] [后端] INFO:     Started server process [87236]
+2026-03-08 11:15:12 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.logger: ============================================================
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.logger: 日志格式: text
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.logger: ============================================================
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:15:12 [INFO] [后端] 2026-03-08 11:15:12 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:15:12 [INFO] [后端] ERROR:    Traceback (most recent call last):
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 692, in lifespan
+2026-03-08 11:15:12 [INFO] [后端]     async with self.lifespan_context(app) as maybe_state:
+2026-03-08 11:15:12 [INFO] [后端]                ~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:12 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:12 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:12 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:12 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:12 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:12 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:12 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:12 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:12 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:12 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:12 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:12 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:12 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:12 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:12 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:12 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:12 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:12 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:12 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:12 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:12 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:12 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:12 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:12 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:12 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:12 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:12 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:12 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:12 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:12 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 75, in lifespan
+2026-03-08 11:15:12 [INFO] [后端]     await market_data_service.init_from_db()
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 59, in init_from_db
+2026-03-08 11:15:12 [INFO] [后端]     self.set_source(data_source, api_key)
+2026-03-08 11:15:12 [INFO] [后端]     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 35, in set_source
+2026-03-08 11:15:12 [INFO] [后端]     self._source = create_data_source(name, api_key)
+2026-03-08 11:15:12 [INFO] [后端]                    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+2026-03-08 11:15:12 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/data_sources/__init__.py", line 27, in create_data_source
+2026-03-08 11:15:12 [INFO] [后端]     return MockSource()
+2026-03-08 11:15:12 [INFO] [后端] TypeError: Can't instantiate abstract class MockSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:15:12 [INFO] [后端] 
+2026-03-08 11:15:12 [INFO] [后端] ERROR:    Application startup failed. Exiting.
+2026-03-08 11:15:16 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/cryptocompare.py'. Reloading...
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:15:17 [INFO] [后端] INFO:     Started server process [87237]
+2026-03-08 11:15:17 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.logger: ============================================================
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.logger: 日志格式: text
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.logger: ============================================================
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:15:17 [INFO] [后端] 2026-03-08 11:15:17 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:15:17 [INFO] [后端] ERROR:    Traceback (most recent call last):
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 692, in lifespan
+2026-03-08 11:15:17 [INFO] [后端]     async with self.lifespan_context(app) as maybe_state:
+2026-03-08 11:15:17 [INFO] [后端]                ~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:17 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:17 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:17 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:17 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:17 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:17 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:17 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:17 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:17 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:17 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:17 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:17 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:17 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:17 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:17 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:17 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:17 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:17 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:17 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:17 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:17 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:17 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:17 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:17 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:17 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:17 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:17 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:17 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:17 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:17 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 75, in lifespan
+2026-03-08 11:15:17 [INFO] [后端]     await market_data_service.init_from_db()
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 59, in init_from_db
+2026-03-08 11:15:17 [INFO] [后端]     self.set_source(data_source, api_key)
+2026-03-08 11:15:17 [INFO] [后端]     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 35, in set_source
+2026-03-08 11:15:17 [INFO] [后端]     self._source = create_data_source(name, api_key)
+2026-03-08 11:15:17 [INFO] [后端]                    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+2026-03-08 11:15:17 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/data_sources/__init__.py", line 27, in create_data_source
+2026-03-08 11:15:17 [INFO] [后端]     return MockSource()
+2026-03-08 11:15:17 [INFO] [后端] TypeError: Can't instantiate abstract class MockSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:15:17 [INFO] [后端] 
+2026-03-08 11:15:17 [INFO] [后端] ERROR:    Application startup failed. Exiting.
+2026-03-08 11:15:21 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/cryptocompare.py'. Reloading...
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:15:22 [INFO] [后端] INFO:     Started server process [87238]
+2026-03-08 11:15:22 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.logger: ============================================================
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.logger: 日志格式: text
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.logger: ============================================================
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:15:22 [INFO] [后端] 2026-03-08 11:15:22 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:15:22 [INFO] [后端] ERROR:    Traceback (most recent call last):
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 692, in lifespan
+2026-03-08 11:15:22 [INFO] [后端]     async with self.lifespan_context(app) as maybe_state:
+2026-03-08 11:15:22 [INFO] [后端]                ~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:22 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:22 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:22 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:22 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:22 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:22 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:22 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:22 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:22 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:22 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:22 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:22 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:22 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:22 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:22 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:22 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:22 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:22 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:22 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:22 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:22 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:22 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:22 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:22 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:22 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:22 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:22 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:22 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:22 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:22 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 75, in lifespan
+2026-03-08 11:15:22 [INFO] [后端]     await market_data_service.init_from_db()
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 59, in init_from_db
+2026-03-08 11:15:22 [INFO] [后端]     self.set_source(data_source, api_key)
+2026-03-08 11:15:22 [INFO] [后端]     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 35, in set_source
+2026-03-08 11:15:22 [INFO] [后端]     self._source = create_data_source(name, api_key)
+2026-03-08 11:15:22 [INFO] [后端]                    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+2026-03-08 11:15:22 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/data_sources/__init__.py", line 27, in create_data_source
+2026-03-08 11:15:22 [INFO] [后端]     return MockSource()
+2026-03-08 11:15:22 [INFO] [后端] TypeError: Can't instantiate abstract class MockSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:15:22 [INFO] [后端] 
+2026-03-08 11:15:22 [INFO] [后端] ERROR:    Application startup failed. Exiting.
+2026-03-08 11:15:32 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/cryptocompare.py'. Reloading...
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:15:33 [INFO] [后端] INFO:     Started server process [87248]
+2026-03-08 11:15:33 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.logger: ============================================================
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.logger: 日志格式: text
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.logger: ============================================================
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:15:33 [INFO] [后端] 2026-03-08 11:15:33 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:15:33 [INFO] [后端] ERROR:    Traceback (most recent call last):
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 692, in lifespan
+2026-03-08 11:15:33 [INFO] [后端]     async with self.lifespan_context(app) as maybe_state:
+2026-03-08 11:15:33 [INFO] [后端]                ~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:33 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:33 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:33 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:33 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:33 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:33 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:33 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:33 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:33 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:33 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:33 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:33 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:33 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:33 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:33 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:33 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:33 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:33 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:33 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:33 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:33 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:33 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:33 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:33 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:33 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:33 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:33 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:33 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:33 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:33 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 75, in lifespan
+2026-03-08 11:15:33 [INFO] [后端]     await market_data_service.init_from_db()
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 59, in init_from_db
+2026-03-08 11:15:33 [INFO] [后端]     self.set_source(data_source, api_key)
+2026-03-08 11:15:33 [INFO] [后端]     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 35, in set_source
+2026-03-08 11:15:33 [INFO] [后端]     self._source = create_data_source(name, api_key)
+2026-03-08 11:15:33 [INFO] [后端]                    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+2026-03-08 11:15:33 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/data_sources/__init__.py", line 27, in create_data_source
+2026-03-08 11:15:33 [INFO] [后端]     return MockSource()
+2026-03-08 11:15:33 [INFO] [后端] TypeError: Can't instantiate abstract class MockSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:15:33 [INFO] [后端] 
+2026-03-08 11:15:33 [INFO] [后端] ERROR:    Application startup failed. Exiting.
+2026-03-08 11:15:37 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/mock.py'. Reloading...
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:15:38 [INFO] [后端] INFO:     Started server process [87249]
+2026-03-08 11:15:38 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.logger: ============================================================
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.logger: 日志格式: text
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.logger: ============================================================
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:15:38 [INFO] [后端] 2026-03-08 11:15:38 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:15:38 [INFO] [后端] ERROR:    Traceback (most recent call last):
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 692, in lifespan
+2026-03-08 11:15:38 [INFO] [后端]     async with self.lifespan_context(app) as maybe_state:
+2026-03-08 11:15:38 [INFO] [后端]                ~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:38 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:38 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:38 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:38 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:38 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:38 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:38 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:38 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:38 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:38 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:38 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:38 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:38 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:38 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:38 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:38 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:38 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:38 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:38 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:38 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:38 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:38 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:38 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:38 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:38 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:38 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:38 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:38 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:38 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:38 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 75, in lifespan
+2026-03-08 11:15:38 [INFO] [后端]     await market_data_service.init_from_db()
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 59, in init_from_db
+2026-03-08 11:15:38 [INFO] [后端]     self.set_source(data_source, api_key)
+2026-03-08 11:15:38 [INFO] [后端]     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 35, in set_source
+2026-03-08 11:15:38 [INFO] [后端]     self._source = create_data_source(name, api_key)
+2026-03-08 11:15:38 [INFO] [后端]                    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+2026-03-08 11:15:38 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/data_sources/__init__.py", line 27, in create_data_source
+2026-03-08 11:15:38 [INFO] [后端]     return MockSource()
+2026-03-08 11:15:38 [INFO] [后端] TypeError: Can't instantiate abstract class MockSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:15:38 [INFO] [后端] 
+2026-03-08 11:15:38 [INFO] [后端] ERROR:    Application startup failed. Exiting.
+2026-03-08 11:15:43 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/mock.py'. Reloading...
+2026-03-08 11:15:44 [INFO] [后端] 2026-03-08 11:15:44 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:15:45 [INFO] [后端] INFO:     Started server process [87252]
+2026-03-08 11:15:45 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:15:45 [INFO] [后端] 2026-03-08 11:15:45 [INFO] app.logger: ============================================================
+2026-03-08 11:15:45 [INFO] [后端] 2026-03-08 11:15:45 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:15:45 [INFO] [后端] 2026-03-08 11:15:45 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:15:45 [INFO] [后端] 2026-03-08 11:15:45 [INFO] app.logger: 日志格式: text
+2026-03-08 11:15:45 [INFO] [后端] 2026-03-08 11:15:45 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:15:45 [INFO] [后端] 2026-03-08 11:15:45 [INFO] app.logger: ============================================================
+2026-03-08 11:15:45 [INFO] [后端] 2026-03-08 11:15:45 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:15:45 [INFO] [后端] 2026-03-08 11:15:45 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:15:45 [INFO] [后端] ERROR:    Traceback (most recent call last):
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 692, in lifespan
+2026-03-08 11:15:45 [INFO] [后端]     async with self.lifespan_context(app) as maybe_state:
+2026-03-08 11:15:45 [INFO] [后端]                ~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:45 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:45 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:45 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:45 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:45 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:45 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:45 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:45 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:45 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:45 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:45 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:45 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:45 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:45 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:45 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:45 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:45 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:45 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:45 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:45 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:45 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:45 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:45 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:45 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:45 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:45 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 133, in merged_lifespan
+2026-03-08 11:15:45 [INFO] [后端]     async with original_context(app) as maybe_original_state:
+2026-03-08 11:15:45 [INFO] [后端]                ~~~~~~~~~~~~~~~~^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/usr/local/Cellar/python@3.13/3.13.12_1/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 214, in __aenter__
+2026-03-08 11:15:45 [INFO] [后端]     return await anext(self.gen)
+2026-03-08 11:15:45 [INFO] [后端]            ^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/main.py", line 75, in lifespan
+2026-03-08 11:15:45 [INFO] [后端]     await market_data_service.init_from_db()
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 59, in init_from_db
+2026-03-08 11:15:45 [INFO] [后端]     self.set_source(data_source, api_key)
+2026-03-08 11:15:45 [INFO] [后端]     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/market_data.py", line 35, in set_source
+2026-03-08 11:15:45 [INFO] [后端]     self._source = create_data_source(name, api_key)
+2026-03-08 11:15:45 [INFO] [后端]                    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+2026-03-08 11:15:45 [INFO] [后端]   File "/Users/eric/autotrade/backend/app/engine/data_sources/__init__.py", line 27, in create_data_source
+2026-03-08 11:15:45 [INFO] [后端]     return MockSource()
+2026-03-08 11:15:45 [INFO] [后端] TypeError: Can't instantiate abstract class MockSource without an implementation for abstract methods 'fetch_symbols', 'fetch_ticker'
+2026-03-08 11:15:45 [INFO] [后端] 
+2026-03-08 11:15:45 [INFO] [后端] ERROR:    Application startup failed. Exiting.
+2026-03-08 11:15:52 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/data_sources/mock.py'. Reloading...
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:15:53 [INFO] [后端] INFO:     Started server process [87253]
+2026-03-08 11:15:53 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.logger: ============================================================
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.logger: 日志格式: text
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.logger: ============================================================
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.engine.market_data: Data source switched to: mock
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.main: ✅ 数据源初始化完成: mock
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 11:15:53 [INFO] [后端] 2026-03-08 11:15:53 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 11:15:53 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 11:15:53 [INFO] [后端] INFO:     127.0.0.1:53259 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:15:54 [INFO] [后端] INFO:     127.0.0.1:53259 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:15:58 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/engine/market_data.py'. Reloading...
+2026-03-08 11:15:58 [INFO] [后端] INFO:     Shutting down
+2026-03-08 11:15:58 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 11:15:58 [INFO] [后端] 2026-03-08 11:15:58 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 11:15:58 [INFO] [后端] 2026-03-08 11:15:58 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 11:15:58 [INFO] [后端] 2026-03-08 11:15:58 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 11:15:58 [INFO] [后端] 2026-03-08 11:15:58 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 11:15:58 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 11:15:58 [INFO] [后端] INFO:     Finished server process [87253]
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:15:59 [INFO] [后端] INFO:     Started server process [87256]
+2026-03-08 11:15:59 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.logger: ============================================================
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.logger: 日志格式: text
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.logger: ============================================================
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.engine.market_data: Data source switched to: mock
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.main: ✅ 数据源初始化完成: mock
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 11:15:59 [INFO] [后端] 2026-03-08 11:15:59 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 11:15:59 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 11:16:11 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/routers/market.py'. Reloading...
+2026-03-08 11:16:11 [INFO] [后端] INFO:     Shutting down
+2026-03-08 11:16:11 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 11:16:11 [INFO] [后端] 2026-03-08 11:16:11 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 11:16:11 [INFO] [后端] 2026-03-08 11:16:11 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 11:16:11 [INFO] [后端] 2026-03-08 11:16:11 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 11:16:11 [INFO] [后端] 2026-03-08 11:16:11 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 11:16:11 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 11:16:11 [INFO] [后端] INFO:     Finished server process [87256]
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:16:12 [INFO] [后端] INFO:     Started server process [87259]
+2026-03-08 11:16:12 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.logger: ============================================================
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.logger: 日志格式: text
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.logger: ============================================================
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.engine.market_data: Data source switched to: mock
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.main: ✅ 数据源初始化完成: mock
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 11:16:12 [INFO] [后端] 2026-03-08 11:16:12 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 11:16:12 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 11:16:16 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/main.py'. Reloading...
+2026-03-08 11:16:16 [INFO] [后端] INFO:     Shutting down
+2026-03-08 11:16:16 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 11:16:16 [INFO] [后端] 2026-03-08 11:16:16 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 11:16:16 [INFO] [后端] 2026-03-08 11:16:16 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 11:16:16 [INFO] [后端] 2026-03-08 11:16:16 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 11:16:16 [INFO] [后端] 2026-03-08 11:16:16 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 11:16:16 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 11:16:16 [INFO] [后端] INFO:     Finished server process [87259]
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:16:17 [INFO] [后端] INFO:     Started server process [87260]
+2026-03-08 11:16:17 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.logger: ============================================================
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.logger: 日志格式: text
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.logger: ============================================================
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.engine.market_data: Data source switched to: mock
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.main: ✅ 数据源初始化完成: mock
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 11:16:17 [INFO] [后端] 2026-03-08 11:16:17 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 11:16:17 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 11:16:21 [INFO] [后端] WARNING:  WatchFiles detected changes in 'app/main.py'. Reloading...
+2026-03-08 11:16:21 [INFO] [后端] INFO:     Shutting down
+2026-03-08 11:16:21 [INFO] [后端] INFO:     Waiting for application shutdown.
+2026-03-08 11:16:21 [INFO] [后端] 2026-03-08 11:16:21 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-08 11:16:21 [INFO] [后端] 2026-03-08 11:16:21 [INFO] app.main: 🛑 调度器已关闭
+2026-03-08 11:16:21 [INFO] [后端] 2026-03-08 11:16:21 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-08 11:16:21 [INFO] [后端] 2026-03-08 11:16:21 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-03-08 11:16:21 [INFO] [后端] INFO:     Application shutdown complete.
+2026-03-08 11:16:21 [INFO] [后端] INFO:     Finished server process [87260]
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.engine.data_sources.binance: BinanceSource using proxy: http://127.0.0.1:1087
+2026-03-08 11:16:22 [INFO] [后端] INFO:     Started server process [87261]
+2026-03-08 11:16:22 [INFO] [后端] INFO:     Waiting for application startup.
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.logger: ============================================================
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.logger: AutoTrade 系统启动
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.logger: 日志级别: INFO
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.logger: 日志格式: text
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.logger: 日志目录: /Users/eric/autotrade/backend/logs
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.logger: ============================================================
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.engine.market_data: Data source switched to: mock
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.main: ✅ 数据源初始化完成: mock
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.main: ✅ 调度器启动完成
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.engine.scheduler: Restored 0 running strategies
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-08 11:16:22 [INFO] [后端] 2026-03-08 11:16:22 [INFO] app.main: 🚀 AutoTrade 启动完成
+2026-03-08 11:16:22 [INFO] [后端] INFO:     Application startup complete.
+2026-03-08 11:16:34 [INFO] [前端] ✓ Compiled in 42ms
+2026-03-08 11:16:50 [INFO] [前端] ✓ Compiled in 83ms
+2026-03-08 11:16:54 [INFO] [后端] INFO:     127.0.0.1:53873 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:17:04 [INFO] [前端] ✓ Compiled in 66ms
+2026-03-08 11:17:28 [INFO] [前端] ✓ Compiled in 1ms
+2026-03-08 11:17:28 [INFO] [前端]  GET /strategies/11 200 in 378ms (compile: 151ms, render: 227ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 386ms (compile: 259ms, render: 127ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 133ms (compile: 3ms, render: 130ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /strategies/11 200 in 179ms (compile: 3ms, render: 176ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 145ms (compile: 4ms, render: 141ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 190ms (compile: 10ms, render: 180ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /strategies/11 200 in 148ms (compile: 8ms, render: 140ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 147ms (compile: 36ms, render: 111ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 130ms (compile: 3ms, render: 127ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /strategies/11 200 in 131ms (compile: 24ms, render: 107ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 106ms (compile: 3ms, render: 104ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 157ms (compile: 3ms, render: 155ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /strategies/11 200 in 157ms (compile: 22ms, render: 136ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 140ms (compile: 4ms, render: 136ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 139ms (compile: 5ms, render: 134ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /strategies/11 200 in 138ms (compile: 32ms, render: 106ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 113ms (compile: 2ms, render: 111ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 159ms (compile: 3ms, render: 156ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /strategies/11 200 in 140ms (compile: 4ms, render: 136ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 116ms (compile: 5ms, render: 112ms)
+2026-03-08 11:17:28 [INFO] [前端]  GET /settings 200 in 112ms (compile: 3ms, render: 108ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 113ms (compile: 4ms, render: 108ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /settings 200 in 113ms (compile: 25ms, render: 88ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 133ms (compile: 3ms, render: 131ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /settings 200 in 133ms (compile: 4ms, render: 129ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /settings 200 in 131ms (compile: 6ms, render: 126ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 110ms (compile: 8ms, render: 102ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /settings 200 in 128ms (compile: 5ms, render: 123ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 109ms (compile: 2ms, render: 107ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /settings 200 in 111ms (compile: 3ms, render: 108ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /settings 200 in 89ms (compile: 4ms, render: 86ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 90ms (compile: 23ms, render: 66ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 95ms (compile: 2ms, render: 92ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 109ms (compile: 3ms, render: 106ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 78ms (compile: 4ms, render: 74ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 55ms (compile: 3ms, render: 52ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 53ms (compile: 2ms, render: 50ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 55ms (compile: 3ms, render: 53ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 56ms (compile: 2ms, render: 54ms)
+2026-03-08 11:17:29 [INFO] [前端]  GET /strategies/11 200 in 29ms (compile: 3ms, render: 26ms)
+2026-03-08 11:17:30 [INFO] [后端] INFO:     127.0.0.1:54005 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:17:34 [INFO] [前端] ✓ Compiled in 177ms
+2026-03-08 11:17:34 [INFO] [前端]  GET /settings 200 in 246ms (compile: 79ms, render: 167ms)
+2026-03-08 11:17:34 [INFO] [前端] ✓ Compiled in 0ms
+2026-03-08 11:17:35 [INFO] [前端]  GET /settings 200 in 489ms (compile: 36ms, render: 453ms)
+2026-03-08 11:17:35 [INFO] [前端]  GET /strategies/11 200 in 432ms (compile: 89ms, render: 343ms)
+2026-03-08 11:17:35 [INFO] [后端] INFO:     127.0.0.1:54021 - "GET /api/settings HTTP/1.1" 200 OK
+2026-03-08 11:17:35 [INFO] [后端] INFO:     127.0.0.1:54021 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:17:46 [INFO] [后端] INFO:     127.0.0.1:54062 - "GET /api/strategies/11 HTTP/1.1" 200 OK
+2026-03-08 11:17:56 [INFO] [后端] INFO:     127.0.0.1:54073 - "GET /api/strategies/11 HTTP/1.1" 200 OK

@@ -32,6 +32,17 @@ async function apiCall<T>(promise: Promise<any>): Promise<T> {
 
 export const fetchDashboard = () => apiCall(api.get("/dashboard"));
 
+// ==================== 大盘行情 ====================
+
+export const fetchSymbols = (q: string = "") =>
+  apiCall<string[]>(api.get("/market/symbols", { params: { q } }));
+
+export const fetchMarketKlines = (symbol: string, timeframe: string, limit = 200) =>
+  apiCall(api.get("/market/klines", { params: { symbol, timeframe, limit } }));
+
+export const fetchTicker = (symbol: string) =>
+  apiCall(api.get("/market/ticker", { params: { symbol } }));
+
 // ==================== 系统设置 ====================
 
 export const fetchSettings = () => apiCall(api.get("/settings"));

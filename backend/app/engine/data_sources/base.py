@@ -4,7 +4,7 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 class DataSource(ABC):
@@ -57,5 +57,28 @@ class DataSource(ABC):
 
         Returns:
             K 线列表，ASC 顺序
+        """
+        ...
+
+    @abstractmethod
+    async def fetch_symbols(self, query: str = "") -> List[str]:
+        """
+        搜索交易对列表
+
+        Args:
+            query: 搜索关键字（如 "BTC"），空字符串返回热门列表
+
+        Returns:
+            交易对列表，如 ["BTCUSDT", "ETHUSDT", ...]
+        """
+        ...
+
+    @abstractmethod
+    async def fetch_ticker(self, symbol: str) -> Dict:
+        """
+        获取交易对 24h 行情摘要
+
+        Returns:
+            {symbol, price, change_pct, high_24h, low_24h, volume_24h}
         """
         ...

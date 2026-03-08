@@ -5,8 +5,9 @@ CryptoCompare 数据源
 """
 
 import asyncio
+import time
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import httpx
 
@@ -67,6 +68,9 @@ class CryptoCompareSource(DataSource):
             base_url=CC_BASE_URL,
             timeout=REQUEST_TIMEOUT,
         )
+        self._symbols_cache: List[str] = []
+        self._symbols_cache_at: float = 0.0
+        self._SYMBOLS_TTL = 300.0
 
     @property
     def name(self) -> str:
@@ -131,6 +135,56 @@ class CryptoCompareSource(DataSource):
         end_ts = int(end_date.timestamp())
         filtered = [b for b in all_raw if start_ts <= b["time"] <= end_ts]
         return self._aggregate(filtered, multiplier)
+
+    async def fetch_symbols(self, query: str = "") -> List[str]:
+        if self._symbols_cache and time.time() - self._symbols_cache_at < self._SYMBOLS_TTL:
+            symbols = self._symbols_cache
+        else:
+            try:
+                params: dict = {"limit": 100, "tsym": "USDT"}
+                if self.api_key:
+                    params["api_key"] = self.api_key
+                response = await self._client.get(
+                    "/data/top/totaltoptiervolfull", params=params
+                )
+                response.raise_for_status()
+                data = response.json()
+                symbols = [
+                    item["CoinInfo"]["Name"] + "USDT"
+                    for item in data.get("Data", [])
+                    if "CoinInfo" in item
+                ]
+                self._symbols_cache = symbols
+                self._symbols_cache_at = time.time()
+            except Exception as e:
+                logger.error(f"CryptoCompareSource fetch_symbols error: {e}")
+                symbols = self._symbols_cache or []
+
+        q = query.upper()
+        filtered = [s for s in symbols if q in s] if q else symbols
+        return filtered[:50]
+
+    async def fetch_ticker(self, symbol: str) -> Dict:
+        fsym, tsym = _split_symbol(symbol)
+        try:
+            params: dict = {"fsyms": fsym, "tsyms": tsym}
+            if self.api_key:
+                params["api_key"] = self.api_key
+            response = await self._client.get("/data/pricemultifull", params=params)
+            response.raise_for_status()
+            data = response.json()
+            raw = data["RAW"][fsym][tsym]
+            return {
+                "symbol": symbol,
+                "price": float(raw.get("PRICE", 0)),
+                "change_pct": float(raw.get("CHANGEPCT24HOUR", 0)),
+                "high_24h": float(raw.get("HIGHDAY", 0)),
+                "low_24h": float(raw.get("LOWDAY", 0)),
+                "volume_24h": float(raw.get("VOLUME24HOUR", 0)),
+            }
+        except Exception as e:
+            logger.error(f"CryptoCompareSource fetch_ticker error: {e}")
+            raise
 
     async def test_connection(self) -> bool:
         """测试 API Key 是否有效"""

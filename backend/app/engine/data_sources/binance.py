@@ -5,8 +5,9 @@ Binance 数据源
 
 import asyncio
 import os
+import time
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import httpx
 
@@ -41,6 +42,10 @@ class BinanceSource(DataSource):
             timeout=REQUEST_TIMEOUT,
             mounts=mounts,
         )
+        # symbols 本地缓存（5 分钟 TTL，避免频繁请求 exchangeInfo）
+        self._symbols_cache: List[str] = []
+        self._symbols_cache_at: float = 0.0
+        self._SYMBOLS_TTL = 300.0
 
     @property
     def name(self) -> str:
@@ -107,6 +112,50 @@ class BinanceSource(DataSource):
                 raise
 
         return all_klines
+
+    async def fetch_symbols(self, query: str = "") -> List[str]:
+        # 缓存未过期直接使用
+        if self._symbols_cache and time.time() - self._symbols_cache_at < self._SYMBOLS_TTL:
+            symbols = self._symbols_cache
+        else:
+            try:
+                response = await self._client.get("/api/v3/exchangeInfo")
+                response.raise_for_status()
+                data = response.json()
+                symbols = [
+                    s["symbol"]
+                    for s in data.get("symbols", [])
+                    if s.get("quoteAsset") == "USDT" and s.get("status") == "TRADING"
+                ]
+                symbols.sort()
+                self._symbols_cache = symbols
+                self._symbols_cache_at = time.time()
+            except Exception as e:
+                logger.error(f"BinanceSource fetch_symbols error: {e}")
+                symbols = self._symbols_cache or []
+
+        q = query.upper()
+        filtered = [s for s in symbols if q in s] if q else symbols
+        return filtered[:50]
+
+    async def fetch_ticker(self, symbol: str) -> Dict:
+        try:
+            response = await self._client.get(
+                "/api/v3/ticker/24hr", params={"symbol": symbol}
+            )
+            response.raise_for_status()
+            d = response.json()
+            return {
+                "symbol": symbol,
+                "price": float(d["lastPrice"]),
+                "change_pct": float(d["priceChangePercent"]),
+                "high_24h": float(d["highPrice"]),
+                "low_24h": float(d["lowPrice"]),
+                "volume_24h": float(d["volume"]),
+            }
+        except Exception as e:
+            logger.error(f"BinanceSource fetch_ticker error: {e}")
+            raise
 
     def _parse(self, data: list) -> List[dict]:
         return [
