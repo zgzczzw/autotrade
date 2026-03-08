@@ -54,7 +54,14 @@ export interface KlineChartModuleProps {
 
   // 聚焦到指定时间戳（毫秒），变化时图表自动滚动到该位置
   focusTimestamp?: number;
+
+  // 受控时间周期（由父组件管理）
+  activePeriod?: string;
+  // 时间周期变化回调（提供时切换器为受控模式，父组件负责拉取新数据）
+  onPeriodChange?: (period: string) => void;
+  // 隐藏内置时间周期切换器（回测等数据预加载场景）
+  hidePeriodSelector?: boolean;
 }
 
-// 时间周期
-export type TimePeriod = '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
+// 时间周期（全局统一）
+export type TimePeriod = '1m' | '15m' | '1h' | '4h' | '1d';

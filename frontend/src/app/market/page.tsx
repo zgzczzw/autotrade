@@ -6,12 +6,6 @@ import { KlineChartModule } from "@/components/kline-chart";
 import { SymbolSelector } from "@/components/symbol-selector";
 import { TickerBar } from "@/components/ticker-bar";
 
-const TIMEFRAMES = [
-  { label: "15m", value: "15m" },
-  { label: "1h",  value: "1h"  },
-  { label: "4h",  value: "4h"  },
-  { label: "1d",  value: "1d"  },
-];
 
 const DEFAULT_SYMBOL = "BTCUSDT";
 const DEFAULT_TF = "1h";
@@ -73,25 +67,9 @@ export default function MarketPage() {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* 顶栏：交易对选择 + 时间周期 */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      {/* 顶栏：交易对选择 */}
+      <div className="flex items-center gap-4">
         <SymbolSelector value={symbol} onChange={setSymbol} />
-
-        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1">
-          {TIMEFRAMES.map((tf) => (
-            <button
-              key={tf.value}
-              onClick={() => setTimeframe(tf.value)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                timeframe === tf.value
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              {tf.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* 行情摘要 */}
@@ -110,6 +88,8 @@ export default function MarketPage() {
             height={560}
             title={symbol}
             subtitle={timeframe}
+            activePeriod={timeframe}
+            onPeriodChange={setTimeframe}
           />
         )}
       </div>

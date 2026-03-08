@@ -26,14 +26,13 @@ function transformKlineData(data: any[]): KLineData[] {
   }));
 }
 
-// 时间周期
+// 时间周期（全局统一：1m / 15m / 1h / 4h / 1d）
 const timePeriods = [
-  { label: "1m", value: "1m" },
-  { label: "5m", value: "5m" },
+  { label: "1m",  value: "1m"  },
   { label: "15m", value: "15m" },
-  { label: "1h", value: "1h" },
-  { label: "4h", value: "4h" },
-  { label: "1d", value: "1d" },
+  { label: "1h",  value: "1h"  },
+  { label: "4h",  value: "4h"  },
+  { label: "1d",  value: "1d"  },
 ];
 
 export function KlineChartModule({
@@ -45,6 +44,9 @@ export function KlineChartModule({
   title = "K线图表",
   subtitle,
   focusTimestamp,
+  activePeriod: controlledPeriod,
+  onPeriodChange,
+  hidePeriodSelector = false,
 }: KlineChartModuleProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<Chart | null>(null);
@@ -57,7 +59,16 @@ export function KlineChartModule({
     boll: indicators.boll !== false,
     volume: indicators.volume !== false,
   });
-  const [activePeriod, setActivePeriod] = useState("1h");
+  const [internalPeriod, setInternalPeriod] = useState("1h");
+  // 受控模式优先使用父组件传入的 activePeriod
+  const activePeriod = controlledPeriod ?? internalPeriod;
+  const handlePeriodClick = (value: string) => {
+    if (onPeriodChange) {
+      onPeriodChange(value);   // 受控：通知父组件，父组件拉取新数据
+    } else {
+      setInternalPeriod(value); // 非受控：仅更新内部视觉状态
+    }
+  };
 
   // 动态计算图表总高度：主图固定高度 + 各子图 100px
   const totalHeight = useMemo(() => {
@@ -192,26 +203,29 @@ export function KlineChartModule({
         <div className="flex flex-col h-full">
           {/* 工具栏 */}
           <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-900 border-b border-slate-800">
-            {/* 时间周期 */}
-            <div className="flex items-center gap-1">
-              {timePeriods.map((period) => (
-                <Button
-                  key={period.value}
-                  variant={activePeriod === period.value ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setActivePeriod(period.value)}
-                  className={`h-7 px-2 text-xs ${
-                    activePeriod === period.value
-                      ? "bg-slate-700"
-                      : "hover:bg-slate-800"
-                  }`}
-                >
-                  {period.label}
-                </Button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-slate-700 mx-2" />
+            {/* 时间周期（可隐藏） */}
+            {!hidePeriodSelector && (
+              <>
+                <div className="flex items-center gap-1">
+                  {timePeriods.map((period) => (
+                    <Button
+                      key={period.value}
+                      variant={activePeriod === period.value ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => handlePeriodClick(period.value)}
+                      className={`h-7 px-2 text-xs ${
+                        activePeriod === period.value
+                          ? "bg-slate-700"
+                          : "hover:bg-slate-800"
+                      }`}
+                    >
+                      {period.label}
+                    </Button>
+                  ))}
+                </div>
+                <div className="w-px h-6 bg-slate-700 mx-2" />
+              </>
+            )}
 
             {/* 指标切换 */}
             <div className="flex items-center gap-1">

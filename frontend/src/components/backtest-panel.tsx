@@ -462,6 +462,7 @@ export function BacktestPanel({ strategyId }: BacktestPanelProps) {
                   title={`回测 K线图表`}
                   subtitle={`${selectedBacktest.symbol} / ${selectedBacktest.timeframe}`}
                   focusTimestamp={focusTimestamp}
+                  hidePeriodSelector
                 />
               </div>
             )}
