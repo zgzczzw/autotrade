@@ -10,6 +10,18 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
 from app.engine.base_strategy import BaseStrategy
+from app.engine.indicators import (
+    calculate_bollinger_bands,
+    calculate_ema,
+    calculate_macd,
+    calculate_rsi,
+    calculate_sma,
+    check_bollinger_touch,
+    check_kdj_signal,
+    check_ma_cross,
+    check_macd_signal,
+    check_volume_spike,
+)
 from app.logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,7 +38,6 @@ def time_limit(seconds: int):
     def signal_handler(signum, frame):
         raise TimeoutException(f"Execution timed out after {seconds} seconds")
 
-    # 设置信号处理器
     old_handler = signal.signal(signal.SIGALRM, signal_handler)
     signal.alarm(seconds)
 
@@ -39,45 +50,18 @@ def time_limit(seconds: int):
 
 # 允许使用的内置函数白名单
 ALLOWED_BUILTINS = {
-    "abs",
-    "all",
-    "any",
-    "bool",
-    "dict",
-    "float",
-    "int",
-    "len",
-    "list",
-    "max",
-    "min",
-    "range",
-    "round",
-    "str",
-    "sum",
-    "tuple",
-    "zip",
-    "enumerate",
-    "filter",
-    "map",
-    "sorted",
-    "reversed",
-    "isinstance",
-    "hasattr",
-    "getattr",
-    "setattr",
-    "print",  # 允许打印用于调试
+    "abs", "all", "any", "bool", "dict", "float", "int", "len", "list",
+    "max", "min", "range", "round", "str", "sum", "tuple", "zip",
+    "enumerate", "filter", "map", "sorted", "reversed",
+    "isinstance", "hasattr", "getattr", "setattr", "print",
+    # class 定义需要 __build_class__，property/staticmethod/super 也常用
+    "__build_class__", "super", "property", "staticmethod", "classmethod",
+    "type", "object", "NotImplemented", "None", "True", "False",
 }
 
 # 禁止使用的关键字
 FORBIDDEN_KEYWORDS = {
-    "import",
-    "from",
-    "open",
-    "exec",
-    "eval",
-    "compile",
-    "__import__",
-    "file",
+    "import", "from", "open", "exec", "eval", "compile", "__import__", "file",
 }
 
 
@@ -86,55 +70,33 @@ class CodeValidator:
 
     @staticmethod
     def validate_syntax(code: str) -> List[str]:
-        """
-        验证代码语法
-
-        Returns:
-            错误列表，空列表表示语法正确
-        """
         errors = []
-
         try:
             ast.parse(code)
         except SyntaxError as e:
             errors.append(f"SyntaxError at line {e.lineno}: {e.msg}")
         except Exception as e:
             errors.append(f"Parse error: {str(e)}")
-
         return errors
 
     @staticmethod
     def validate_security(code: str) -> List[str]:
-        """
-        验证代码安全性
-
-        Returns:
-            错误列表，空列表表示通过安全检查
-        """
         errors = []
-
         try:
             tree = ast.parse(code)
         except SyntaxError:
-            return errors  # 语法错误已在 validate_syntax 中检查
+            return errors
 
         for node in ast.walk(tree):
-            # 检查 Import
             if isinstance(node, (ast.Import, ast.ImportFrom)):
                 errors.append(f"Line {node.lineno}: Import statements are not allowed")
-
-            # 检查函数调用
             elif isinstance(node, ast.Call):
                 if isinstance(node.func, ast.Name):
                     if node.func.id in FORBIDDEN_KEYWORDS:
                         errors.append(f"Line {node.lineno}: Function '{node.func.id}' is not allowed")
-
-            # 检查属性访问（防止访问 __import__ 等）
             elif isinstance(node, ast.Attribute):
                 if node.attr.startswith("__") and node.attr.endswith("__"):
                     errors.append(f"Line {node.lineno}: Access to dunder attributes is not allowed")
-
-            # 检查 Delete
             elif isinstance(node, ast.Delete):
                 errors.append(f"Line {node.lineno}: Delete statements are not allowed")
 
@@ -147,80 +109,176 @@ class SandboxExecutor:
     def __init__(self, timeout: int = 10):
         self.timeout = timeout
 
+    def _build_restricted_globals(self) -> dict:
+        """构建受限的全局命名空间（注入基类和常用指标函数）"""
+        builtins_src = __builtins__ if isinstance(__builtins__, dict) else vars(__builtins__)
+        return {
+            "__builtins__": {
+                name: builtins_src[name]
+                for name in ALLOWED_BUILTINS
+                if name in builtins_src
+            },
+            # class 定义需要 __name__ 作为 __module__ 的来源
+            "__name__": "<strategy>",
+            # 策略基类
+            "BaseStrategy": BaseStrategy,
+            # 类型注解（策略代码中常用，不能 import 但需要用）
+            "List": List,
+            "Dict": Dict,
+            "Optional": Optional,
+            # 技术指标函数
+            "calculate_bollinger_bands": calculate_bollinger_bands,
+            "calculate_rsi": calculate_rsi,
+            "calculate_sma": calculate_sma,
+            "calculate_ema": calculate_ema,
+            "calculate_macd": calculate_macd,
+            "check_bollinger_touch": check_bollinger_touch,
+            "check_ma_cross": check_ma_cross,
+            "check_macd_signal": check_macd_signal,
+            "check_kdj_signal": check_kdj_signal,
+            "check_volume_spike": check_volume_spike,
+        }
+
+    def create_instance(
+        self,
+        code: str,
+        context: Any,
+        strategy_id: int,
+    ) -> Any:
+        """
+        编译代码策略并创建持久化实例，调用 on_start() 初始化。
+
+        用户代码应包含完整的类定义（继承 BaseStrategy），例如：
+            class MyStrategy(BaseStrategy):
+                def on_tick(self, data): ...
+
+        Returns:
+            Strategy 实例（持有 context 引用）
+        """
+        restricted_globals = self._build_restricted_globals()
+        local_namespace: dict = {}
+
+        try:
+            with time_limit(self.timeout):
+                compiled = compile(code, f"<strategy_{strategy_id}>", "exec")
+                exec(compiled, restricted_globals, local_namespace)
+
+                # 找到用户定义的 BaseStrategy 子类
+                StrategyClass = None
+                for obj in local_namespace.values():
+                    if (
+                        isinstance(obj, type)
+                        and issubclass(obj, BaseStrategy)
+                        and obj is not BaseStrategy
+                    ):
+                        StrategyClass = obj
+                        break
+
+                if StrategyClass is None:
+                    raise ValueError(
+                        "No BaseStrategy subclass found in strategy code. "
+                        "Please define a class that inherits from BaseStrategy."
+                    )
+
+                instance = StrategyClass(context)
+
+            # on_start 在超时保护外单独调用，失败只 warning 不阻断策略启动
+            try:
+                instance.on_start()
+            except Exception as e:
+                logger.warning(
+                    f"Strategy {strategy_id} on_start() failed (ignored): {e}"
+                )
+
+            logger.info(
+                f"Strategy {strategy_id} instance created: {StrategyClass.__name__}"
+            )
+            return instance
+
+        except TimeoutException:
+            logger.error(f"Strategy {strategy_id} create_instance timed out")
+            raise
+        except Exception as e:
+            logger.error(f"Strategy {strategy_id} create_instance error: {e}")
+            raise
+
+    def call_on_tick(
+        self,
+        instance: Any,
+        data: dict,
+    ) -> Optional[str]:
+        """
+        在超时保护下调用策略实例的 on_tick。
+
+        Args:
+            instance: 由 create_instance 创建的持久化策略实例
+            data: 传给 on_tick 的数据字典
+
+        Returns:
+            "buy", "sell", 或 None
+        """
+        try:
+            with time_limit(self.timeout):
+                signal = instance.on_tick(data)
+                if signal in ("buy", "sell"):
+                    return signal
+                return None
+        except TimeoutException:
+            logger.error(f"Strategy on_tick timed out")
+            raise
+        except Exception as e:
+            logger.error(f"Strategy on_tick error: {e}")
+            raise
+
     def execute(
         self,
         code: str,
         context: Any,
         strategy_id: int,
+        klines: Optional[List[dict]] = None,
+        current_kline: Optional[dict] = None,
     ) -> Optional[str]:
         """
-        在沙箱中执行代码策略
+        在沙箱中一次性执行代码策略（主要供回测使用）。
+        每次调用都创建新实例，不持久化状态。
 
         Args:
             code: 策略代码
-            context: StrategyContext 实例
+            context: StrategyContext / BacktestContext 实例
             strategy_id: 策略 ID
+            klines: 预取的 K 线数据
+            current_kline: 当前 K 线
 
         Returns:
-            交易信号: "buy", "sell", 或 None
+            "buy", "sell", 或 None
         """
-        # 创建受限的全局命名空间
-        restricted_globals = {
-            "__builtins__": {
-                name: __builtins__[name]
-                for name in ALLOWED_BUILTINS
-                if name in __builtins__
-            },
-        }
-
-        # 创建局部命名空间
-        local_namespace = {
-            "ctx": context,
-            "signal": None,
-        }
-
-        # 包装代码，捕获信号
-        wrapped_code = f"""
-class Strategy(BaseStrategy):
-{self._indent_code(code)}
-
-# 执行策略
-strategy = Strategy(ctx)
-signal = strategy.on_tick({{
-    "symbol": ctx.strategy.symbol,
-    "timeframe": ctx.strategy.timeframe,
-    "price": ctx.current_kline["close"] if hasattr(ctx, "current_kline") else 0,
-    "klines": ctx.get_klines(limit=100),
-}})
-"""
+        # 兼容 BacktestContext（同步 get_klines）
+        if klines is None:
+            get_klines_fn = getattr(context, "get_klines", None)
+            if callable(get_klines_fn):
+                try:
+                    klines = get_klines_fn(limit=100)
+                except Exception:
+                    klines = []
+        if current_kline is None:
+            current_kline = getattr(context, "current_kline", None)
 
         try:
-            with time_limit(self.timeout):
-                # 编译代码
-                compiled_code = compile(wrapped_code, f"<strategy_{strategy_id}>", "exec")
+            instance = self.create_instance(code, context, strategy_id)
+        except Exception:
+            return None
 
-                # 执行代码
-                exec(compiled_code, restricted_globals, local_namespace)
+        data = {
+            "symbol": context.strategy.symbol,
+            "timeframe": context.strategy.timeframe,
+            "price": current_kline["close"] if current_kline else 0,
+            "klines": klines or [],
+        }
 
-                # 获取信号
-                signal = local_namespace.get("signal")
-
-                if signal in ("buy", "sell"):
-                    return signal
-                return None
-
-        except TimeoutException:
-            logger.error(f"Strategy {strategy_id} execution timed out")
-            raise
-        except Exception as e:
-            logger.error(f"Strategy {strategy_id} execution error: {e}")
-            raise
-
-    def _indent_code(self, code: str, indent: int = 4) -> str:
-        """为代码添加缩进"""
-        lines = code.strip().split("\n")
-        indented_lines = [(" " * indent) + line for line in lines]
-        return "\n".join(indented_lines)
+        try:
+            return self.call_on_tick(instance, data)
+        except Exception:
+            return None
 
 
 # 全局实例
@@ -236,12 +294,10 @@ def validate_code(code: str) -> tuple[bool, List[str]]:
     """
     validator = CodeValidator()
 
-    # 语法检查
     syntax_errors = validator.validate_syntax(code)
     if syntax_errors:
         return False, syntax_errors
 
-    # 安全检查
     security_errors = validator.validate_security(code)
     if security_errors:
         return False, security_errors

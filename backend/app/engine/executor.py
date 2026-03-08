@@ -1,12 +1,12 @@
 """
 策略执行器
 - 可视化策略解析执行
-- 代码策略沙箱执行
+- 代码策略沙箱执行（持久化实例，跨 tick 保留状态）
 - 策略上下文
 """
 
 import json
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,13 +35,14 @@ class StrategyContext:
     def __init__(self, strategy: Strategy, db: AsyncSession, current_kline: Optional[dict] = None):
         self.strategy = strategy
         self.db = db
-        self._current_kline = current_kline
+        self.current_kline = current_kline
 
     async def get_klines(self, limit: int = 100) -> List[dict]:
-        """获取 K 线数据"""
+        """获取 K 线数据（使用策略主时间周期）"""
+        primary_tf = self.strategy.timeframe.split(",")[0].strip()
         return await market_data_service.get_klines(
             symbol=self.strategy.symbol,
-            timeframe=self.strategy.timeframe,
+            timeframe=primary_tf,
             limit=limit,
             db=self.db,
         )
@@ -53,7 +54,7 @@ class StrategyContext:
             logger.error("No kline data available for buy")
             return None
 
-        price = klines[0]["close"]
+        price = klines[-1]["close"]
         if quantity is not None:
             qty = quantity
         elif self.strategy.position_size_type == "percent":
@@ -77,7 +78,7 @@ class StrategyContext:
             logger.error("No kline data available for sell")
             return None
 
-        price = klines[0]["close"]
+        price = klines[-1]["close"]
         sell_size_pct = getattr(self.strategy, "sell_size_pct", 100.0) or 100.0
 
         return await simulator.execute_sell(
@@ -117,30 +118,56 @@ class StrategyContext:
 class StrategyExecutor:
     """策略执行器"""
 
-    async def execute(self, strategy: Strategy):
+    def __init__(self):
+        # 持久化代码策略实例，key = strategy_id
+        # 跨 tick 保留状态（如缓存的多周期 K 线数据）
+        self._strategy_instances: Dict[int, Any] = {}
+
+    def release_instance(self, strategy_id: int) -> None:
         """
-        执行策略
+        释放策略持久化实例（策略停止时调用）。
+        调用 on_stop() 做清理，失败只 warning 不抛出。
+        """
+        instance = self._strategy_instances.pop(strategy_id, None)
+        if instance is None:
+            return
+        try:
+            instance.on_stop()
+        except Exception as e:
+            logger.warning(f"Strategy {strategy_id} on_stop() error (ignored): {e}")
+        logger.info(f"Strategy {strategy_id} instance released")
+
+    async def execute(self, strategy: Strategy, timeframe: Optional[str] = None):
+        """
+        执行策略。
 
         Args:
             strategy: 策略实例
+            timeframe: 当前触发的时间周期（多时间周期策略由调度器按周期传入）。
+                       None 时取 strategy.timeframe 的第一个周期。
         """
-        logger.info(f"Executing strategy: {strategy.name} (ID: {strategy.id})")
+        # 确定本次执行的时间周期
+        active_tf = timeframe if timeframe else strategy.timeframe.split(",")[0].strip()
+
+        logger.info(
+            f"Executing strategy: {strategy.name} (ID: {strategy.id}, tf={active_tf})"
+        )
 
         async with async_session() as db:
-            # 获取当前 K 线
+            # 拉取当前时间周期的 K 线（ASC 顺序，[-1] 为最新）
             klines = await market_data_service.get_klines(
                 symbol=strategy.symbol,
-                timeframe=strategy.timeframe,
-                limit=1,
+                timeframe=active_tf,
+                limit=100,
                 db=db,
             )
-            current_kline = klines[0] if klines else None
+            current_kline = klines[-1] if klines else None
 
             ctx = StrategyContext(strategy, db, current_kline)
 
             try:
                 sl_tp_trigger = None
-                # 1. 检查止盈止损；触发后本 tick 跳过策略信号
+                # 1. 检查止盈止损
                 if current_kline:
                     current_price = current_kline["close"]
                     sl_tp_trigger = await simulator.check_stop_loss_take_profit(
@@ -160,7 +187,9 @@ class StrategyExecutor:
                     if strategy.type == "visual":
                         signal = await self._execute_visual_strategy(strategy, ctx)
                     else:
-                        signal = await self._execute_code_strategy(strategy, ctx)
+                        signal = await self._execute_code_strategy(
+                            strategy, ctx, klines, current_kline, active_tf
+                        )
 
                     # 3. 执行交易信号
                     if signal == "buy":
@@ -174,7 +203,6 @@ class StrategyExecutor:
 
             except Exception as e:
                 logger.error(f"Error executing strategy {strategy.id}: {e}")
-                # 标记策略状态为 error
                 strategy.status = "error"
                 await db.commit()
                 raise
@@ -199,19 +227,13 @@ class StrategyExecutor:
             )
         except Exception as e:
             logger.error(f"Failed to send notification: {e}")
-            # 通知失败不影响策略执行
 
     async def _execute_visual_strategy(
         self,
         strategy: Strategy,
         ctx: StrategyContext,
     ) -> Optional[str]:
-        """
-        执行可视化策略
-
-        Returns:
-            交易信号: "buy", "sell", 或 None
-        """
+        """执行可视化策略"""
         if not strategy.config_json:
             return None
 
@@ -221,23 +243,17 @@ class StrategyExecutor:
             logger.error(f"Invalid config_json for strategy {strategy.id}")
             return None
 
-        # 获取 K 线数据
         klines = await ctx.get_klines(limit=100)
         if not klines:
             return None
 
         calculator = IndicatorCalculator(klines)
-
-        # 检查是否有持仓
         position = await ctx.get_position()
 
-        # 如果有持仓，检查卖出条件
         if position:
             sell_conditions = config.get("sell_conditions", {})
             if self._check_conditions(sell_conditions, calculator):
                 return "sell"
-
-        # 如果没有持仓，检查买入条件
         else:
             buy_conditions = config.get("buy_conditions", {})
             if self._check_conditions(buy_conditions, calculator):
@@ -249,26 +265,47 @@ class StrategyExecutor:
         self,
         strategy: Strategy,
         ctx: StrategyContext,
+        klines: List[dict],
+        current_kline: Optional[dict],
+        active_tf: str,
     ) -> Optional[str]:
         """
-        执行代码策略
+        执行代码策略（使用持久化实例，跨 tick 保留状态）。
 
-        Returns:
-            交易信号: "buy", "sell", 或 None
+        首次执行时创建实例并调用 on_start()；后续复用实例，每次更新 ctx。
         """
         if not strategy.code:
             return None
 
         try:
-            signal = sandbox_executor.execute(
-                code=strategy.code,
-                context=ctx,
-                strategy_id=strategy.id,
-            )
+            # 获取或创建持久化实例
+            instance = self._strategy_instances.get(strategy.id)
+            if instance is None:
+                instance = sandbox_executor.create_instance(
+                    code=strategy.code,
+                    context=ctx,
+                    strategy_id=strategy.id,
+                )
+                self._strategy_instances[strategy.id] = instance
+            else:
+                # 更新 ctx（db session 每次都是新的，必须注入最新的）
+                instance.ctx = ctx
+
+            # 调用 on_tick，传入当前触发周期的数据
+            data = {
+                "symbol": strategy.symbol,
+                "timeframe": active_tf,
+                "price": current_kline["close"] if current_kline else 0,
+                "klines": klines,
+            }
+            signal = sandbox_executor.call_on_tick(instance, data)
             return signal
+
         except Exception as e:
             logger.error(f"Code strategy {strategy.id} execution failed: {e}")
-            # 记录错误到 TriggerLog
+            # 实例出错，清除后下次重新创建
+            self._strategy_instances.pop(strategy.id, None)
+            # 记录错误
             error_trigger = TriggerLog(
                 strategy_id=strategy.id,
                 signal_type="error",
@@ -347,7 +384,7 @@ class StrategyExecutor:
             elif operator == "==":
                 return actual_value == v
             elif operator == "<=":
-                return actual_value <= value
+                return actual_value <= v
             elif operator == ">=":
                 return actual_value >= v
         except Exception as e:

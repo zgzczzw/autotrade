@@ -12,7 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.database import init_db
 from app.engine.scheduler import scheduler
 from app.logger import get_access_logger, get_logger, log_startup
-from app.routers import account, backtests, dashboard, logs, strategies, triggers
+from app.routers import account, backtests, dashboard, logs, settings, strategies, triggers
 from app.schemas import HealthResponse
 
 logger = get_logger(__name__)
@@ -70,6 +70,11 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("✅ 数据库初始化完成")
 
+    # 从 DB 读取数据源配置
+    from app.engine.market_data import market_data_service
+    await market_data_service.init_from_db()
+    logger.info(f"✅ 数据源初始化完成: {market_data_service.source_name}")
+
     # 启动调度器
     scheduler.start()
     logger.info("✅ 调度器启动完成")
@@ -119,6 +124,7 @@ app.include_router(dashboard.router, prefix="/api")
 app.include_router(account.router, prefix="/api")
 app.include_router(backtests.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
+app.include_router(settings.router, prefix="/api")
 
 
 @app.get("/", response_model=HealthResponse)

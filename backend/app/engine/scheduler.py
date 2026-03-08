@@ -1,12 +1,18 @@
 """
 策略调度器
 使用 APScheduler AsyncIOScheduler
+
+支持多时间周期策略：
+- timeframe="1h"     → 注册 1 个 job，每小时触发
+- timeframe="3m,15m,4h" → 注册 3 个 job，各自按节奏触发，
+                           每次触发时把当前周期传给 executor
 """
+
+from typing import Dict, List
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session
 from app.engine.executor import executor
@@ -15,13 +21,32 @@ from app.models import Strategy
 
 logger = get_logger(__name__)
 
+# timeframe → 秒数映射（完整版）
+TIMEFRAME_SECONDS: Dict[str, int] = {
+    "1m":  60,
+    "3m":  180,
+    "5m":  300,
+    "15m": 900,
+    "30m": 1800,
+    "1h":  3600,
+    "2h":  7200,
+    "4h":  14400,
+    "6h":  21600,
+    "8h":  28800,
+    "12h": 43200,
+    "1d":  86400,
+    "3d":  259200,
+    "1w":  604800,
+}
+
 
 class StrategyScheduler:
     """策略调度器"""
 
     def __init__(self):
         self.scheduler = AsyncIOScheduler()
-        self.running_jobs = {}  # strategy_id -> job_id
+        # strategy_id → [job_id, ...]  （多时间周期可能有多个 job）
+        self.running_jobs: Dict[int, List[str]] = {}
 
     def start(self):
         """启动调度器"""
@@ -33,14 +58,16 @@ class StrategyScheduler:
         self.scheduler.shutdown()
         logger.info("Strategy scheduler shutdown")
 
-    async def start_strategy(self, strategy_id: int):
+    async def start_strategy(self, strategy_id: int) -> bool:
         """
-        启动策略调度
+        启动策略调度。
 
-        Args:
-            strategy_id: 策略 ID
+        多时间周期策略（timeframe="3m,15m,4h"）会注册多个 job，
+        各 job 分别按对应周期的间隔触发，触发时携带自己的 timeframe。
+
+        Returns:
+            bool: 是否成功启动
         """
-        # 获取策略信息
         async with async_session() as db:
             result = await db.execute(
                 select(Strategy).where(Strategy.id == strategy_id)
@@ -55,46 +82,59 @@ class StrategyScheduler:
                 logger.warning(f"Strategy {strategy_id} is not in running status")
                 return False
 
-            # 移除已存在的任务
+            # 先清理旧 job（含持久化实例）
             if strategy_id in self.running_jobs:
                 self.stop_strategy(strategy_id)
 
-            # 根据 timeframe 设置执行间隔
-            interval = self._timeframe_to_seconds(strategy.timeframe)
+            # 解析时间周期列表
+            timeframes = [tf.strip() for tf in strategy.timeframe.split(",") if tf.strip()]
 
-            # 添加定时任务
-            job = self.scheduler.add_job(
-                func=self._execute_strategy,
-                trigger=IntervalTrigger(seconds=interval),
-                id=f"strategy_{strategy_id}",
-                args=[strategy_id],
-                replace_existing=True,
-            )
+            job_ids: List[str] = []
+            for tf in timeframes:
+                interval = self._timeframe_to_seconds(tf)
+                job_id = f"strategy_{strategy_id}_{tf}"
 
-            self.running_jobs[strategy_id] = job.id
+                self.scheduler.add_job(
+                    func=self._execute_strategy,
+                    trigger=IntervalTrigger(seconds=interval),
+                    id=job_id,
+                    args=[strategy_id, tf],
+                    replace_existing=True,
+                )
+                job_ids.append(job_id)
+                logger.info(
+                    f"Strategy '{strategy.name}' (ID:{strategy_id}) "
+                    f"registered job for tf={tf} every {interval}s"
+                )
+
+            self.running_jobs[strategy_id] = job_ids
             logger.info(
-                f"Strategy {strategy.name} (ID: {strategy_id}) scheduled to run every {interval}s"
+                f"Strategy '{strategy.name}' (ID:{strategy_id}) "
+                f"started with {len(timeframes)} timeframe(s): {strategy.timeframe}"
             )
             return True
 
     def stop_strategy(self, strategy_id: int):
         """
-        停止策略调度
-
-        Args:
-            strategy_id: 策略 ID
+        停止策略调度，清除所有相关 job 并释放持久化实例。
         """
-        job_id = self.running_jobs.get(strategy_id)
-        if job_id:
+        job_ids = self.running_jobs.get(strategy_id, [])
+        for job_id in job_ids:
             try:
                 self.scheduler.remove_job(job_id)
-                del self.running_jobs[strategy_id]
-                logger.info(f"Strategy {strategy_id} stopped")
             except Exception as e:
-                logger.error(f"Error stopping strategy {strategy_id}: {e}")
+                logger.warning(f"Error removing job {job_id}: {e}")
 
-    async def _execute_strategy(self, strategy_id: int):
-        """执行策略任务"""
+        if strategy_id in self.running_jobs:
+            del self.running_jobs[strategy_id]
+
+        # 释放代码策略的持久化实例，触发 on_stop()
+        executor.release_instance(strategy_id)
+
+        logger.info(f"Strategy {strategy_id} stopped, all jobs removed")
+
+    async def _execute_strategy(self, strategy_id: int, timeframe: str):
+        """执行策略任务（由调度器按时间周期触发）"""
         async with async_session() as db:
             result = await db.execute(
                 select(Strategy).where(Strategy.id == strategy_id)
@@ -102,19 +142,18 @@ class StrategyScheduler:
             strategy = result.scalar_one_or_none()
 
             if not strategy or strategy.status != "running":
-                # 策略已停止，移除任务
                 self.stop_strategy(strategy_id)
                 return
 
             try:
-                await executor.execute(strategy)
+                await executor.execute(strategy, timeframe=timeframe)
             except Exception as e:
-                logger.error(f"Error executing strategy {strategy_id}: {e}")
+                logger.error(
+                    f"Error executing strategy {strategy_id} (tf={timeframe}): {e}"
+                )
 
     async def restore_running_strategies(self):
-        """
-        应用启动时恢复所有运行中的策略
-        """
+        """应用启动时恢复所有运行中的策略"""
         async with async_session() as db:
             result = await db.execute(
                 select(Strategy).where(Strategy.status == "running")
@@ -127,22 +166,8 @@ class StrategyScheduler:
             logger.info(f"Restored {len(strategies)} running strategies")
 
     def _timeframe_to_seconds(self, timeframe: str) -> int:
-        """
-        将 timeframe 转换为秒数
-
-        Args:
-            timeframe: 1m, 5m, 1h, 1d
-
-        Returns:
-            秒数
-        """
-        mapping = {
-            "1m": 60,
-            "5m": 300,
-            "1h": 3600,
-            "1d": 86400,
-        }
-        return mapping.get(timeframe, 3600)
+        """将 timeframe 转换为秒数，未知周期默认 1 小时"""
+        return TIMEFRAME_SECONDS.get(timeframe.strip(), 3600)
 
 
 # 全局实例

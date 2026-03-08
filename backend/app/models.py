@@ -126,6 +126,15 @@ class KlineData(Base):
     )
 
 
+class SystemSetting(Base):
+    """系统设置（key-value 存储）"""
+    __tablename__ = "system_settings"
+
+    key = Column(String, primary_key=True)
+    value = Column(Text, nullable=True)
+    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+
 class BacktestResult(Base):
     """回测结果模型"""
     __tablename__ = "backtest_results"

@@ -33,7 +33,7 @@ async def init_db():
     # Seed default SimAccount if empty
     async with async_session() as session:
         from sqlalchemy import select
-        from app.models import SimAccount
+        from app.models import SimAccount, SystemSetting
 
         result = await session.execute(select(SimAccount))
         if result.scalar_one_or_none() is None:
@@ -47,4 +47,20 @@ async def init_db():
                     total_pnl=0.0,
                 )
             )
+            await session.commit()
+
+    # Seed default SystemSetting if empty
+    async with async_session() as session:
+        from sqlalchemy import select
+        from app.models import SystemSetting
+
+        result = await session.execute(
+            select(SystemSetting).where(SystemSetting.key == "data_source")
+        )
+        if result.scalar_one_or_none() is None:
+            # USE_MOCK_DATA 环境变量向后兼容：若设置则默认 mock
+            use_mock = os.getenv("USE_MOCK_DATA", "false").lower() == "true"
+            default_source = "mock" if use_mock else "binance"
+            session.add(SystemSetting(key="data_source", value=default_source))
+            session.add(SystemSetting(key="cryptocompare_api_key", value=""))
             await session.commit()

@@ -1,24 +1,54 @@
 """
 回测引擎
 基于历史数据回测策略表现
+支持单时间周期和多时间周期代码策略
 """
 
 import asyncio
 import json
-from copy import deepcopy
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.engine.executor import StrategyContext
 from app.engine.indicators import IndicatorCalculator
 from app.engine.market_data import market_data_service
 from app.logger import get_logger
-from app.models import BacktestResult, Position, Strategy, TriggerLog
+from app.models import BacktestResult, Position, Strategy
 
 logger = get_logger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# 持仓视图：同时支持属性访问和 .get() 方法（兼容代码策略中的 dict-style 调用）
+# ---------------------------------------------------------------------------
+
+class PositionView:
+    """
+    持仓数据视图
+
+    BacktestContext.get_position() 返回此对象而非 ORM 实例，
+    使代码策略中的 position.get("side") 调用能正常工作。
+    """
+    __slots__ = ("side", "entry_price", "quantity", "symbol", "strategy_id")
+
+    def __init__(self, pos: Position):
+        self.side = pos.side
+        self.entry_price = pos.entry_price
+        self.quantity = pos.quantity
+        self.symbol = pos.symbol
+        self.strategy_id = pos.strategy_id
+
+    def get(self, key: str, default=None):
+        return getattr(self, key, default)
+
+    def __bool__(self):
+        return True
+
+
+# ---------------------------------------------------------------------------
+# 虚拟账户
+# ---------------------------------------------------------------------------
 
 class VirtualAccount:
     """回测使用的虚拟账户"""
@@ -31,21 +61,24 @@ class VirtualAccount:
         self.trades: List[dict] = []
 
     def reset(self):
-        """重置账户"""
         self.balance = self.initial_balance
         self.total_pnl = 0.0
         self.positions = []
         self.trades = []
 
 
+# ---------------------------------------------------------------------------
+# 回测上下文
+# ---------------------------------------------------------------------------
+
 class BacktestContext:
-    """回测上下文"""
+    """回测上下文（传给策略代码，提供同步 API）"""
 
     def __init__(
         self,
         strategy: Strategy,
         account: VirtualAccount,
-        current_kline: dict,
+        current_kline: Optional[dict],
         all_klines: List[dict],
     ):
         self.strategy = strategy
@@ -54,10 +87,10 @@ class BacktestContext:
         self.all_klines = all_klines
 
     def get_klines(self, limit: int = 100) -> List[dict]:
-        """获取 K 线数据"""
-        idx = self.all_klines.index(self.current_kline)
-        start_idx = max(0, idx - limit + 1)
-        return self.all_klines[start_idx : idx + 1]
+        """获取当前 bar 及之前的 K 线（ASC 顺序）"""
+        total = len(self.all_klines)
+        start = max(0, total - limit)
+        return self.all_klines[start:]
 
     def buy(self, quantity: Optional[float] = None, trigger_reason: str = "") -> bool:
         """买入（回测模式）"""
@@ -93,7 +126,6 @@ class BacktestContext:
             "pnl": 0,
             "trigger": trigger_reason,
         })
-
         return True
 
     def sell(self, quantity: Optional[float] = None, trigger_reason: str = "") -> bool:
@@ -107,9 +139,7 @@ class BacktestContext:
         sell_qty = quantity if quantity is not None else position.quantity * min(sell_size_pct, 100.0) / 100.0
 
         pnl = (price - position.entry_price) * sell_qty
-        sell_value = price * sell_qty
-
-        self.account.balance += sell_value
+        self.account.balance += price * sell_qty
         self.account.total_pnl += pnl
 
         self.account.trades.append({
@@ -121,7 +151,7 @@ class BacktestContext:
             "trigger": trigger_reason,
         })
 
-        if sell_size_pct >= 100.0 or quantity is None and sell_qty >= position.quantity:
+        if sell_size_pct >= 100.0 or (quantity is None and sell_qty >= position.quantity):
             position.current_price = price
             position.pnl = pnl
             position.closed_at = self.current_kline["open_time"]
@@ -131,44 +161,38 @@ class BacktestContext:
 
         return True
 
-    def get_position(self) -> Optional[Position]:
-        """获取当前持仓"""
-        return self.account.positions[0] if self.account.positions else None
+    def get_position(self) -> Optional[PositionView]:
+        """
+        获取当前持仓视图。
+
+        返回 PositionView（而非 ORM 对象），支持代码策略中的
+        position.get("side") 调用方式。
+        """
+        if not self.account.positions:
+            return None
+        return PositionView(self.account.positions[0])
 
     def get_balance(self) -> float:
-        """获取账户余额"""
         return self.account.balance
 
-    def _calculate_buy_quantity(self, price: float) -> float:
-        """计算买入数量"""
-        if self.strategy.position_size_type == "percent":
-            return self.account.balance * self.strategy.position_size / 100.0 / price
-        return self.strategy.position_size / price
 
+# ---------------------------------------------------------------------------
+# 回测引擎
+# ---------------------------------------------------------------------------
 
 class BacktestEngine:
     """回测引擎"""
 
     def __init__(self):
-        # 存储正在运行的回测任务
         self._running_tasks: Dict[int, asyncio.Event] = {}
 
     def is_running(self, strategy_id: int) -> bool:
-        """检查策略是否正在回测"""
         return strategy_id in self._running_tasks
 
     def cancel_backtest(self, strategy_id: int) -> bool:
-        """
-        取消正在运行的回测
-        
-        Returns:
-            bool: 是否成功取消
-        """
         if strategy_id not in self._running_tasks:
             return False
-        
-        cancel_event = self._running_tasks[strategy_id]
-        cancel_event.set()
+        self._running_tasks[strategy_id].set()
         logger.info(f"Backtest cancellation requested for strategy {strategy_id}")
         return True
 
@@ -179,133 +203,109 @@ class BacktestEngine:
         end_date: datetime,
         initial_balance: float = 100000.0,
     ) -> BacktestResult:
-        """
-        运行回测
-
-        Args:
-            strategy: 策略实例
-            start_date: 回测开始时间
-            end_date: 回测结束时间
-            initial_balance: 初始资金
-
-        Returns:
-            BacktestResult 实例
-        """
-        # 检查是否已有回测在运行
+        """运行回测"""
         if strategy.id in self._running_tasks:
             raise ValueError("该策略已有回测正在运行")
 
-        # 创建取消事件
         cancel_event = asyncio.Event()
         self._running_tasks[strategy.id] = cancel_event
 
+        # 解析时间周期
+        timeframes = [tf.strip() for tf in strategy.timeframe.split(",") if tf.strip()]
+        primary_tf = timeframes[0]
+
         logger.info(
-            f"Starting backtest for strategy {strategy.name} "
-            f"from {start_date} to {end_date}"
+            f"Starting backtest: {strategy.name} | tf={strategy.timeframe} "
+            f"| {start_date} → {end_date}"
         )
 
-        # 1. 获取历史 K 线数据
-        klines = await market_data_service.fetch_historical_klines(
+        # 获取主时间周期历史数据
+        primary_klines = await market_data_service.fetch_historical_klines(
             symbol=strategy.symbol,
-            timeframe=strategy.timeframe,
+            timeframe=primary_tf,
             start_date=start_date,
             end_date=end_date,
         )
 
-        if not klines:
+        if not primary_klines:
             raise ValueError("No historical data available for backtest")
 
-        logger.info(f"Loaded {len(klines)} klines for backtest")
+        logger.info(f"Loaded {len(primary_klines)} klines for primary tf={primary_tf}")
 
-        # 2. 创建虚拟账户
         account = VirtualAccount(initial_balance)
-
-        # 3. 运行回测（逐 K 线执行）
-        equity_curve = []
+        equity_curve: List[dict] = []
 
         try:
-            for i, kline in enumerate(klines):
-                # 检查是否被取消
-                if cancel_event.is_set():
-                    logger.info(f"Backtest cancelled for strategy {strategy.id} at kline {i}")
-                    raise asyncio.CancelledError("回测已被用户取消")
-                
-                # 创建回测上下文
-                ctx = BacktestContext(strategy, account, kline, klines[: i + 1])
+            is_multitf_code = (
+                strategy.type == "code"
+                and bool(strategy.code)
+                and len(timeframes) > 1
+            )
 
-                # 检查止盈止损；触发后本根 K 线跳过策略信号
-                sl_tp_triggered = await self._check_stop_loss_take_profit(ctx, strategy)
-                if not sl_tp_triggered:
-                    # 执行策略逻辑，返回 (信号, 触发描述)
-                    signal, trigger = await self._execute_strategy_logic(strategy, ctx)
-                    if signal == "buy":
-                        ctx.buy(trigger_reason=trigger)
-                    elif signal == "sell":
-                        ctx.sell(trigger_reason=trigger)
+            if is_multitf_code:
+                # 获取其余时间周期数据
+                other_klines: Dict[str, List[dict]] = {}
+                for tf in timeframes[1:]:
+                    tf_data = await market_data_service.fetch_historical_klines(
+                        symbol=strategy.symbol,
+                        timeframe=tf,
+                        start_date=start_date,
+                        end_date=end_date,
+                    )
+                    other_klines[tf] = tf_data
+                    logger.info(f"Loaded {len(tf_data)} klines for tf={tf}")
 
-                # 记录资金曲线
-                total_value = account.balance
-                for pos in account.positions:
-                    total_value += pos.quantity * kline["close"]
+                equity_curve = await self._run_multitf_code_loop(
+                    strategy, primary_tf, primary_klines, other_klines,
+                    account, cancel_event,
+                )
+            else:
+                equity_curve = await self._run_single_tf_loop(
+                    strategy, primary_tf, primary_klines, account, cancel_event,
+                )
 
-                equity_curve.append({
-                    "time": kline["open_time"].isoformat(),
-                    "balance": round(total_value, 2),
-                })
-
-                # 每100根K线检查一次取消，避免过于频繁
-                if i % 100 == 0:
-                    await asyncio.sleep(0)
-
-            # 回测结束：平仓所有持仓
+            # 回测结束：强制平仓所有持仓
             if account.positions:
-                last_kline = klines[-1]
+                last_kline = primary_klines[-1]
                 for pos in list(account.positions):
                     price = last_kline["close"]
                     pnl = (price - pos.entry_price) * pos.quantity
-                    sell_value = price * pos.quantity
-                    
-                    account.balance += sell_value
+                    account.balance += price * pos.quantity
                     account.total_pnl += pnl
-                    
                     account.trades.append({
                         "time": last_kline["open_time"].isoformat(),
                         "side": "sell",
                         "price": price,
                         "quantity": pos.quantity,
                         "pnl": pnl,
+                        "trigger": "回测结束平仓",
                     })
                     account.positions.remove(pos)
-                
-                logger.info(f"回测结束：已平掉所有持仓，最终盈亏: {account.total_pnl:.2f}")
+                logger.info(f"回测结束：已平仓所有持仓，累计盈亏: {account.total_pnl:.2f}")
 
         except asyncio.CancelledError:
             logger.info(f"Backtest for strategy {strategy.id} was cancelled")
             raise
         finally:
-            # 清理任务记录
             self._running_tasks.pop(strategy.id, None)
 
-        # 4. 计算统计指标
+        # 计算统计指标
         stats = self._calculate_stats(account, equity_curve, initial_balance)
 
-        # 5. 准备K线数据（用于前端图表显示）
-        klines_data = []
-        for k in klines:
-            klines_data.append({
+        # K 线数据供前端图表展示
+        klines_data = [
+            {
                 "time": k["open_time"].isoformat(),
-                "open": k["open"],
-                "high": k["high"],
-                "low": k["low"],
-                "close": k["close"],
-                "volume": k["volume"],
-            })
+                "open": k["open"], "high": k["high"],
+                "low": k["low"], "close": k["close"], "volume": k["volume"],
+            }
+            for k in primary_klines
+        ]
 
-        # 6. 创建回测结果
         result = BacktestResult(
             strategy_id=strategy.id,
             symbol=strategy.symbol,
-            timeframe=strategy.timeframe,
+            timeframe=primary_tf,
             start_date=start_date,
             end_date=end_date,
             initial_balance=initial_balance,
@@ -324,18 +324,219 @@ class BacktestEngine:
         logger.info(
             f"Backtest completed: PnL={stats['total_pnl']:.2f} "
             f"({stats['pnl_percent']:.2f}%), "
-            f"Trades={stats['total_trades']}, "
-            f"Win Rate={stats['win_rate']:.2f}%"
+            f"Trades={stats['total_trades']}, WinRate={stats['win_rate']:.1f}%"
         )
-
         return result
+
+    # ------------------------------------------------------------------
+    # 单时间周期回测主循环（可视化策略 + 单周期代码策略）
+    # ------------------------------------------------------------------
+
+    async def _run_single_tf_loop(
+        self,
+        strategy: Strategy,
+        primary_tf: str,
+        klines: List[dict],
+        account: VirtualAccount,
+        cancel_event: asyncio.Event,
+    ) -> List[dict]:
+        """单时间周期回测主循环"""
+        from app.engine.sandbox import sandbox_executor
+
+        equity_curve: List[dict] = []
+        code_instance = None  # 代码策略持久化实例
+
+        for i, kline in enumerate(klines):
+            if cancel_event.is_set():
+                raise asyncio.CancelledError("回测已被用户取消")
+
+            ctx = BacktestContext(strategy, account, kline, klines[: i + 1])
+
+            # 止盈止损
+            sl_tp_triggered = await self._check_stop_loss_take_profit(ctx, strategy)
+
+            if not sl_tp_triggered:
+                if strategy.type == "visual":
+                    signal, trigger = await self._execute_visual_strategy(strategy, ctx)
+                    if signal == "buy":
+                        ctx.buy(trigger_reason=trigger)
+                    elif signal == "sell":
+                        ctx.sell(trigger_reason=trigger)
+
+                elif strategy.type == "code" and strategy.code:
+                    # 创建或复用持久化实例
+                    if code_instance is None:
+                        try:
+                            code_instance = sandbox_executor.create_instance(
+                                strategy.code, ctx, strategy.id
+                            )
+                        except Exception as e:
+                            logger.warning(f"Code instance creation failed: {e}")
+                    else:
+                        code_instance.ctx = ctx
+
+                    if code_instance is not None:
+                        try:
+                            data = {
+                                "symbol": strategy.symbol,
+                                "timeframe": primary_tf,
+                                "price": kline["close"],
+                                "klines": klines[max(0, i - 99): i + 1],
+                            }
+                            signal = sandbox_executor.call_on_tick(code_instance, data)
+                            if signal == "buy":
+                                ctx.buy(trigger_reason="代码策略买入")
+                            elif signal == "sell":
+                                ctx.sell(trigger_reason="代码策略卖出")
+                        except Exception as e:
+                            logger.warning(f"Code on_tick error at bar {i}: {e}")
+                            code_instance = None  # 出错后下次重新创建
+
+            total_value = account.balance + sum(
+                p.quantity * kline["close"] for p in account.positions
+            )
+            equity_curve.append({
+                "time": kline["open_time"].isoformat(),
+                "balance": round(total_value, 2),
+            })
+
+            if i % 100 == 0:
+                await asyncio.sleep(0)
+
+        return equity_curve
+
+    # ------------------------------------------------------------------
+    # 多时间周期代码策略回测主循环
+    # ------------------------------------------------------------------
+
+    async def _run_multitf_code_loop(
+        self,
+        strategy: Strategy,
+        primary_tf: str,
+        primary_klines: List[dict],
+        other_klines: Dict[str, List[dict]],
+        account: VirtualAccount,
+        cancel_event: asyncio.Event,
+    ) -> List[dict]:
+        """
+        多时间周期代码策略回测主循环。
+
+        以最小周期（primary_tf）的 K 线为主循环，
+        每当其他周期出现新 K 线时，额外触发一次 on_tick 以更新策略内部缓存，
+        从而模拟真实的多周期信号叠加。
+        """
+        from app.engine.sandbox import sandbox_executor
+
+        equity_curve: List[dict] = []
+        code_instance = None
+
+        # 跟踪各非主周期已处理到的 kline 索引
+        tf_cursor: Dict[str, int] = {tf: 0 for tf in other_klines}
+
+        for i, kline in enumerate(primary_klines):
+            if cancel_event.is_set():
+                raise asyncio.CancelledError("回测已被用户取消")
+
+            current_time = kline["open_time"]
+            ctx = BacktestContext(strategy, account, kline, primary_klines[: i + 1])
+
+            # 创建或复用持久化实例
+            if code_instance is None:
+                try:
+                    code_instance = sandbox_executor.create_instance(
+                        strategy.code, ctx, strategy.id
+                    )
+                except Exception as e:
+                    logger.warning(f"Code instance creation failed: {e}")
+            else:
+                code_instance.ctx = ctx
+
+            if code_instance is None:
+                # 实例创建失败，只记录资金曲线
+                total_value = account.balance + sum(
+                    p.quantity * kline["close"] for p in account.positions
+                )
+                equity_curve.append({
+                    "time": current_time.isoformat(),
+                    "balance": round(total_value, 2),
+                })
+                continue
+
+            # 止盈止损
+            sl_tp_triggered = await self._check_stop_loss_take_profit(ctx, strategy)
+
+            if not sl_tp_triggered:
+                # ① 先更新各非主周期的 kline 缓存（按时间顺序向前推进）
+                for tf, tf_klines in other_klines.items():
+                    new_cursor = tf_cursor[tf]
+                    while (
+                        new_cursor < len(tf_klines)
+                        and tf_klines[new_cursor]["open_time"] <= current_time
+                    ):
+                        new_cursor += 1
+
+                    if new_cursor > tf_cursor[tf]:
+                        tf_cursor[tf] = new_cursor
+                        tf_slice = tf_klines[:new_cursor]
+                        tf_price = tf_slice[-1]["close"]
+                        try:
+                            sig = sandbox_executor.call_on_tick(code_instance, {
+                                "symbol": strategy.symbol,
+                                "timeframe": tf,
+                                "price": tf_price,
+                                "klines": tf_slice[-100:],
+                            })
+                            if sig == "buy":
+                                ctx.buy(trigger_reason=f"代码策略买入(tf={tf})")
+                            elif sig == "sell":
+                                ctx.sell(trigger_reason=f"代码策略卖出(tf={tf})")
+                        except Exception as e:
+                            logger.warning(f"Code on_tick tf={tf} error at bar {i}: {e}")
+                            code_instance = None
+                            break
+
+                # ② 主时间周期 on_tick（策略在此更新 klines_3m 并评估信号）
+                if code_instance is not None:
+                    try:
+                        sig = sandbox_executor.call_on_tick(code_instance, {
+                            "symbol": strategy.symbol,
+                            "timeframe": primary_tf,
+                            "price": kline["close"],
+                            "klines": primary_klines[max(0, i - 99): i + 1],
+                        })
+                        if sig == "buy":
+                            ctx.buy(trigger_reason=f"代码策略买入(tf={primary_tf})")
+                        elif sig == "sell":
+                            ctx.sell(trigger_reason=f"代码策略卖出(tf={primary_tf})")
+                    except Exception as e:
+                        logger.warning(
+                            f"Code on_tick tf={primary_tf} error at bar {i}: {e}"
+                        )
+                        code_instance = None
+
+            total_value = account.balance + sum(
+                p.quantity * kline["close"] for p in account.positions
+            )
+            equity_curve.append({
+                "time": current_time.isoformat(),
+                "balance": round(total_value, 2),
+            })
+
+            if i % 100 == 0:
+                await asyncio.sleep(0)
+
+        return equity_curve
+
+    # ------------------------------------------------------------------
+    # 止盈止损
+    # ------------------------------------------------------------------
 
     async def _check_stop_loss_take_profit(
         self,
         ctx: BacktestContext,
         strategy: Strategy,
     ) -> bool:
-        """检查止盈止损，返回 True 表示已触发（本 K 线应跳过策略信号）"""
+        """检查止盈止损，返回 True 表示已触发（本 K 线跳过策略信号）"""
         position = ctx.get_position()
         if not position:
             return False
@@ -344,64 +545,48 @@ class BacktestEngine:
         entry_price = position.entry_price
         price_change_pct = (current_price - entry_price) / entry_price * 100
 
-        # 检查止损
         if strategy.stop_loss and price_change_pct <= -strategy.stop_loss:
             ctx.sell(trigger_reason=f"止损 ({price_change_pct:+.2f}%)")
             return True
 
-        # 检查止盈
         if strategy.take_profit and price_change_pct >= strategy.take_profit:
             ctx.sell(trigger_reason=f"止盈 ({price_change_pct:+.2f}%)")
             return True
 
         return False
 
-    async def _execute_strategy_logic(
-        self,
-        strategy: Strategy,
-        ctx: BacktestContext,
-    ) -> tuple:
-        """执行策略逻辑，返回 (信号, 触发描述)"""
-        if strategy.type == "visual":
-            return await self._execute_visual_strategy(strategy, ctx)
-        else:
-            # 代码策略在回测中简化处理
-            return None, ""
+    # ------------------------------------------------------------------
+    # 可视化策略执行
+    # ------------------------------------------------------------------
 
     async def _execute_visual_strategy(
         self,
         strategy: Strategy,
         ctx: BacktestContext,
-    ) -> tuple:
+    ) -> Tuple[Optional[str], str]:
         """执行可视化策略，返回 (信号, 触发描述)"""
-        import json
+        import json as _json
 
         if not strategy.config_json:
             return None, ""
 
         try:
-            config = json.loads(strategy.config_json)
-        except json.JSONDecodeError:
+            config = _json.loads(strategy.config_json)
+        except _json.JSONDecodeError:
             return None, ""
 
-        # 获取 K 线数据
         klines = ctx.get_klines(limit=100)
         if not klines:
             return None, ""
 
         calculator = IndicatorCalculator(klines)
-
-        # 检查是否有持仓
         position = ctx.get_position()
 
-        # 如果有持仓，检查卖出条件
         if position:
             sell_conditions = config.get("sell_conditions", {})
             if self._check_conditions(sell_conditions, calculator):
                 trigger = self._collect_trigger_description(sell_conditions, calculator)
                 return "sell", trigger
-
-        # 如果没有持仓，检查买入条件
         else:
             buy_conditions = config.get("buy_conditions", {})
             if self._check_conditions(buy_conditions, calculator):
@@ -410,67 +595,37 @@ class BacktestEngine:
 
         return None, ""
 
-    def _check_conditions(
-        self,
-        conditions: dict,
-        calculator: IndicatorCalculator,
-    ) -> bool:
-        """检查条件组合（支持嵌套 group）"""
+    def _check_conditions(self, conditions: dict, calculator: IndicatorCalculator) -> bool:
         logic = conditions.get("logic", "AND")
         rules = conditions.get("rules", [])
-
         if not rules:
             return False
-
-        results = []
-        for rule in rules:
-            if rule.get("type") == "group" or ("logic" in rule and "indicator" not in rule):
-                result = self._check_conditions(rule, calculator)
-            else:
-                result = self._check_single_condition(rule, calculator)
-            results.append(result)
-
+        results = [
+            self._check_conditions(r, calculator)
+            if r.get("type") == "group" or ("logic" in r and "indicator" not in r)
+            else self._check_single_condition(r, calculator)
+            for r in rules
+        ]
         return all(results) if logic == "AND" else any(results)
 
-    def _check_single_condition(
-        self,
-        rule: dict,
-        calculator: IndicatorCalculator,
-    ) -> bool:
-        """检查单个条件规则"""
+    def _check_single_condition(self, rule: dict, calculator: IndicatorCalculator) -> bool:
         indicator = rule.get("indicator")
         params = rule.get("params", {})
         operator = rule.get("operator")
         value = rule.get("value")
 
-        # ── 枚举类指标 ──────────────────────────────────────
         if indicator == "RSI":
             actual = calculator.rsi(params.get("period", 14))
-        elif indicator in ("MA_CROSS", "BOLL"):
-            # 兼容旧格式 key
-            if indicator == "MA_CROSS":
-                actual = calculator.ma_cross(
-                    params.get("fast", 5), params.get("slow", 20)
-                )
-            else:
-                actual = calculator.bollinger_touch(
-                    params.get("period", 20), params.get("std_dev", 2.0)
-                )
-            return actual == value
+        elif indicator == "MA_CROSS":
+            return calculator.ma_cross(params.get("fast", 5), params.get("slow", 20)) == value
+        elif indicator == "BOLL":
+            return calculator.bollinger_touch(params.get("period", 20), params.get("std_dev", 2.0)) == value
         elif indicator == "MACD":
-            actual = calculator.macd_signal(
-                params.get("fast", 12),
-                params.get("slow", 26),
-                params.get("signal", 9),
-            )
-            return actual == value
+            return calculator.macd_signal(params.get("fast", 12), params.get("slow", 26), params.get("signal", 9)) == value
         elif indicator == "KDJ":
-            actual = calculator.kdj_signal(params.get("period", 9))
-            return actual == value
-        # ── 数值类指标 ──────────────────────────────────────
+            return calculator.kdj_signal(params.get("period", 9)) == value
         elif indicator == "VOLUME":
-            multiplier = float(value) if value is not None else 1.5
-            return calculator.volume_spike(params.get("ma_period", 20), multiplier)
+            return calculator.volume_spike(params.get("ma_period", 20), float(value) if value is not None else 1.5)
         elif indicator == "PRICE_CHANGE":
             actual = calculator.price_change_pct()
         elif indicator == "PRICE":
@@ -480,31 +635,22 @@ class BacktestEngine:
 
         if actual is None:
             return False
-
         try:
             v = float(value)
-            if operator == "<":
-                return actual < v
-            elif operator == ">":
-                return actual > v
-            elif operator == "==":
-                return actual == v
-            elif operator == "<=":
-                return actual <= v
-            elif operator == ">=":
-                return actual >= v
+            if operator == "<":   return actual < v
+            if operator == ">":   return actual > v
+            if operator == "==":  return actual == v
+            if operator == "<=":  return actual <= v
+            if operator == ">=":  return actual >= v
         except Exception:
             return False
-
         return False
 
     def _describe_single_condition(self, rule: dict) -> str:
-        """生成单条条件的人类可读描述"""
         indicator = rule.get("indicator", "")
         params = rule.get("params", {})
         operator = rule.get("operator", "")
         value = rule.get("value", "")
-
         ENUM_LABELS = {
             "golden": "金叉", "death": "死叉",
             "above_upper": "突破上轨", "below_lower": "跌破下轨",
@@ -512,7 +658,6 @@ class BacktestEngine:
             "overbought": "超买(K>80)", "oversold": "超卖(K<20)",
             "above_zero": "柱状图>0", "below_zero": "柱状图<0",
         }
-
         if indicator == "RSI":
             return f"RSI({params.get('period', 14)}) {operator} {value}"
         elif indicator == "MA_CROSS":
@@ -532,7 +677,6 @@ class BacktestEngine:
         return indicator
 
     def _collect_trigger_description(self, conditions: dict, calculator: IndicatorCalculator) -> str:
-        """收集已命中条件的描述文字"""
         logic = conditions.get("logic", "AND")
         rules = conditions.get("rules", [])
         descs = []
@@ -546,44 +690,29 @@ class BacktestEngine:
         sep = " + " if logic == "AND" else " | "
         return sep.join(d for d in descs if d)
 
+    # ------------------------------------------------------------------
+    # 统计指标计算
+    # ------------------------------------------------------------------
+
     def _calculate_stats(
         self,
         account: VirtualAccount,
         equity_curve: List[dict],
         initial_balance: float,
     ) -> dict:
-        """计算回测统计指标"""
-        # 计算已实现盈亏（来自卖出交易）
         realized_pnl = account.total_pnl
-        
-        # 计算浮动盈亏（来自未平仓持仓）
-        unrealized_pnl = 0.0
-        if account.positions and equity_curve:
-            current_price = equity_curve[-1].get("balance", account.balance)
-            # 从资金曲线反推当前价格
-            for pos in account.positions:
-                # 使用持仓的 entry_price 和 current_price 计算浮动盈亏
-                unrealized_pnl += pos.pnl if pos.pnl else 0
-        
-        total_pnl = realized_pnl + unrealized_pnl
+        total_pnl = realized_pnl
         pnl_percent = (total_pnl / initial_balance) * 100
 
-        # 统计交易次数（买入和卖出都统计）
         buy_trades = [t for t in account.trades if t["side"] == "buy"]
         sell_trades = [t for t in account.trades if t["side"] == "sell"]
         total_trades = len(buy_trades) + len(sell_trades)
-        
-        # 已完成交易对数（一次完整买卖算一对）
         completed_trades = len(sell_trades)
 
-        # 胜率（基于已完成交易）
         winning_trades = [t for t in sell_trades if t.get("pnl", 0) > 0]
         win_rate = (len(winning_trades) / completed_trades * 100) if completed_trades > 0 else 0
 
-        # 最大回撤
         max_drawdown = self._calculate_max_drawdown(equity_curve)
-
-        # 平均持仓时间
         avg_hold_time = self._calculate_avg_hold_time(account.trades)
 
         return {
@@ -596,13 +725,10 @@ class BacktestEngine:
         }
 
     def _calculate_max_drawdown(self, equity_curve: List[dict]) -> float:
-        """计算最大回撤"""
         if not equity_curve:
             return 0.0
-
         max_drawdown = 0.0
         peak = equity_curve[0]["balance"]
-
         for point in equity_curve:
             balance = point["balance"]
             if balance > peak:
@@ -610,27 +736,19 @@ class BacktestEngine:
             drawdown = (peak - balance) / peak * 100
             if drawdown > max_drawdown:
                 max_drawdown = drawdown
-
         return max_drawdown
 
     def _calculate_avg_hold_time(self, trades: List[dict]) -> Optional[int]:
-        """计算平均持仓时间（秒）"""
         hold_times = []
         buy_time = None
-
         for trade in trades:
             if trade["side"] == "buy":
                 buy_time = datetime.fromisoformat(trade["time"])
             elif trade["side"] == "sell" and buy_time:
                 sell_time = datetime.fromisoformat(trade["time"])
-                hold_time = (sell_time - buy_time).total_seconds()
-                hold_times.append(int(hold_time))
+                hold_times.append(int((sell_time - buy_time).total_seconds()))
                 buy_time = None
-
-        if not hold_times:
-            return None
-
-        return int(sum(hold_times) / len(hold_times))
+        return int(sum(hold_times) / len(hold_times)) if hold_times else None
 
 
 # 全局实例
@@ -638,5 +756,4 @@ backtest_engine = BacktestEngine()
 
 
 def get_backtest_engine() -> BacktestEngine:
-    """获取回测引擎实例"""
     return backtest_engine

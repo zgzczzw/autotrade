@@ -15,7 +15,7 @@ class StrategyBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     type: str = Field(..., pattern="^(visual|code)$")
     symbol: str = Field(..., min_length=1)
-    timeframe: str = Field(..., pattern="^(1m|5m|1h|1d)$")
+    timeframe: str = Field(..., pattern=r"^(\d+[mhdw])(,\d+[mhdw])*$")
     position_size: float = Field(..., gt=0)
     position_size_type: str = Field(..., pattern="^(fixed|percent)$")
     stop_loss: Optional[float] = Field(None, ge=0, le=100)
@@ -48,6 +48,7 @@ class StrategyResponse(StrategyBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    timeframe: str  # 覆盖基类限制，读库数据不做格式校验
     config_json: Optional[str] = None
     code: Optional[str] = None
     status: str
@@ -193,6 +194,32 @@ class BacktestList(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+# ==================== 系统设置 ====================
+
+class SettingsResponse(BaseModel):
+    """系统设置响应"""
+    data_source: str  # binance | cryptocompare | mock
+    cryptocompare_api_key: str = ""
+
+
+class SettingsUpdate(BaseModel):
+    """系统设置更新请求"""
+    data_source: str = Field(..., pattern="^(binance|cryptocompare|mock)$")
+    cryptocompare_api_key: Optional[str] = None
+
+
+class TestConnectionRequest(BaseModel):
+    """测试数据源连接请求"""
+    data_source: str = Field(..., pattern="^(binance|cryptocompare|mock)$")
+    api_key: Optional[str] = None
+
+
+class TestConnectionResponse(BaseModel):
+    """测试连接响应"""
+    success: bool
+    message: str
 
 
 # ==================== 通用 ====================

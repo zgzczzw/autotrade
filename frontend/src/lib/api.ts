@@ -32,6 +32,20 @@ async function apiCall<T>(promise: Promise<any>): Promise<T> {
 
 export const fetchDashboard = () => apiCall(api.get("/dashboard"));
 
+// ==================== 系统设置 ====================
+
+export const fetchSettings = () => apiCall(api.get("/settings"));
+
+export const updateSettings = (data: {
+  data_source: string;
+  cryptocompare_api_key?: string;
+}) => apiCall(api.put("/settings", data));
+
+export const testConnection = (data: {
+  data_source: string;
+  api_key?: string;
+}) => apiCall(api.post("/settings/test", data));
+
 // ==================== 策略 ====================
 
 export const fetchStrategies = (params?: { status?: string; page?: number; page_size?: number }) =>

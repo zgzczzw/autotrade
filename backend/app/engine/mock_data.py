@@ -22,6 +22,7 @@ def generate_mock_klines(
     # 根据时间周期确定间隔
     interval_minutes = {
         "1m": 1,
+        "3m": 3,
         "5m": 5,
         "15m": 15,
         "30m": 30,
@@ -32,6 +33,8 @@ def generate_mock_klines(
         "8h": 480,
         "12h": 720,
         "1d": 1440,
+        "3d": 4320,
+        "1w": 10080,
     }
     
     minutes = interval_minutes.get(timeframe, 60)
