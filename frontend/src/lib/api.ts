@@ -4,7 +4,7 @@
 
 import axios, { AxiosResponse } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -37,7 +37,7 @@ export const fetchDashboard = () => apiCall(api.get("/dashboard"));
 export const fetchSymbols = (q: string = "") =>
   apiCall<string[]>(api.get("/market/symbols", { params: { q } }));
 
-export const fetchMarketKlines = (symbol: string, timeframe: string, limit = 200) =>
+export const fetchMarketKlines = (symbol: string, timeframe: string, limit = 1000) =>
   apiCall(api.get("/market/klines", { params: { symbol, timeframe, limit } }));
 
 export const fetchTicker = (symbol: string) =>

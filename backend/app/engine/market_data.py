@@ -96,13 +96,15 @@ class MarketDataService:
                 return cached_data[-limit:]
             # 缓存过期，继续走增量拉取流程
 
-        # 缓存不足，从数据源拉取增量数据
+        # 缓存不足，从数据源拉取数据
         try:
             since_ms: Optional[int] = None
-            if cached_data:
+            if cached_data and len(cached_data) >= limit:
+                # 缓存条数已足够但过期，只追加最新数据
                 last_time = cached_data[-1]["open_time"]
                 since_ms = int(last_time.timestamp() * 1000) + 1
 
+            # since_ms=None 时 Binance 返回最新的 limit 条，涵盖更多历史
             new_klines = await self._source.fetch_klines(symbol, primary_tf, since_ms, limit)
             await self._save_klines(symbol, primary_tf, new_klines)
 

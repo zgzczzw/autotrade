@@ -10,7 +10,7 @@ import { formatSymbol } from "@/lib/utils";
 import { Plus, Settings, Trash2 } from "lucide-react";
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface Strategy {
   id: number;

@@ -20,7 +20,7 @@ import {
 } from "@/components/visual-strategy-editor";
 import type { StrategyConfig } from "@/components/visual-strategy-editor";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function NewStrategyPage() {
   const router = useRouter();

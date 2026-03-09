@@ -95,7 +95,13 @@ class CodeValidator:
                     if node.func.id in FORBIDDEN_KEYWORDS:
                         errors.append(f"Line {node.lineno}: Function '{node.func.id}' is not allowed")
             elif isinstance(node, ast.Attribute):
-                if node.attr.startswith("__") and node.attr.endswith("__"):
+                # 允许类定义常用的安全 dunder，拦截危险的系统级 dunder
+                ALLOWED_DUNDERS = {"__init__", "__class__", "__name__", "__doc__", "__str__", "__repr__"}
+                DANGEROUS_DUNDERS = {"__builtins__", "__globals__", "__locals__", "__code__",
+                                     "__import__", "__loader__", "__spec__", "__file__", "__dict__"}
+                attr = node.attr
+                if (attr.startswith("__") and attr.endswith("__")
+                        and attr not in ALLOWED_DUNDERS):
                     errors.append(f"Line {node.lineno}: Access to dunder attributes is not allowed")
             elif isinstance(node, ast.Delete):
                 errors.append(f"Line {node.lineno}: Delete statements are not allowed")

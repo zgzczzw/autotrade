@@ -9,7 +9,7 @@ import { TickerBar } from "@/components/ticker-bar";
 
 const DEFAULT_SYMBOL = "BTCUSDT";
 const DEFAULT_TF = "1h";
-const KLINES_LIMIT = 200;
+const KLINES_LIMIT = 1000;
 
 export default function MarketPage() {
   const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);

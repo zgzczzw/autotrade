@@ -6,7 +6,7 @@ import { formatPrice } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Activity, Zap } from "lucide-react";
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface DashboardData {
   balance: number;
