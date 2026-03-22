@@ -26,50 +26,77 @@ CREATE TABLE users (
 );
 ```
 
+`is_admin` 字段当前用于保护高影响力端点（如 `PUT /api/settings` 数据源切换），同时为未来扩展保留。
+
 ### 现有模型加 `user_id` 外键
 
-以下模型新增 `user_id INTEGER NOT NULL REFERENCES users(id)`，实现数据隔离：
+以下模型新增直接 `user_id INTEGER NOT NULL REFERENCES users(id)`：
 
 - `strategies`
-- `trigger_logs`
 - `positions`
 - `sim_accounts`
 - `backtest_results`
-- `notification_logs`
+
+`trigger_logs` 和 `notification_logs` **不加** `user_id`，通过 JOIN `strategies` 实现隔离（`trigger_logs.strategy_id → strategies.user_id`）。所有查询需通过 JOIN 验证归属，避免冗余列带来的数据不一致风险。
 
 ### 全局共享模型（不加 user_id）
 
 - `kline_data` — 行情缓存，所有用户共享
-- `system_settings` — 系统级配置，由管理员管理
+- `system_settings` — 系统级配置，仅管理员可修改
 
 ### 数据迁移策略
 
 1. Alembic migration：新增 `users` 表
-2. Alembic migration：给上述模型加 `user_id`（先允许 NULL）
+2. Alembic migration：给 `strategies`、`positions`、`sim_accounts`、`backtest_results` 加 `user_id`（先允许 NULL）
 3. 迁移脚本：自动创建第一个 admin 用户（用户名 `admin`，密码从环境变量 `ADMIN_PASSWORD` 读取，默认 `changeme`）
 4. 将所有现有数据的 `user_id` 设为 admin 的 id
 5. 将 `user_id` 列改为 NOT NULL
+6. 更新 `init_db()`：停止自动 seed 全局 `SimAccount`，改为在用户注册时为每个用户创建独立的 `SimAccount`
+
+### SimAccount 生命周期
+
+- 注册时：自动为新用户创建一条 `SimAccount`（初始余额从配置读取，默认 100,000 USDT）
+- `dashboard.py` 中懒创建 `SimAccount` 的逻辑需更新为按 `user_id` 查找或创建
 
 ---
 
 ## 认证层（后端）
+
+### SECRET_KEY 校验
+
+`SECRET_KEY` **必须**在 `main.py` 的 `lifespan` 启动函数中校验：
+
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    secret_key = os.environ.get("SECRET_KEY")
+    if not secret_key:
+        raise RuntimeError("SECRET_KEY 环境变量未设置，拒绝启动")
+    # 初始化 serializer
+    app.state.serializer = URLSafeTimedSerializer(secret_key)
+    ...
+```
+
+不在模块级初始化 serializer，避免 import 时崩溃产生误导性错误。
 
 ### Session 机制
 
 - 库：`itsdangerous.URLSafeTimedSerializer`
 - Cookie 名：`session`
 - Cookie 属性：`HttpOnly=True`，`SameSite=Lax`，`Max-Age=604800`（7 天）
+- `Secure=True`（生产环境）；本地开发通过 `ENV=development` 环境变量禁用
 - 内容：签名后的 `user_id`
-- 密钥：从环境变量 `SECRET_KEY` 读取；不存在则启动时抛出异常
 
 ### 新增路由：`/api/auth/`
 
 | 方法 | 路径 | 请求体 | 响应 | 说明 |
 |------|------|--------|------|------|
-| POST | `/api/auth/register` | `{username, password}` | 用户信息 + Set-Cookie | 注册并自动登录 |
+| POST | `/api/auth/register` | `{username, password}` | 用户信息 + Set-Cookie | 注册并自动登录，同时创建 SimAccount |
 | POST | `/api/auth/login` | `{username, password}` | 用户信息 + Set-Cookie | 登录 |
 | POST | `/api/auth/logout` | — | 200 + 清除 Cookie | 退出 |
-| GET  | `/api/auth/me` | — | 用户信息 | 获取当前用户 |
+| GET  | `/api/auth/me` | — | 用户信息 | 获取当前用户，无需认证也不触发 401 跳转 |
+
+**注册开放性：** 注册端点当前无访问控制，任何能访问服务器的人均可注册。这是已知的权衡，适用于内部/可信网络环境。生产部署建议在反向代理（nginx/Caddy）层限制访问来源，或在未来版本中通过 `ALLOW_REGISTRATION` 环境变量控制开关。
 
 ### FastAPI 依赖注入
 
@@ -79,7 +106,7 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     if not session_cookie:
         raise HTTPException(status_code=401, detail="未登录")
     try:
-        user_id = serializer.loads(session_cookie, max_age=604800)
+        user_id = request.app.state.serializer.loads(session_cookie, max_age=604800)
     except Exception:
         raise HTTPException(status_code=401, detail="Session 无效或已过期")
     user = await db.get(User, user_id)
@@ -90,11 +117,37 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
 
 所有现有 router 函数签名加 `current_user: User = Depends(get_current_user)`，查询时过滤 `user_id = current_user.id`。
 
+### 高权限端点保护
+
+`is_admin=True` 才可访问：
+
+- `PUT /api/settings` — 修改数据源（会清空 kline 缓存，影响所有用户）
+
+### 危险端点改造
+
+`POST /api/account/reset`（当前无 WHERE 子句，会删除全表数据）必须改为：
+
+```sql
+DELETE FROM positions WHERE user_id = current_user.id;
+DELETE FROM trigger_logs WHERE strategy_id IN (
+    SELECT id FROM strategies WHERE user_id = current_user.id
+);
+```
+
+### 调度器多用户适配
+
+`engine/scheduler.py` 的 `restore_running_strategies()` 和 `StrategyContext.get_balance()` 当前是全局查询，需更新：
+
+- `restore_running_strategies`：查询策略时保留 `user_id`，传入 `StrategyContext`
+- `StrategyContext.get_balance()`：改为 `SELECT * FROM sim_accounts WHERE user_id = strategy.user_id`
+- `simulator.py` 的 `execute_buy`/`execute_sell`：通过 `sim_account_id` 关联，而非 `LIMIT 1` 全局查询
+
 ### 密码安全
 
 - 使用 `passlib[bcrypt]` 进行密码哈希
 - 注册校验：用户名唯一，密码最短 6 位
 - 登录校验：用户名存在 + 密码匹配（常量时间比较，防时序攻击）
+- 速率限制：登录/注册端点无内置限速，建议生产环境通过反向代理配置（超出范围，已知风险）
 
 ---
 
@@ -111,14 +164,19 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
 
 `middleware.ts`（Next.js Edge Middleware）：
 
-- 检查请求中是否包含 `session` Cookie
+- 检查请求中是否包含 `session` Cookie（仅检查存在性，不验签）
 - 未登录访问任意页面 → `redirect('/login')`
 - 已登录访问 `/login` 或 `/register` → `redirect('/')`
-- `/api/auth/*` 路径豁免（不做重定向）
+- 豁免路径：`/api/auth/*`、`/_next/*`、`/favicon.ico`
+
+> **已知限制：** middleware 只检查 Cookie 存在性，不验证签名。伪造 Cookie 可绕过重定向，但后端 API 调用仍会返回 401。结合 401 拦截器，实际安全性不受影响。
 
 ### Sidebar 改动
 
-- 底部新增：当前用户名显示 + 退出登录按钮
+**桌面端和移动端均需更新：**
+
+- 桌面端 Sidebar 底部：当前用户名显示 + 退出登录按钮
+- 移动端底部导航栏：同样添加用户名显示 + 退出登录入口
 - 点击退出：调用 `POST /api/auth/logout` → 跳转 `/login`
 - 用户信息通过 `GET /api/auth/me` 在 layout 层获取并注入
 
@@ -132,11 +190,12 @@ const api = axios.create({
   withCredentials: true,  // 新增：携带 Cookie
 });
 
-// 新增：401 拦截器
+// 新增：401 拦截器（豁免 /auth/* 路径，避免重定向循环）
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const url = err.config?.url ?? '';
+    if (err.response?.status === 401 && !url.startsWith('/auth/')) {
       window.location.href = '/login';
     }
     return Promise.reject(err);
@@ -173,3 +232,5 @@ passlib[bcrypt]
 - 用户角色细分（仅 admin / 普通用户两级）
 - 管理员后台界面（用户管理通过 API 或直接操作 DB）
 - SystemSetting 的用户级隔离
+- 注册速率限制（由反向代理处理）
+- 注册开关控制（`ALLOW_REGISTRATION` 环境变量，未来版本实现）
