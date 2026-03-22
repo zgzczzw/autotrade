@@ -11,7 +11,8 @@ from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import KlineData, SystemSetting
+from app.deps import get_admin_user
+from app.models import KlineData, SystemSetting, User
 from app.schemas import (
     SettingsResponse,
     SettingsUpdate,
@@ -45,6 +46,7 @@ async def get_settings(db: AsyncSession = Depends(get_db)):
 async def update_settings(
     payload: SettingsUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_admin_user),  # admin only
 ):
     # 检查数据源是否变更
     current_source = await _get_setting("data_source", "binance", db)
