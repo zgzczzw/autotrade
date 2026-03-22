@@ -21,33 +21,79 @@ async def init_db():
     from app.models import Base
 
     async with engine.begin() as conn:
+        # Create all tables (idempotent)
         await conn.run_sync(Base.metadata.create_all)
-        # 增量迁移：添加新列（忽略已存在错误）
-        try:
-            await conn.execute(text(
-                "ALTER TABLE strategies ADD COLUMN sell_size_pct REAL NOT NULL DEFAULT 100.0"
-            ))
-        except Exception:
-            pass  # 列已存在
 
-    # Seed default SimAccount if empty
+        # Incremental migrations (ignore errors if column already exists)
+        migrations = [
+            "ALTER TABLE strategies ADD COLUMN sell_size_pct REAL NOT NULL DEFAULT 100.0",
+            "ALTER TABLE strategies ADD COLUMN user_id INTEGER REFERENCES users(id)",
+            "ALTER TABLE positions ADD COLUMN user_id INTEGER REFERENCES users(id)",
+            "ALTER TABLE sim_accounts ADD COLUMN user_id INTEGER REFERENCES users(id)",
+            "ALTER TABLE backtest_results ADD COLUMN user_id INTEGER REFERENCES users(id)",
+        ]
+        for sql in migrations:
+            try:
+                await conn.execute(text(sql))
+            except Exception:
+                pass  # Column already exists
+
+    # Backfill: ensure admin user exists and all existing data is assigned to them
     async with async_session() as session:
         from sqlalchemy import select
-        from app.models import SimAccount, SystemSetting
+        from app.models import BacktestResult, Position, SimAccount, Strategy, User
+        from passlib.context import CryptContext
 
-        result = await session.execute(select(SimAccount))
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+        # Check if admin user exists
+        result = await session.execute(select(User).where(User.username == "admin"))
+        admin = result.scalar_one_or_none()
+
+        if admin is None:
+            admin_password = os.getenv("ADMIN_PASSWORD", "changeme")
+            admin = User(
+                username="admin",
+                password_hash=pwd_context.hash(admin_password),
+                is_admin=True,
+            )
+            session.add(admin)
+            await session.flush()  # get admin.id
+
+        admin_id = admin.id
+
+        # Backfill existing rows
+        await session.execute(
+            text("UPDATE strategies SET user_id = :uid WHERE user_id IS NULL"),
+            {"uid": admin_id},
+        )
+        await session.execute(
+            text("UPDATE positions SET user_id = :uid WHERE user_id IS NULL"),
+            {"uid": admin_id},
+        )
+        await session.execute(
+            text("UPDATE sim_accounts SET user_id = :uid WHERE user_id IS NULL"),
+            {"uid": admin_id},
+        )
+        await session.execute(
+            text("UPDATE backtest_results SET user_id = :uid WHERE user_id IS NULL"),
+            {"uid": admin_id},
+        )
+
+        # If no sim_account exists for admin, create one
+        result = await session.execute(
+            select(SimAccount).where(SimAccount.user_id == admin_id)
+        )
         if result.scalar_one_or_none() is None:
-            initial_balance = float(
-                os.getenv("SIMULATED_INITIAL_BALANCE", "100000")
-            )
-            session.add(
-                SimAccount(
-                    initial_balance=initial_balance,
-                    balance=initial_balance,
-                    total_pnl=0.0,
-                )
-            )
-            await session.commit()
+            initial_balance = float(os.getenv("SIMULATED_INITIAL_BALANCE", "100000"))
+            session.add(SimAccount(
+                user_id=admin_id,
+                initial_balance=initial_balance,
+                balance=initial_balance,
+                total_pnl=0.0,
+            ))
+
+        await session.commit()
 
     # Seed default SystemSetting if empty
     async with async_session() as session:
@@ -58,7 +104,6 @@ async def init_db():
             select(SystemSetting).where(SystemSetting.key == "data_source")
         )
         if result.scalar_one_or_none() is None:
-            # USE_MOCK_DATA 环境变量向后兼容：若设置则默认 mock
             use_mock = os.getenv("USE_MOCK_DATA", "false").lower() == "true"
             default_source = "mock" if use_mock else "binance"
             session.add(SystemSetting(key="data_source", value=default_source))
