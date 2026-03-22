@@ -32,6 +32,7 @@ interface Strategy {
   sell_size_pct: number;
   notify_enabled: boolean;
   config_json?: string;
+  code?: string;
   created_at: string;
   updated_at: string;
   trigger_count?: number;
@@ -270,6 +271,19 @@ export default function StrategyDetailPage() {
                     stopLoss={strategy.stop_loss}
                     takeProfit={strategy.take_profit}
                   />
+                </CardContent>
+              </Card>
+            )}
+
+            {strategy.type === "code" && strategy.code && (
+              <Card className="bg-slate-900 border-slate-800 md:col-span-2">
+                <CardHeader>
+                  <CardTitle>策略代码</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <pre className="p-4 text-sm font-mono text-slate-200 overflow-x-auto whitespace-pre leading-relaxed">
+                    {strategy.code}
+                  </pre>
                 </CardContent>
               </Card>
             )}
