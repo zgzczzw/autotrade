@@ -57,7 +57,7 @@ class UserSetting(Base):
     user_id    = Column(Integer, ForeignKey("users.id"), nullable=False)
     key        = Column(String(50), nullable=False)
     value      = Column(Text, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (UniqueConstraint("user_id", "key"),)
 
@@ -83,7 +83,7 @@ class BarkClient:
         """
 ```
 
-- 使用已有 `httpx.AsyncClient`，timeout=5s
+- **使用 per-request `async with httpx.AsyncClient(timeout=5.0)` 模式**（与 `settings.py` 一致），避免持久 client 的生命周期管理问题
 - 失败静默降级（返回 False + error_message，不抛异常）
 - Bark API 返回 `{"code": 200}` 为成功
 
@@ -111,7 +111,7 @@ class BarkClient:
 }
 ```
 
-**PUT 行为：** upsert `user_settings` 表，`bark_key` 和 `bark_enabled` 各自独立更新。
+**PUT 行为：** upsert `user_settings` 表，使用 SQLite dialect insert：`insert(...).on_conflict_do_update(index_elements=["user_id","key"], set_={"value":..., "updated_at":...})`，与 `settings.py` 中 `SystemSetting` 的 upsert 模式一致。`bark_key` 和 `bark_enabled` 作为两行分别 upsert。
 
 **POST /test 行为：**
 - 读取当前用户的 `bark_key`
@@ -123,25 +123,41 @@ class BarkClient:
 
 #### `backend/app/database.py`
 
-`init_db()` 中新增 `user_settings` 表的创建（`CREATE TABLE IF NOT EXISTS`，与现有模式一致）。
+`user_settings` 表由 `Base.metadata.create_all` 自动创建，只需确保 `UserSetting` 模型在 `init_db()` 执行前已被 import。**无需手动写 `CREATE TABLE IF NOT EXISTS` SQL**，与现有所有模型（`User`、`Strategy` 等）的处理方式一致。
 
-#### `backend/app/services/feishu.py` → 重命名/拆分
+#### `backend/app/services/feishu.py`
 
-`NotificationService.send_strategy_notification` 扩展：在发送飞书通知之后，额外检查策略所属用户的 Bark 配置，若 `bark_enabled=true` 且 `bark_key` 非空，则异步发送 Bark 通知并写入 `NotificationLog(channel="bark")`。
+`NotificationService.send_strategy_notification` 扩展：
 
-**`_send_notification` 在 `executor.py` 中需传入 `user_id`：**
+1. **移除 `executor.py` 中的 Feishu 守卫**：`_send_notification` 方法当前有早退逻辑 `if not check_webhook_configured(): return`，此逻辑会同时屏蔽 Bark。需将该守卫删除，改为在 `NotificationService` 内部各自判断（Feishu 有 URL 才发，Bark 有 key 且 enabled 才发）。
+2. **新增 `user_id` 参数**：`send_strategy_notification` 接收 `user_id: Optional[int]`，据此从 `user_settings` 查询 Bark 配置。
+3. **并行发送**：先发飞书（若 URL 已配置），再发 Bark（若用户启用且 key 非空），各自写入 `NotificationLog`。
+4. **返回类型**：改为 `None`（可能写入 0、1 或 2 条 `NotificationLog`）。
+
+**`executor.py` 中 `_send_notification` 改为：**
 
 ```python
-await notification_service.send_strategy_notification(
-    trigger_log=trigger,
-    strategy_name=strategy.name,
-    symbol=strategy.symbol,
-    db=db,
-    user_id=getattr(strategy, "user_id", None),  # 新增
-)
+async def _send_notification(self, trigger, strategy, db):
+    try:
+        await notification_service.send_strategy_notification(
+            trigger_log=trigger,
+            strategy_name=strategy.name,
+            symbol=strategy.symbol,
+            db=db,
+            user_id=getattr(strategy, "user_id", None),
+        )
+    except Exception as e:
+        logger.error(f"Failed to send notification: {e}")
 ```
 
-`NotificationService.send_strategy_notification` 接收 `user_id: Optional[int]`，据此查询 user_settings 决定是否发 Bark。
+同时更新 `executor.py` 顶部的 import，移除已不再使用的 `check_webhook_configured`：
+
+```python
+# 修改前
+from app.services.feishu import check_webhook_configured, notification_service
+# 修改后
+from app.services.feishu import notification_service
+```
 
 #### `backend/app/main.py`
 
@@ -153,6 +169,8 @@ app.include_router(notifications.router, prefix="/api")
 
 ### Schemas
 
+添加到 `backend/app/schemas.py`（与所有现有 schema 保持一致）：
+
 ```python
 class NotificationSettingsResponse(BaseModel):
     bark_key: Optional[str] = None
@@ -162,6 +180,8 @@ class NotificationSettingsUpdate(BaseModel):
     bark_key: Optional[str] = None
     bark_enabled: Optional[bool] = None
 ```
+
+`POST /test` 成功响应复用已有的 `MessageResponse(message="测试通知已发送")`。
 
 ---
 
@@ -202,6 +222,8 @@ const navItems = [
   { icon: Settings,        label: "设置",   href: "/settings" },
 ];
 ```
+
+**移动端底部导航说明：** 桌面端侧边栏和移动端底部导航栏共用同一个 `navItems` 数组，新增 Bell 项后两端均会出现「消息」入口。移动端底部导航由此变为 6 个导航项 + 退出按钮共 7 项，布局在主流手机宽度（375px+）下可正常显示，无需额外处理。
 
 ### 修改 `frontend/src/lib/api.ts`
 
