@@ -2,8 +2,11 @@
 AutoTrade FastAPI 入口
 """
 
+import os
 import time
 from contextlib import asynccontextmanager
+
+from itsdangerous import URLSafeTimedSerializer
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +15,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.database import init_db
 from app.engine.scheduler import scheduler
 from app.logger import get_access_logger, get_logger, log_startup
-from app.routers import account, backtests, dashboard, logs, market, settings, strategies, triggers
+from app.routers import account, auth, backtests, dashboard, logs, market, settings, strategies, triggers
 from app.schemas import HealthResponse
 
 logger = get_logger(__name__)
@@ -63,7 +66,14 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    # 记录启动日志
+    # Validate SECRET_KEY FIRST — before log_startup() or any other init
+    secret_key = os.environ.get("SECRET_KEY")
+    if not secret_key:
+        raise RuntimeError("SECRET_KEY 环境变量未设置，拒绝启动")
+    app.state.serializer = URLSafeTimedSerializer(secret_key)
+    app.state.cookie_secure = (os.environ.get("ENV") != "development")
+
+    # 记录启动日志（after SECRET_KEY is validated）
     log_startup()
 
     logger.info("🚀 AutoTrade 启动中...")
@@ -126,6 +136,7 @@ app.include_router(backtests.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
 app.include_router(market.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
 
 
 @app.get("/", response_model=HealthResponse)
