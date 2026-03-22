@@ -44,8 +44,8 @@ export function TickerBar({ ticker, loading }: TickerBarProps) {
 
   return (
     <div className="px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl">
-      {/* 移动端：紧凑两行布局 */}
-      <div className="flex items-center justify-between md:hidden">
+      {/* 移动端：两行布局 */}
+      <div className="flex flex-col gap-1.5 md:hidden">
         <div className="flex items-baseline gap-2">
           <span className={`text-xl font-bold font-mono ${changeColor}`}>
             ${fmt(ticker.price)}
@@ -55,7 +55,7 @@ export function TickerBar({ ticker, loading }: TickerBarProps) {
             {isUp ? "+" : ""}{ticker.change_pct.toFixed(2)}%
           </span>
         </div>
-        <div className="flex items-center gap-3 text-xs text-slate-400">
+        <div className="flex items-center gap-4 text-xs text-slate-400">
           <span><span className="text-slate-500">高</span> <span className="font-mono text-slate-200">${fmt(ticker.high_24h)}</span></span>
           <span><span className="text-slate-500">低</span> <span className="font-mono text-slate-200">${fmt(ticker.low_24h)}</span></span>
           <span><span className="text-slate-500">量</span> <span className="font-mono text-slate-200">{fmtVol(ticker.volume_24h)}</span></span>
