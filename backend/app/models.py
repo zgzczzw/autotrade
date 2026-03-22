@@ -30,6 +30,22 @@ class User(Base):
     positions = relationship("Position", back_populates="user", cascade="all, delete-orphan")
     sim_accounts = relationship("SimAccount", back_populates="user", cascade="all, delete-orphan")
     backtest_results = relationship("BacktestResult", back_populates="user", cascade="all, delete-orphan")
+    settings = relationship("UserSetting", back_populates="user", cascade="all, delete-orphan")
+
+
+class UserSetting(Base):
+    """用户级设置（键值对）"""
+    __tablename__ = "user_settings"
+
+    id         = Column(Integer, primary_key=True, autoincrement=True)
+    user_id    = Column(Integer, ForeignKey("users.id"), nullable=False)
+    key        = Column(String(50), nullable=False)
+    value      = Column(Text, nullable=True)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("user_id", "key"),)
+
+    user = relationship("User", back_populates="settings")
 
 
 class Strategy(Base):
