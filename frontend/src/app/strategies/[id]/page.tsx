@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BacktestPanel } from "@/components/backtest-panel";
-import { formatSymbol } from "@/lib/utils";
-import { ArrowLeft, Play, Pencil, Square } from "lucide-react";
+import { formatPrice, formatSymbol } from "@/lib/utils";
+import { ArrowLeft, ChevronLeft, ChevronRight, History, Pencil, Play, Square } from "lucide-react";
 import axios from "axios";
 import {
   StrategyPreview,
@@ -38,11 +38,28 @@ interface Strategy {
   position_count?: number;
 }
 
+interface Trigger {
+  id: number;
+  strategy_id: number;
+  triggered_at: string;
+  signal_type: string;
+  signal_detail?: string;
+  action?: string;
+  price?: number;
+  quantity?: number;
+  simulated_pnl?: number;
+}
+
 export default function StrategyDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [loading, setLoading] = useState(true);
+  const [triggers, setTriggers] = useState<Trigger[]>([]);
+  const [triggersTotal, setTriggersTotal] = useState(0);
+  const [triggersPage, setTriggersPage] = useState(1);
+  const [triggersLoading, setTriggersLoading] = useState(false);
+  const [triggersLoaded, setTriggersLoaded] = useState(false);
 
   useEffect(() => {
     loadStrategy();
@@ -58,6 +75,23 @@ export default function StrategyDetailPage() {
       console.error("Failed to load strategy:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTriggers = async (page = 1) => {
+    setTriggersLoading(true);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/triggers?strategy_id=${id}&page=${page}&page_size=20`
+      );
+      setTriggers(response.data.items || []);
+      setTriggersTotal(response.data.total || 0);
+      setTriggersPage(page);
+    } catch (error) {
+      console.error("Failed to load triggers:", error);
+    } finally {
+      setTriggersLoading(false);
+      setTriggersLoaded(true);
     }
   };
 
@@ -86,6 +120,21 @@ export default function StrategyDetailPage() {
         return <Badge variant="destructive">错误</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getActionBadge = (action?: string) => {
+    switch (action) {
+      case "buy":
+        return <Badge className="bg-green-600">买入</Badge>;
+      case "sell":
+        return <Badge className="bg-red-600">卖出</Badge>;
+      case "short":
+        return <Badge className="bg-orange-600">开空</Badge>;
+      case "cover":
+        return <Badge className="bg-purple-600">平空</Badge>;
+      default:
+        return <Badge variant="secondary">观望</Badge>;
     }
   };
 
@@ -141,7 +190,15 @@ export default function StrategyDetailPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs
+        defaultValue="overview"
+        className="space-y-6"
+        onValueChange={(value) => {
+          if (value === "triggers" && !triggersLoaded) {
+            loadTriggers(1);
+          }
+        }}
+      >
         <TabsList className="bg-slate-900">
           <TabsTrigger value="overview">概览</TabsTrigger>
           <TabsTrigger value="triggers">触发历史</TabsTrigger>
@@ -244,11 +301,102 @@ export default function StrategyDetailPage() {
         </TabsContent>
 
         <TabsContent value="triggers">
-          <Card className="bg-slate-900 border-slate-800">
-            <CardContent className="py-12 text-center">
-              <p className="text-slate-400">触发历史功能将在后续版本中支持</p>
-            </CardContent>
-          </Card>
+          {triggersLoading ? (
+            <div className="text-center py-12 text-slate-400">加载中...</div>
+          ) : triggers.length === 0 ? (
+            <Card className="bg-slate-900 border-slate-800">
+              <CardContent className="py-12 text-center">
+                <History className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400">暂无触发记录</p>
+                <p className="text-sm text-slate-500 mt-2">
+                  启动策略后将在此显示触发记录
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <Card className="bg-slate-900 border-slate-800">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-slate-800">
+                          <th className="text-left p-4 text-slate-400 font-medium">时间</th>
+                          <th className="text-left p-4 text-slate-400 font-medium">操作</th>
+                          <th className="text-left p-4 text-slate-400 font-medium">价格</th>
+                          <th className="text-left p-4 text-slate-400 font-medium">数量</th>
+                          <th className="text-right p-4 text-slate-400 font-medium">盈亏</th>
+                          <th className="text-left p-4 text-slate-400 font-medium">备注</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {triggers.map((trigger) => (
+                          <tr key={trigger.id} className="border-b border-slate-800 last:border-0">
+                            <td className="p-4 whitespace-nowrap">
+                              {new Date(trigger.triggered_at).toLocaleString()}
+                            </td>
+                            <td className="p-4">{getActionBadge(trigger.action)}</td>
+                            <td className="p-4">
+                              {trigger.price ? formatPrice(trigger.price) : "-"}
+                            </td>
+                            <td className="p-4">
+                              {trigger.quantity != null
+                                ? trigger.quantity.toFixed(4)
+                                : "-"}
+                            </td>
+                            <td className="p-4 text-right">
+                              {trigger.simulated_pnl != null ? (
+                                <span
+                                  className={
+                                    trigger.simulated_pnl >= 0
+                                      ? "text-green-400"
+                                      : "text-red-400"
+                                  }
+                                >
+                                  {trigger.simulated_pnl >= 0 ? "+" : ""}
+                                  {formatPrice(trigger.simulated_pnl)}
+                                </span>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                            <td className="p-4 text-sm text-slate-400 max-w-xs truncate">
+                              {trigger.signal_detail || "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 分页控件 */}
+              <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadTriggers(triggersPage - 1)}
+                  disabled={triggersPage <= 1}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  上一页
+                </Button>
+                <span>
+                  第 {triggersPage} / {Math.ceil(triggersTotal / 20)} 页，共 {triggersTotal} 条
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadTriggers(triggersPage + 1)}
+                  disabled={triggersPage >= Math.ceil(triggersTotal / 20)}
+                >
+                  下一页
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="positions">
