@@ -301,8 +301,10 @@ export default function StrategyDetailPage() {
         </TabsContent>
 
         <TabsContent value="triggers">
-          {triggersLoading ? (
-            <div className="text-center py-12 text-slate-400">加载中...</div>
+          {!triggersLoaded ? (
+            triggersLoading ? (
+              <div className="text-center py-12 text-slate-400">加载中...</div>
+            ) : null
           ) : triggers.length === 0 ? (
             <Card className="bg-slate-900 border-slate-800">
               <CardContent className="py-12 text-center">
@@ -315,7 +317,7 @@ export default function StrategyDetailPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              <Card className="bg-slate-900 border-slate-800">
+              <Card className={`bg-slate-900 border-slate-800 transition-opacity ${triggersLoading ? "opacity-60" : ""}`}>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
                     <table className="w-full">
