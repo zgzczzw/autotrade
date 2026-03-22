@@ -53,10 +53,10 @@ export function deserializeConfig(json: string): StrategyConfig {
       buy_conditions: normalizeGroup(parsed.buy_conditions ?? { logic: "AND", rules: [] }),
       sell_conditions: normalizeGroup(parsed.sell_conditions ?? { logic: "AND", rules: [] }),
     };
-    if (parsed.short_conditions) {
+    if (parsed.short_conditions?.rules?.length > 0) {
       config.short_conditions = normalizeGroup(parsed.short_conditions);
     }
-    if (parsed.cover_conditions) {
+    if (parsed.cover_conditions?.rules?.length > 0) {
       config.cover_conditions = normalizeGroup(parsed.cover_conditions);
     }
     return config;
