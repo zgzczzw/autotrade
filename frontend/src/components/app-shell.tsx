@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
-import { authMe } from "@/lib/api";
+import { authMe, fetchSettings } from "@/lib/api";
+import { setTimezone } from "@/lib/utils";
 
 const AUTH_PATHS = ["/login", "/register"];
 
@@ -16,6 +17,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (!isAuthPage) {
       authMe().then((res) => {
         setUsername(res.user?.username ?? null);
+      }).catch(() => {});
+      fetchSettings().then((data: any) => {
+        if (data?.timezone) setTimezone(data.timezone);
       }).catch(() => {});
     }
   }, [isAuthPage]);
