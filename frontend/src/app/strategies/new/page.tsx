@@ -17,6 +17,7 @@ import {
   StrategyPreview,
   serializeConfig,
   makeEmptyConfig,
+  makeEmptyGroup,
 } from "@/components/visual-strategy-editor";
 import type { StrategyConfig } from "@/components/visual-strategy-editor";
 
@@ -113,6 +114,91 @@ export default function NewStrategyPage() {
                   onChange={(g) => setVisualConfig({ ...visualConfig, sell_conditions: g })}
                   label="卖出条件"
                 />
+
+                {/* 开空条件（可选折叠） */}
+                <details className="group">
+                  <summary className="cursor-pointer select-none text-sm font-medium text-slate-300 hover:text-white flex items-center gap-2 py-2">
+                    <span className="transition-transform group-open:rotate-90">▶</span>
+                    开空条件
+                    <span className="text-xs text-slate-500 font-normal">
+                      {visualConfig.short_conditions ? "已配置" : "未配置（策略不做空）"}
+                    </span>
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    {!visualConfig.short_conditions ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVisualConfig({ ...visualConfig, short_conditions: makeEmptyGroup() })
+                        }
+                        className="text-sm text-blue-400 hover:text-blue-300"
+                      >
+                        + 添加开空条件
+                      </button>
+                    ) : (
+                      <>
+                        <ConditionGroupEditor
+                          group={visualConfig.short_conditions}
+                          onChange={(g) => setVisualConfig({ ...visualConfig, short_conditions: g })}
+                          label="开空条件"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const { short_conditions, ...rest } = visualConfig;
+                            setVisualConfig(rest as typeof visualConfig);
+                          }}
+                          className="text-xs text-slate-500 hover:text-red-400"
+                        >
+                          移除开空条件
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </details>
+
+                {/* 平空条件（可选折叠） */}
+                <details className="group">
+                  <summary className="cursor-pointer select-none text-sm font-medium text-slate-300 hover:text-white flex items-center gap-2 py-2">
+                    <span className="transition-transform group-open:rotate-90">▶</span>
+                    平空条件
+                    <span className="text-xs text-slate-500 font-normal">
+                      {visualConfig.cover_conditions ? "已配置" : "未配置（依赖止盈止损平空）"}
+                    </span>
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    {!visualConfig.cover_conditions ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVisualConfig({ ...visualConfig, cover_conditions: makeEmptyGroup() })
+                        }
+                        className="text-sm text-blue-400 hover:text-blue-300"
+                      >
+                        + 添加平空条件
+                      </button>
+                    ) : (
+                      <>
+                        <ConditionGroupEditor
+                          group={visualConfig.cover_conditions}
+                          onChange={(g) => setVisualConfig({ ...visualConfig, cover_conditions: g })}
+                          label="平空条件"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const { cover_conditions, ...rest } = visualConfig;
+                            setVisualConfig(rest as typeof visualConfig);
+                          }}
+                          className="text-xs text-slate-500 hover:text-red-400"
+                        >
+                          移除平空条件
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </details>
+
                 <StrategyPreview
                   config={visualConfig}
                   stopLoss={formData.stop_loss ? parseFloat(formData.stop_loss) : null}
