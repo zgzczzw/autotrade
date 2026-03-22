@@ -69,6 +69,7 @@ class StrategyContext:
             quantity=qty,
             price=price,
             db=self.db,
+            user_id=getattr(self.strategy, "user_id", None),
         )
 
     async def sell(self, quantity: Optional[float] = None) -> Optional[TriggerLog]:
@@ -87,6 +88,7 @@ class StrategyContext:
             price=price,
             db=self.db,
             sell_size_pct=sell_size_pct,
+            user_id=getattr(self.strategy, "user_id", None),
         )
 
     async def get_position(self) -> Optional[Position]:
@@ -101,10 +103,16 @@ class StrategyContext:
         return result.scalar_one_or_none()
 
     async def get_balance(self) -> float:
-        """获取账户余额"""
+        """获取账户余额（当前用户的 SimAccount）"""
         from app.models import SimAccount
 
-        result = await self.db.execute(select(SimAccount).limit(1))
+        user_id = getattr(self.strategy, "user_id", None)
+        if user_id is not None:
+            result = await self.db.execute(
+                select(SimAccount).where(SimAccount.user_id == user_id)
+            )
+        else:
+            result = await self.db.execute(select(SimAccount).limit(1))
         account = result.scalar_one()
         return account.balance
 
@@ -177,6 +185,7 @@ class StrategyExecutor:
                         stop_loss_pct=strategy.stop_loss,
                         take_profit_pct=strategy.take_profit,
                         db=db,
+                        user_id=getattr(strategy, "user_id", None),
                     )
                     if sl_tp_trigger and strategy.notify_enabled:
                         await self._send_notification(sl_tp_trigger, strategy, db)
