@@ -104,3 +104,113 @@ async def test_execute_cover_success():
     assert position.closed_at is not None
     assert trigger.action == "cover"
     assert trigger.simulated_pnl == pytest.approx(expected_pnl)
+
+
+@pytest.mark.asyncio
+async def test_check_sl_tp_short_stop_loss():
+    """空头止损：价格上涨超过 stop_loss_pct"""
+    from app.services.simulator import simulator
+    from app.models import Position
+
+    position = MagicMock(spec=Position)
+    position.entry_price = 40000.0
+    position.quantity = 0.1
+    position.side = "short"
+    position.pnl = None
+    position.current_price = None
+    position.closed_at = None
+
+    account = make_account(balance=96000.0)
+    db = AsyncMock()
+    db.add = MagicMock()
+    db.commit = AsyncMock()
+    db.refresh = AsyncMock()
+
+    call_count = [0]
+    async def mock_execute(stmt):
+        result = MagicMock()
+        n = call_count[0]
+        call_count[0] += 1
+        if n == 0:
+            # First call: check_sl_tp queries long position → None
+            result.scalar_one_or_none = MagicMock(return_value=None)
+        elif n == 1:
+            # Second call: check_sl_tp queries short position → position
+            result.scalar_one_or_none = MagicMock(return_value=position)
+        elif n == 2:
+            # Third call: execute_cover re-queries short position → position
+            result.scalar_one_or_none = MagicMock(return_value=position)
+        else:
+            # Fourth call: execute_cover queries account
+            result.scalar_one = MagicMock(return_value=account)
+        return result
+
+    db.execute = mock_execute
+
+    # Short at 40000, current price 42000 (up 5%), stop loss at 5%
+    trigger = await simulator.check_stop_loss_take_profit(
+        strategy_id=1,
+        symbol="BTCUSDT",
+        current_price=42000.0,
+        stop_loss_pct=5.0,
+        take_profit_pct=None,
+        db=db,
+    )
+
+    assert trigger is not None
+    assert "[止损]" in trigger.signal_detail
+
+
+@pytest.mark.asyncio
+async def test_check_sl_tp_short_take_profit():
+    """空头止盈：价格下跌超过 take_profit_pct"""
+    from app.services.simulator import simulator
+    from app.models import Position
+
+    position = MagicMock(spec=Position)
+    position.entry_price = 40000.0
+    position.quantity = 0.1
+    position.side = "short"
+    position.pnl = None
+    position.current_price = None
+    position.closed_at = None
+
+    account = make_account(balance=96000.0)
+    db = AsyncMock()
+    db.add = MagicMock()
+    db.commit = AsyncMock()
+    db.refresh = AsyncMock()
+
+    call_count = [0]
+    async def mock_execute(stmt):
+        result = MagicMock()
+        n = call_count[0]
+        call_count[0] += 1
+        if n == 0:
+            # First call: check_sl_tp queries long position → None
+            result.scalar_one_or_none = MagicMock(return_value=None)
+        elif n == 1:
+            # Second call: check_sl_tp queries short position → position
+            result.scalar_one_or_none = MagicMock(return_value=position)
+        elif n == 2:
+            # Third call: execute_cover re-queries short position → position
+            result.scalar_one_or_none = MagicMock(return_value=position)
+        else:
+            # Fourth call: execute_cover queries account
+            result.scalar_one = MagicMock(return_value=account)
+        return result
+
+    db.execute = mock_execute
+
+    # Short at 40000, current price 36000 (down 10%), take profit at 10%
+    trigger = await simulator.check_stop_loss_take_profit(
+        strategy_id=1,
+        symbol="BTCUSDT",
+        current_price=36000.0,
+        stop_loss_pct=None,
+        take_profit_pct=10.0,
+        db=db,
+    )
+
+    assert trigger is not None
+    assert "[止盈]" in trigger.signal_detail

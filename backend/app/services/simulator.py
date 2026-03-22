@@ -376,27 +376,56 @@ class Simulator:
         )
         position = result.scalar_one_or_none()
 
-        if not position:
-            return None
+        if position:
+            entry_price = position.entry_price
+            price_change_pct = (current_price - entry_price) / entry_price * 100
 
-        entry_price = position.entry_price
-        price_change_pct = (current_price - entry_price) / entry_price * 100
+            # 检查止损
+            if stop_loss_pct and price_change_pct <= -stop_loss_pct:
+                logger.info(f"Stop loss triggered: {price_change_pct:.2f}%")
+                trigger = await self.execute_sell(strategy_id, symbol, current_price, db, user_id=user_id)
+                trigger.signal_detail = f"[止损] {trigger.signal_detail}"
+                await db.commit()
+                return trigger
 
-        # 检查止损
-        if stop_loss_pct and price_change_pct <= -stop_loss_pct:
-            logger.info(f"Stop loss triggered: {price_change_pct:.2f}%")
-            trigger = await self.execute_sell(strategy_id, symbol, current_price, db, user_id=user_id)
-            trigger.signal_detail = f"[止损] {trigger.signal_detail}"
-            await db.commit()
-            return trigger
+            # 检查止盈
+            if take_profit_pct and price_change_pct >= take_profit_pct:
+                logger.info(f"Take profit triggered: {price_change_pct:.2f}%")
+                trigger = await self.execute_sell(strategy_id, symbol, current_price, db, user_id=user_id)
+                trigger.signal_detail = f"[止盈] {trigger.signal_detail}"
+                await db.commit()
+                return trigger
 
-        # 检查止盈
-        if take_profit_pct and price_change_pct >= take_profit_pct:
-            logger.info(f"Take profit triggered: {price_change_pct:.2f}%")
-            trigger = await self.execute_sell(strategy_id, symbol, current_price, db, user_id=user_id)
-            trigger.signal_detail = f"[止盈] {trigger.signal_detail}"
-            await db.commit()
-            return trigger
+        # ── 空头止盈止损 ──────────────────────────────────────
+        short_result = await db.execute(
+            select(Position).where(
+                Position.strategy_id == strategy_id,
+                Position.symbol == symbol,
+                Position.side == "short",
+                Position.closed_at.is_(None),
+            )
+        )
+        short_position = short_result.scalar_one_or_none()
+
+        if short_position:
+            entry_price = short_position.entry_price
+            price_change_pct = (current_price - entry_price) / entry_price * 100
+
+            # 空头止损：价格上涨 ≥ stop_loss_pct
+            if stop_loss_pct and price_change_pct >= stop_loss_pct:
+                logger.info(f"Short stop loss triggered: +{price_change_pct:.2f}%")
+                trigger = await self.execute_cover(strategy_id, symbol, current_price, db, user_id=user_id)
+                trigger.signal_detail = f"[止损] {trigger.signal_detail}"
+                await db.commit()
+                return trigger
+
+            # 空头止盈：价格下跌 ≥ take_profit_pct
+            if take_profit_pct and price_change_pct <= -take_profit_pct:
+                logger.info(f"Short take profit triggered: {price_change_pct:.2f}%")
+                trigger = await self.execute_cover(strategy_id, symbol, current_price, db, user_id=user_id)
+                trigger.signal_detail = f"[止盈] {trigger.signal_detail}"
+                await db.commit()
+                return trigger
 
         return None
 
