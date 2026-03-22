@@ -3,7 +3,7 @@
 处理模拟买入/卖出逻辑
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import select
@@ -198,7 +198,19 @@ class Simulator:
         db: AsyncSession,
         user_id: Optional[int] = None,
     ) -> Optional[TriggerLog]:
-        """执行模拟开空（锁定保证金）"""
+        """执行模拟开空（锁定保证金）
+
+        Args:
+            strategy_id: 策略 ID
+            symbol: 交易对
+            quantity: 开空数量
+            price: 开空价格
+            db: 数据库会话
+            user_id: 用户 ID（用于查找 SimAccount）
+
+        Returns:
+            TriggerLog（action="short" 成功开空，action="hold" 余额不足跳过）
+        """
         required_margin = quantity * price
 
         if user_id is not None:
@@ -260,7 +272,18 @@ class Simulator:
         db: AsyncSession,
         user_id: Optional[int] = None,
     ) -> Optional[TriggerLog]:
-        """执行模拟平空（始终全额平仓）"""
+        """执行模拟平空（始终全额平仓）
+
+        Args:
+            strategy_id: 策略 ID
+            symbol: 交易对
+            price: 平空价格
+            db: 数据库会话
+            user_id: 用户 ID（用于查找 SimAccount）
+
+        Returns:
+            TriggerLog（action="cover" 成功平空，action="hold" 无空仓跳过）
+        """
         result = await db.execute(
             select(Position).where(
                 Position.strategy_id == strategy_id,
@@ -301,7 +324,7 @@ class Simulator:
 
         position.pnl = pnl
         position.current_price = price
-        position.closed_at = datetime.utcnow()
+        position.closed_at = datetime.now(timezone.utc)
 
         trigger = TriggerLog(
             strategy_id=strategy_id,

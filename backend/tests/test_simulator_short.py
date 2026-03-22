@@ -1,6 +1,6 @@
 """测试 Simulator.execute_short / execute_cover"""
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from datetime import datetime
 
 
