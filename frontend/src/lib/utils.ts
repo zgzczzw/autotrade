@@ -45,7 +45,10 @@ export function setTimezone(tz: string): void {
 }
 
 export function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString("zh-CN", {
+  // Backend returns naive UTC strings without timezone indicator.
+  // Append 'Z' so JavaScript parses them as UTC instead of local time.
+  const utcStr = /[Z+\-]\d{2}:?\d{2}$/.test(dateStr) ? dateStr : dateStr + "Z";
+  return new Date(utcStr).toLocaleString("zh-CN", {
     timeZone: getTimezone(),
     year: "numeric",
     month: "2-digit",
