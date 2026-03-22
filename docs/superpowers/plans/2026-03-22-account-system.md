@@ -6,7 +6,7 @@
 
 **Architecture:** itsdangerous-signed Cookie session stored in `app.state.serializer`; `get_current_user` FastAPI dependency injected into all routers; `user_id` foreign key added to Strategy/Position/SimAccount/BacktestResult; TriggerLog/NotificationLog scoped via JOIN through strategies.
 
-**Tech Stack:** FastAPI, SQLAlchemy async, SQLite, itsdangerous, passlib[bcrypt], Next.js 14 middleware, shadcn/ui
+**Tech Stack:** FastAPI, SQLAlchemy async, SQLite, itsdangerous, passlib[bcrypt], Next.js 16 middleware, shadcn/ui
 
 **Spec:** `docs/superpowers/specs/2026-03-22-account-system-design.md`
 
@@ -580,28 +580,53 @@ cd /home/autotrade/autotrade && git add backend/app/deps.py && git commit -m "fe
 
 - [ ] **Step 1: Update lifespan to validate SECRET_KEY and initialize app.state**
 
-In `backend/app/main.py`, update the imports at the top to add:
+In `backend/app/main.py`, add to imports at the top:
 ```python
 import os
 from itsdangerous import URLSafeTimedSerializer
 ```
 
-Update the `lifespan` function to add SECRET_KEY validation at the very beginning:
+Replace the `lifespan` function with:
 
 ```python
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    # Validate SECRET_KEY before anything else
+    # Validate SECRET_KEY FIRST — before log_startup() or any other init
     secret_key = os.environ.get("SECRET_KEY")
     if not secret_key:
         raise RuntimeError("SECRET_KEY 环境变量未设置，拒绝启动")
     app.state.serializer = URLSafeTimedSerializer(secret_key)
     app.state.cookie_secure = (os.environ.get("ENV") != "development")
 
-    # 记录启动日志
+    # 记录启动日志（after SECRET_KEY is validated）
     log_startup()
-    # ... rest of lifespan unchanged
+
+    logger.info("🚀 AutoTrade 启动中...")
+    await init_db()
+    logger.info("✅ 数据库初始化完成")
+
+    # 从 DB 读取数据源配置
+    from app.engine.market_data import market_data_service
+    await market_data_service.init_from_db()
+    logger.info(f"✅ 数据源初始化完成: {market_data_service.source_name}")
+
+    # 启动调度器
+    scheduler.start()
+    logger.info("✅ 调度器启动完成")
+
+    # 恢复运行中的策略
+    await scheduler.restore_running_strategies()
+    logger.info("✅ 运行中策略已恢复")
+
+    logger.info("🚀 AutoTrade 启动完成")
+
+    yield
+
+    # 关闭调度器
+    scheduler.shutdown()
+    logger.info("🛑 调度器已关闭")
+    logger.info("🛑 AutoTrade 关闭中...")
 ```
 
 - [ ] **Step 2: Register auth router**
@@ -884,7 +909,17 @@ account = account_result.scalar_one()
 
 - [ ] **Step 3: Update check_stop_loss_take_profit to accept user_id**
 
-Same pattern: add `user_id: Optional[int] = None` and pass it through to `execute_sell`.
+Add `user_id: Optional[int] = None` parameter to `check_stop_loss_take_profit`. Then update **both** internal `self.execute_sell(...)` calls inside the method to pass `user_id`. The existing calls look like:
+
+```python
+trigger = await self.execute_sell(strategy_id, symbol, current_price, db)
+```
+
+Change both to:
+
+```python
+trigger = await self.execute_sell(strategy_id, symbol, current_price, db, user_id=user_id)
+```
 
 - [ ] **Step 4: Verify simulator imports**
 
@@ -1363,13 +1398,25 @@ Also add `current_user: User = Depends(get_current_user)` to the function signat
 
 - [ ] **Step 4: Update get_strategy, update_strategy, delete_strategy, start_strategy, stop_strategy**
 
-For each of these endpoints:
-1. Add `current_user: User = Depends(get_current_user)` to signature
-2. After fetching the strategy, add ownership check:
+For each of these 5 endpoints, add `current_user: User = Depends(get_current_user)` to the function signature, then add the ownership check immediately after the existing 404 check. For example, `get_strategy` becomes:
+
 ```python
-if strategy.user_id != current_user.id:
-    raise HTTPException(status_code=404, detail="策略不存在")
+@router.get("/strategies/{strategy_id}", response_model=StrategyResponse)
+async def get_strategy(
+    strategy_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
+    strategy = result.scalar_one_or_none()
+
+    if not strategy or strategy.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="策略不存在")
+
+    # ... rest of function unchanged
 ```
+
+Apply the same pattern to `update_strategy`, `delete_strategy`, `start_strategy`, and `stop_strategy`. The ownership check `strategy.user_id != current_user.id` should be combined with the existing `not strategy` check using `or`, so a foreign user gets a 404 (not 403) — this prevents information leakage about strategy IDs.
 
 ### triggers.py
 
@@ -1381,30 +1428,67 @@ from app.deps import get_current_user
 from app.models import Strategy, TriggerLog, User
 ```
 
-Update `list_triggers`:
+Replace `list_triggers` with the full implementation (the count query must be rewritten to handle the JOIN correctly):
+
 ```python
+@router.get("/triggers", response_model=TriggerLogList)
 async def list_triggers(
-    strategy_id: Optional[int] = Query(None),
-    start_date: Optional[datetime] = Query(None),
-    end_date: Optional[datetime] = Query(None),
+    strategy_id: Optional[int] = Query(None, description="筛选特定策略"),
+    start_date: Optional[datetime] = Query(None, description="开始时间"),
+    end_date: Optional[datetime] = Query(None, description="结束时间"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """获取当前用户的触发日志列表"""
     # Base query: JOIN with strategies to filter by user
-    query = (
+    base_query = (
         select(TriggerLog)
         .join(Strategy, TriggerLog.strategy_id == Strategy.id)
         .where(Strategy.user_id == current_user.id)
     )
+
     if strategy_id:
-        query = query.where(TriggerLog.strategy_id == strategy_id)
+        base_query = base_query.where(TriggerLog.strategy_id == strategy_id)
     if start_date:
-        query = query.where(TriggerLog.triggered_at >= start_date)
+        base_query = base_query.where(TriggerLog.triggered_at >= start_date)
     if end_date:
-        query = query.where(TriggerLog.triggered_at <= end_date)
-    # ... rest unchanged (count, pagination, response building)
+        base_query = base_query.where(TriggerLog.triggered_at <= end_date)
+
+    # Count using the filtered base query as subquery
+    count_result = await db.execute(
+        select(func.count()).select_from(base_query.subquery())
+    )
+    total = count_result.scalar()
+
+    # Paginate
+    paged_query = (
+        base_query
+        .order_by(TriggerLog.triggered_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    result = await db.execute(paged_query)
+    items = result.scalars().all()
+
+    # Build response (same as existing code)
+    response_items = []
+    for item in items:
+        strategy_result = await db.execute(
+            select(Strategy.name).where(Strategy.id == item.strategy_id)
+        )
+        strategy_name = strategy_result.scalar()
+        response_item = TriggerLogResponse.model_validate(item)
+        response_item.strategy_name = strategy_name
+        response_items.append(response_item)
+
+    return TriggerLogList(
+        items=response_items,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 ```
 
 ### backtests.py
@@ -1417,11 +1501,40 @@ from app.deps import get_current_user
 from app.models import BacktestResult, Strategy, User
 ```
 
-For `create_backtest`, `list_backtests`, `get_backtest`, `delete_backtest`:
-1. Add `current_user: User = Depends(get_current_user)` to each signature
-2. Add ownership check when fetching strategy or backtest result
-3. In `create_backtest`, after creating the result, set `result.user_id = current_user.id`
-4. In list queries, add `.where(BacktestResult.user_id == current_user.id)`
+Apply these changes:
+
+**`create_backtest`:** Add `current_user: User = Depends(get_current_user)` to signature. After fetching the strategy, add ownership check:
+```python
+if strategy.user_id != current_user.id:
+    raise HTTPException(status_code=404, detail="策略不存在")
+```
+After `backtest_engine.run_backtest(...)` returns `backtest_result` (note: the variable is named `backtest_result`, NOT `result`), set the user_id before `db.add(...)`:
+```python
+backtest_result.user_id = current_user.id
+db.add(backtest_result)
+```
+
+**`get_backtest`:** Add `current_user: User = Depends(get_current_user)`. After fetching `backtest`, add:
+```python
+if backtest.user_id != current_user.id:
+    raise HTTPException(status_code=404, detail="回测结果不存在")
+```
+
+**`list_strategy_backtests`:** Add `current_user: User = Depends(get_current_user)`. After verifying the strategy exists, add ownership check on the strategy. Change the `query` to:
+```python
+query = select(BacktestResult).where(
+    BacktestResult.strategy_id == strategy_id,
+    BacktestResult.user_id == current_user.id,
+)
+```
+
+**`delete_backtest`:** Add `current_user: User = Depends(get_current_user)`. After fetching `backtest`, add:
+```python
+if backtest.user_id != current_user.id:
+    raise HTTPException(status_code=404, detail="回测结果不存在")
+```
+
+**`cancel_backtest` and `get_backtest_status`:** Add `current_user: User = Depends(get_current_user)`. After fetching strategy, add ownership check.
 
 - [ ] **Step 7: Verify all three routers import cleanly**
 
@@ -1441,6 +1554,19 @@ Expected: prints `OK`
 ```bash
 cd /home/autotrade/autotrade && git add backend/app/routers/strategies.py backend/app/routers/triggers.py backend/app/routers/backtests.py && git commit -m "feat: scope strategies/triggers/backtests endpoints to current user"
 ```
+
+---
+
+## Task 13b: Exempt logs.py from Auth
+
+**Files:**
+- No changes needed — `logs.py` must NOT get `get_current_user`
+
+`backend/app/routers/logs.py` handles `POST /api/logs` (frontend client-side log ingestion) and `GET /api/logs/frontend` (debug endpoint). These endpoints must remain unauthenticated because:
+1. The frontend may call `POST /api/logs` before a session cookie exists (e.g., logging errors during login)
+2. Adding auth would require the frontend logger to handle 401 responses specially
+
+**Action:** Do not modify `logs.py`. Leave it as-is with no `get_current_user` dependency.
 
 ---
 
