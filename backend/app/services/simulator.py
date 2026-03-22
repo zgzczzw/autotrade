@@ -189,6 +189,136 @@ class Simulator:
         logger.info(f"模拟卖出: {symbol} {sell_qty:.4f} @ {price} ({sell_size_pct}%), PnL: {pnl:.2f}")
         return trigger
 
+    async def execute_short(
+        self,
+        strategy_id: int,
+        symbol: str,
+        quantity: float,
+        price: float,
+        db: AsyncSession,
+        user_id: Optional[int] = None,
+    ) -> Optional[TriggerLog]:
+        """执行模拟开空（锁定保证金）"""
+        required_margin = quantity * price
+
+        if user_id is not None:
+            account_result = await db.execute(
+                select(SimAccount).where(SimAccount.user_id == user_id)
+            )
+        else:
+            account_result = await db.execute(select(SimAccount).limit(1))
+        account = account_result.scalar_one()
+
+        if account.balance < required_margin:
+            logger.warning(
+                f"Insufficient balance for short: required={required_margin}, "
+                f"balance={account.balance}"
+            )
+            trigger = TriggerLog(
+                strategy_id=strategy_id,
+                signal_type="short",
+                signal_detail="余额不足，跳过开空",
+                action="hold",
+                price=price,
+                quantity=0,
+            )
+            db.add(trigger)
+            await db.commit()
+            return trigger
+
+        account.balance -= required_margin
+
+        position = Position(
+            strategy_id=strategy_id,
+            symbol=symbol,
+            side="short",
+            entry_price=price,
+            quantity=quantity,
+        )
+        db.add(position)
+
+        trigger = TriggerLog(
+            strategy_id=strategy_id,
+            signal_type="short",
+            signal_detail=f"开空 {quantity} {symbol} @ {price}",
+            action="short",
+            price=price,
+            quantity=quantity,
+        )
+        db.add(trigger)
+        await db.commit()
+        await db.refresh(trigger)
+
+        logger.info(f"模拟开空: {symbol} {quantity} @ {price}")
+        return trigger
+
+    async def execute_cover(
+        self,
+        strategy_id: int,
+        symbol: str,
+        price: float,
+        db: AsyncSession,
+        user_id: Optional[int] = None,
+    ) -> Optional[TriggerLog]:
+        """执行模拟平空（始终全额平仓）"""
+        result = await db.execute(
+            select(Position).where(
+                Position.strategy_id == strategy_id,
+                Position.symbol == symbol,
+                Position.side == "short",
+                Position.closed_at.is_(None),
+            )
+        )
+        position = result.scalar_one_or_none()
+
+        if not position:
+            logger.warning(f"No open short position to cover for strategy {strategy_id}")
+            trigger = TriggerLog(
+                strategy_id=strategy_id,
+                signal_type="cover",
+                signal_detail="无空仓，跳过平空",
+                action="hold",
+                price=price,
+                quantity=0,
+            )
+            db.add(trigger)
+            await db.commit()
+            return trigger
+
+        quantity = position.quantity
+        pnl = (position.entry_price - price) * quantity  # 价跌盈利
+        margin_returned = position.entry_price * quantity
+
+        if user_id is not None:
+            account_result = await db.execute(
+                select(SimAccount).where(SimAccount.user_id == user_id)
+            )
+        else:
+            account_result = await db.execute(select(SimAccount).limit(1))
+        account = account_result.scalar_one()
+        account.balance += margin_returned + pnl
+        account.total_pnl += pnl
+
+        position.pnl = pnl
+        position.current_price = price
+        position.closed_at = datetime.utcnow()
+
+        trigger = TriggerLog(
+            strategy_id=strategy_id,
+            signal_type="cover",
+            signal_detail=f"平空 {quantity:.4f} {symbol} @ {price}, 盈亏: {pnl:.2f}",
+            action="cover",
+            price=price,
+            quantity=quantity,
+            simulated_pnl=pnl,
+        )
+        db.add(trigger)
+        await db.commit()
+        await db.refresh(trigger)
+
+        logger.info(f"模拟平空: {symbol} {quantity:.4f} @ {price}, PnL: {pnl:.2f}")
+        return trigger
+
     async def check_stop_loss_take_profit(
         self,
         strategy_id: int,
