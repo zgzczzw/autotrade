@@ -45,7 +45,20 @@ class PositionHistoryList(BaseModel):
     page_size: int
 ```
 
-item 复用现有 `PositionResponse`（已含 `closed_at`、`pnl` 等所有字段）。
+> ⚠️ 此端点的 `response_model` 必须使用 `PositionHistoryList`，不得复用现有 `PositionList`。
+> `PositionList` 只有 `items` 和 `total` 两个字段，缺少 `page` 和 `page_size`。
+
+> ⚠️ 路由声明顺序：此路由 `@router.get("/positions/history")` 必须置于现有 `@router.get("/positions")` **之前**，否则 FastAPI 会将 `history` 解析为路径参数导致冲突。
+
+> ⚠️ 导入：`PositionHistoryList` 需同时添加到 `account.py` 顶部的 `from app.schemas import ...` 导入行。
+
+item 复用现有 `PositionResponse`（已含 `closed_at`、`pnl`、`current_price` 等所有字段）。
+
+### 平仓价说明
+
+`Position` 模型没有独立的 `closed_price` 字段。平仓时 simulator 会将平仓价写入 `current_price`（参见 `execute_sell`、`execute_cover`），因此 `current_price` 兼作历史平仓价的存储字段。历史列表展示时直接读取 `current_price`，无则显示 `-`。
+
+部分平仓（`sell_size_pct < 100%`）不设置 `closed_at`，因此不会出现在历史列表中，这是预期行为。
 
 ---
 
@@ -74,29 +87,73 @@ interface Position {
   side: string;           // "long" | "short"
   entry_price: number;
   quantity: number;
-  current_price?: number;
-  pnl?: number;
-  unrealized_pnl?: number;
+  current_price?: number; // 开仓时为实时价；平仓后为平仓价
+  pnl?: number;           // 已实现盈亏（平仓后有值）
+  unrealized_pnl?: number; // 浮动盈亏（开仓时由后端计算）
   opened_at: string;
   closed_at?: string;
 }
 ```
 
-### 数据加载
+### loadPositions 函数契约
 
-Tab 首次激活时（`onValueChange` → `value === "positions" && !positionsLoaded`）并行请求：
-1. `GET /api/positions?strategy_id={id}` → 当前持仓（取 items[0]，策略同时只有一个持仓）
-2. `GET /api/positions/history?strategy_id={id}&page=1&page_size=20` → 历史记录
+```typescript
+const loadPositions = async (page = 1) => {
+  setPositionsLoading(true);
+  try {
+    if (page === 1) {
+      // 首次加载：并行请求当前持仓 + 历史第一页
+      const [openRes, historyRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/positions?strategy_id=${id}`),
+        axios.get(`${API_BASE_URL}/api/positions/history?strategy_id=${id}&page=1&page_size=20`),
+      ]);
+      setCurrentPosition(openRes.data.items?.[0] ?? null);
+      setPosHistory(historyRes.data.items || []);
+      setPosHistoryTotal(historyRes.data.total || 0);
+      setPosHistoryPage(1);
+    } else {
+      // 翻页：只重新请求历史，当前持仓不变
+      const historyRes = await axios.get(
+        `${API_BASE_URL}/api/positions/history?strategy_id=${id}&page=${page}&page_size=20`
+      );
+      setPosHistory(historyRes.data.items || []);
+      setPosHistoryTotal(historyRes.data.total || 0);
+      setPosHistoryPage(page);
+    }
+  } catch (error) {
+    console.error("Failed to load positions:", error);
+  } finally {
+    setPositionsLoading(false);
+    setPositionsLoaded(true); // 仅在 finally 中设为 true，翻页时不重置为 false
+  }
+};
+```
 
-翻页时只重新请求历史端点，不重新请求当前持仓。
+> ⚠️ `setPositionsLoaded(true)` 只在 `finally` 中调用，永远不重置为 `false`。
+> 这保证翻页时不会触发空状态闪现。
+
+### onValueChange 扩展方式
+
+在现有 `<Tabs onValueChange={...}>` 回调中**扩展** `"positions"` 分支，不替换现有 `"triggers"` 分支：
+
+```typescript
+onValueChange={(value) => {
+  if (value === "triggers" && !triggersLoaded) {
+    loadTriggers(1);
+  }
+  if (value === "positions" && !positionsLoaded) {
+    loadPositions(1);
+  }
+}}
+```
 
 ### Tab 布局
 
 **当前持仓区块**
 
-| 有持仓 | 无持仓 |
-|--------|--------|
-| 展示卡片：方向 badge（多仓绿 / 空仓橙）、开仓价、数量、浮动盈亏（正绿负红） | 小型空状态"当前无持仓" |
+- 有持仓：展示卡片，字段：方向 badge（多仓绿 / 空仓橙）、开仓价、数量、**浮动盈亏（`unrealized_pnl`，正绿负红）**
+  - 注意：当前持仓使用 `unrealized_pnl`（后端动态计算），不使用 `pnl`（平仓后才有值）
+- 无持仓：小型空状态"当前无持仓"
 
 **历史持仓区块**
 
@@ -118,9 +175,9 @@ Tab 首次激活时（`onValueChange` → `value === "positions" && !positionsLo
 
 ### 加载态
 
-- Tab 首次激活前：不渲染任何内容（`positionsLoaded` 守卫，防止空状态闪现）
-- 首次加载中：显示"加载中..."
-- 翻页时：历史表格 + 分页控件保持可见（`opacity-60`），同触发历史 tab 处理方式
+- Tab 首次激活前：不渲染任何内容（`!positionsLoaded && !positionsLoading` 返回 `null`，防止空状态闪现）
+- 首次加载中（`!positionsLoaded && positionsLoading`）：显示"加载中..."
+- 翻页时（`positionsLoaded && positionsLoading`）：历史表格 + 分页控件保持可见（`opacity-60`），同触发历史 tab 处理方式
 
 ---
 
