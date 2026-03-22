@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchSettings, updateSettings, testConnection } from "@/lib/api";
-import { CheckCircle, XCircle, Loader2, FlaskConical } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { fetchSettings, updateSettings, testConnection, authLogout } from "@/lib/api";
+import { CheckCircle, XCircle, Loader2, FlaskConical, Bell, LogOut } from "lucide-react";
 
 type DataSource = "binance" | "cryptocompare" | "mock";
 
@@ -22,6 +24,7 @@ const DATA_SOURCE_LABELS: Record<DataSource, { label: string; desc: string }> = 
 };
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [dataSource, setDataSource] = useState<DataSource>("binance");
   const [apiKey, setApiKey] = useState("");
   const [loading, setLoading] = useState(true);
@@ -184,7 +187,7 @@ export default function SettingsPage() {
       </div>
 
       {/* 保存按钮 */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 mb-8">
         <button
           onClick={handleSave}
           disabled={saving}
@@ -209,6 +212,29 @@ export default function SettingsPage() {
           </span>
         )}
       </div>
+
+      {/* 账号 */}
+      <section className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider px-6 py-4 border-b border-slate-800">
+          账号
+        </h2>
+        <Link
+          href="/notifications"
+          className="flex items-center gap-3 px-6 py-4 text-slate-200 hover:bg-slate-800 transition-colors border-b border-slate-800"
+        >
+          <Bell className="w-4 h-4 text-slate-400" />
+          <span>消息通知</span>
+        </Link>
+        <button
+          onClick={async () => {
+            try { await authLogout(); } finally { router.push("/login"); }
+          }}
+          className="flex items-center gap-3 px-6 py-4 w-full text-left text-red-400 hover:bg-slate-800 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>退出登录</span>
+        </button>
+      </section>
     </div>
   );
 }

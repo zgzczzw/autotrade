@@ -15,6 +15,10 @@ const navItems = [
   { icon: Settings, label: "设置", href: "/settings" },
 ];
 
+const mobileNavItems = navItems.filter(
+  (item) => item.href !== "/notifications"
+);
+
 interface SidebarProps {
   username?: string | null;
 }
@@ -86,7 +90,7 @@ export function Sidebar({ username }: SidebarProps) {
       {/* 移动端底部导航栏 */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 pb-[env(safe-area-inset-bottom)]">
         <ul className="flex items-center justify-around">
-          {navItems.map((item) => (
+          {mobileNavItems.map((item) => (
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
@@ -101,15 +105,6 @@ export function Sidebar({ username }: SidebarProps) {
               </Link>
             </li>
           ))}
-          <li className="flex-1">
-            <button
-              onClick={handleLogout}
-              className="flex flex-col items-center gap-1 py-2 w-full text-slate-500 hover:text-red-400 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-[10px]">退出</span>
-            </button>
-          </li>
         </ul>
       </nav>
     </>
