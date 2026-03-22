@@ -10,10 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.database import get_db
+from app.deps import get_current_user
 from app.engine.scheduler import scheduler
 from app.engine.sandbox import validate_code
 from app.logger import get_logger
-from app.models import Strategy
+from app.models import Strategy, User
 from app.schemas import (
     CodeValidationRequest,
     CodeValidationResponse,
@@ -34,9 +35,10 @@ async def list_strategies(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """获取策略列表"""
-    query = select(Strategy)
+    query = select(Strategy).where(Strategy.user_id == current_user.id)
 
     if status:
         query = query.where(Strategy.status == status)
@@ -64,6 +66,7 @@ async def list_strategies(
 async def create_strategy(
     data: StrategyCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """创建新策略"""
     # 验证配置
@@ -88,6 +91,7 @@ async def create_strategy(
             )
 
     strategy = Strategy(**data.model_dump())
+    strategy.user_id = current_user.id
     db.add(strategy)
     await db.commit()
     await db.refresh(strategy)
@@ -100,12 +104,13 @@ async def create_strategy(
 async def get_strategy(
     strategy_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """获取策略详情"""
     result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
     strategy = result.scalar_one_or_none()
 
-    if not strategy:
+    if not strategy or strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",
@@ -136,12 +141,13 @@ async def update_strategy(
     strategy_id: int,
     data: StrategyUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """更新策略（仅 stopped 状态可编辑）"""
     result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
     strategy = result.scalar_one_or_none()
 
-    if not strategy:
+    if not strategy or strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",
@@ -178,12 +184,13 @@ async def update_strategy(
 async def delete_strategy(
     strategy_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """删除策略（同时清理关联数据）"""
     result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
     strategy = result.scalar_one_or_none()
 
-    if not strategy:
+    if not strategy or strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",
@@ -204,12 +211,13 @@ async def delete_strategy(
 async def start_strategy(
     strategy_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """启动策略"""
     result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
     strategy = result.scalar_one_or_none()
 
-    if not strategy:
+    if not strategy or strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",
@@ -243,12 +251,13 @@ async def start_strategy(
 async def stop_strategy(
     strategy_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """停止策略"""
     result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
     strategy = result.scalar_one_or_none()
 
-    if not strategy:
+    if not strategy or strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",

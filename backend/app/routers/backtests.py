@@ -11,9 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.database import get_db
+from app.deps import get_current_user
 from app.engine.backtester import backtest_engine, get_backtest_engine
 from app.logger import get_logger
-from app.models import BacktestResult, Strategy
+from app.models import BacktestResult, Strategy, User
 from app.schemas import BacktestCreate, BacktestList, BacktestResponse, MessageResponse
 
 logger = get_logger(__name__)
@@ -32,6 +33,7 @@ async def create_backtest(
     strategy_id: int,
     data: BacktestCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     发起策略回测
@@ -45,6 +47,12 @@ async def create_backtest(
     strategy = result.scalar_one_or_none()
 
     if not strategy:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="策略不存在",
+        )
+
+    if strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",
@@ -77,6 +85,7 @@ async def create_backtest(
         )
 
         # 保存结果
+        backtest_result.user_id = current_user.id
         db.add(backtest_result)
         await db.commit()
         await db.refresh(backtest_result)
@@ -105,6 +114,7 @@ async def create_backtest(
 async def get_backtest(
     backtest_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """获取回测结果详情"""
     result = await db.execute(
@@ -112,7 +122,7 @@ async def get_backtest(
     )
     backtest = result.scalar_one_or_none()
 
-    if not backtest:
+    if not backtest or backtest.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="回测结果不存在",
@@ -127,20 +137,25 @@ async def list_strategy_backtests(
     page: int = 1,
     page_size: int = 20,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """获取某策略的所有回测记录"""
-    # 检查策略是否存在
+    # 检查策略是否存在并验证归属
     strategy_result = await db.execute(
         select(Strategy).where(Strategy.id == strategy_id)
     )
-    if not strategy_result.scalar_one_or_none():
+    strategy = strategy_result.scalar_one_or_none()
+    if not strategy or strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",
         )
 
     # 查询回测记录
-    query = select(BacktestResult).where(BacktestResult.strategy_id == strategy_id)
+    query = select(BacktestResult).where(
+        BacktestResult.strategy_id == strategy_id,
+        BacktestResult.user_id == current_user.id,
+    )
 
     # 总数
     count_result = await db.execute(select(func.count()).select_from(query.subquery()))
@@ -165,6 +180,7 @@ async def list_strategy_backtests(
 async def delete_backtest(
     backtest_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """删除回测结果"""
     result = await db.execute(
@@ -172,7 +188,7 @@ async def delete_backtest(
     )
     backtest = result.scalar_one_or_none()
 
-    if not backtest:
+    if not backtest or backtest.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="回测结果不存在",
@@ -189,10 +205,11 @@ async def delete_backtest(
 async def cancel_backtest(
     strategy_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     取消正在运行的回测
-    
+
     - 如果该策略有回测正在运行，将发送取消信号
     - 回测将在下一次检查点时停止
     """
@@ -200,7 +217,7 @@ async def cancel_backtest(
     result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
     strategy = result.scalar_one_or_none()
 
-    if not strategy:
+    if not strategy or strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",
@@ -224,10 +241,11 @@ async def cancel_backtest(
 async def get_backtest_status(
     strategy_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     获取策略的回测状态
-    
+
     Returns:
         - running: 是否正在运行回测
     """
@@ -235,7 +253,7 @@ async def get_backtest_status(
     result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
     strategy = result.scalar_one_or_none()
 
-    if not strategy:
+    if not strategy or strategy.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="策略不存在",
