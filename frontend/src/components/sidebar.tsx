@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Bot, History, BarChart2, Settings } from "lucide-react";
+import { LayoutDashboard, Bot, History, BarChart2, Settings, LogOut, User } from "lucide-react";
+import { authLogout } from "@/lib/api";
 
 const navItems = [
   { icon: LayoutDashboard, label: "仪表盘", href: "/" },
@@ -12,11 +14,24 @@ const navItems = [
   { icon: Settings, label: "设置", href: "/settings" },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  username?: string | null;
+}
+
+export function Sidebar({ username }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname?.startsWith(`${href}/`);
+
+  async function handleLogout() {
+    try {
+      await authLogout();
+    } finally {
+      router.push("/login");
+    }
+  }
 
   return (
     <>
@@ -50,8 +65,20 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <p className="text-xs text-slate-500 text-center">AutoTrade v0.1.0</p>
+        <div className="p-4 border-t border-slate-800 space-y-2">
+          {username && (
+            <div className="flex items-center gap-2 px-2 py-1 text-slate-400">
+              <User className="w-4 h-4" />
+              <span className="text-sm truncate">{username}</span>
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 w-full px-2 py-1 text-slate-400 hover:text-red-400 transition-colors text-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            退出登录
+          </button>
         </div>
       </aside>
 
@@ -73,6 +100,15 @@ export function Sidebar() {
               </Link>
             </li>
           ))}
+          <li className="flex-1">
+            <button
+              onClick={handleLogout}
+              className="flex flex-col items-center gap-1 py-2 w-full text-slate-500 hover:text-red-400 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-[10px]">退出</span>
+            </button>
+          </li>
         </ul>
       </nav>
     </>
