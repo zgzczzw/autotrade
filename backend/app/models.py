@@ -15,28 +15,47 @@ class Base(DeclarativeBase):
     pass
 
 
+class User(Base):
+    """用户模型"""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), nullable=False, unique=True)
+    password_hash = Column(String, nullable=False)
+    is_admin = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
+    # 关系
+    strategies = relationship("Strategy", back_populates="user", cascade="all, delete-orphan")
+    positions = relationship("Position", back_populates="user", cascade="all, delete-orphan")
+    sim_accounts = relationship("SimAccount", back_populates="user", cascade="all, delete-orphan")
+    backtest_results = relationship("BacktestResult", back_populates="user", cascade="all, delete-orphan")
+
+
 class Strategy(Base):
     """策略模型"""
     __tablename__ = "strategies"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable during migration
     name = Column(String, nullable=False)
     type = Column(String, nullable=False)  # visual / code
-    config_json = Column(Text, nullable=True)  # 可视化配置 JSON 字符串
-    code = Column(Text, nullable=True)  # 代码策略源码
-    symbol = Column(String, nullable=False)  # e.g. BTCUSDT
-    timeframe = Column(String, nullable=False)  # 1m/5m/1h/1d
+    config_json = Column(Text, nullable=True)
+    code = Column(Text, nullable=True)
+    symbol = Column(String, nullable=False)
+    timeframe = Column(String, nullable=False)
     position_size = Column(Float, nullable=False, default=100.0)
-    position_size_type = Column(String, nullable=False, default="fixed")  # fixed / percent
-    stop_loss = Column(Float, nullable=True)  # 止损百分比
-    take_profit = Column(Float, nullable=True)  # 止盈百分比
-    sell_size_pct = Column(Float, nullable=False, default=100.0)  # 每次卖出仓位比例 (1-100)
+    position_size_type = Column(String, nullable=False, default="fixed")
+    stop_loss = Column(Float, nullable=True)
+    take_profit = Column(Float, nullable=True)
+    sell_size_pct = Column(Float, nullable=False, default=100.0)
     notify_enabled = Column(Boolean, nullable=False, default=True)
-    status = Column(String, nullable=False, default="stopped")  # running/stopped/error
+    status = Column(String, nullable=False, default="stopped")
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
 
     # 关系
+    user = relationship("User", back_populates="strategies")
     trigger_logs = relationship("TriggerLog", back_populates="strategy", cascade="all, delete-orphan")
     positions = relationship("Position", back_populates="strategy", cascade="all, delete-orphan")
     backtest_results = relationship("BacktestResult", back_populates="strategy", cascade="all, delete-orphan")
@@ -49,12 +68,12 @@ class TriggerLog(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=False)
     triggered_at = Column(DateTime, nullable=False, server_default=func.now())
-    signal_type = Column(String, nullable=False)  # buy / sell / error
-    signal_detail = Column(Text, nullable=True)  # 信号详情
-    action = Column(String, nullable=True)  # buy / sell / hold (实际执行)
+    signal_type = Column(String, nullable=False)
+    signal_detail = Column(Text, nullable=True)
+    action = Column(String, nullable=True)
     price = Column(Float, nullable=True)
     quantity = Column(Float, nullable=True)
-    simulated_pnl = Column(Float, nullable=True)  # 模拟盈亏
+    simulated_pnl = Column(Float, nullable=True)
 
     # 关系
     strategy = relationship("Strategy", back_populates="trigger_logs")
@@ -66,17 +85,19 @@ class Position(Base):
     __tablename__ = "positions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable during migration
     strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=False)
     symbol = Column(String, nullable=False)
-    side = Column(String, nullable=False)  # long / short
+    side = Column(String, nullable=False)
     entry_price = Column(Float, nullable=False)
     quantity = Column(Float, nullable=False)
-    current_price = Column(Float, nullable=True)  # 当前价格（平仓时写入）
-    pnl = Column(Float, nullable=True)  # 已实现盈亏
+    current_price = Column(Float, nullable=True)
+    pnl = Column(Float, nullable=True)
     opened_at = Column(DateTime, nullable=False, server_default=func.now())
     closed_at = Column(DateTime, nullable=True)
 
     # 关系
+    user = relationship("User", back_populates="positions")
     strategy = relationship("Strategy", back_populates="positions")
 
 
@@ -86,8 +107,8 @@ class NotificationLog(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     trigger_log_id = Column(Integer, ForeignKey("trigger_logs.id"), nullable=False)
-    channel = Column(String, nullable=False, default="feishu")  # feishu
-    status = Column(String, nullable=False)  # sent / failed
+    channel = Column(String, nullable=False, default="feishu")
+    status = Column(String, nullable=False)
     error_message = Column(Text, nullable=True)
     sent_at = Column(DateTime, nullable=False, server_default=func.now())
 
@@ -100,10 +121,14 @@ class SimAccount(Base):
     __tablename__ = "sim_accounts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable during migration
     initial_balance = Column(Float, nullable=False, default=100000.0)
     balance = Column(Float, nullable=False, default=100000.0)
     total_pnl = Column(Float, nullable=False, default=0.0)
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+    # 关系
+    user = relationship("User", back_populates="sim_accounts")
 
 
 class KlineData(Base):
@@ -112,7 +137,7 @@ class KlineData(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     symbol = Column(String, nullable=False)
-    timeframe = Column(String, nullable=False)  # 1m/5m/1h/1d
+    timeframe = Column(String, nullable=False)
     open_time = Column(DateTime, nullable=False)
     open = Column(Float, nullable=False)
     high = Column(Float, nullable=False)
@@ -120,7 +145,6 @@ class KlineData(Base):
     close = Column(Float, nullable=False)
     volume = Column(Float, nullable=False)
 
-    # 联合唯一索引
     __table_args__ = (
         UniqueConstraint('symbol', 'timeframe', 'open_time', name='uix_kline'),
     )
@@ -140,6 +164,7 @@ class BacktestResult(Base):
     __tablename__ = "backtest_results"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable during migration
     strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=False)
     symbol = Column(String, nullable=False)
     timeframe = Column(String, nullable=False)
@@ -152,11 +177,12 @@ class BacktestResult(Base):
     win_rate = Column(Float, nullable=False)
     max_drawdown = Column(Float, nullable=False)
     total_trades = Column(Integer, nullable=False)
-    avg_hold_time = Column(Integer, nullable=True)  # 平均持仓时间（秒）
-    equity_curve = Column(Text, nullable=False)  # JSON 字符串
-    trades = Column(Text, nullable=False)  # JSON 字符串
-    klines = Column(Text, nullable=True)  # JSON 字符串，回测用的K线数据
+    avg_hold_time = Column(Integer, nullable=True)
+    equity_curve = Column(Text, nullable=False)
+    trades = Column(Text, nullable=False)
+    klines = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
     # 关系
+    user = relationship("User", back_populates="backtest_results")
     strategy = relationship("Strategy", back_populates="backtest_results")
