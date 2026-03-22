@@ -1261,6 +1261,8 @@ import {
 
 读取 `frontend/src/app/strategies/[id]/edit/page.tsx`，在 `deserializeConfig` 初始化 `visualConfig` 的位置确认 `short_conditions` / `cover_conditions` 会被正确读取（`deserializeConfig` 已在 Task 5 扩展，无需额外处理），然后在 visual tab 中插入与 Step 1 完全相同的两个 `<details>` 区块。
 
+同时，将 `edit/page.tsx` 的 `import { ..., makeEmptyConfig }` 行也加入 `makeEmptyGroup`（与 Step 1 对 `new/page.tsx` 的改法完全一致，否则 TypeScript 编译会报错）。
+
 - [ ] **Step 3: 提交**
 
 ```bash
