@@ -145,7 +145,7 @@ class StrategyContext:
         )
 
     async def cover(self, quantity: Optional[float] = None) -> Optional[TriggerLog]:
-        """平空"""
+        """平空（始终全额平仓，quantity 参数保留但未使用）"""
         klines = await self.get_klines(limit=1)
         if not klines:
             logger.error("No kline data available for cover")
