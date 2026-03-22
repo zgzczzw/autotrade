@@ -47,6 +47,10 @@ export default function TriggersPage() {
         return <Badge className="bg-green-600">买入</Badge>;
       case "sell":
         return <Badge className="bg-red-600">卖出</Badge>;
+      case "short":
+        return <Badge className="bg-orange-600">开空</Badge>;
+      case "cover":
+        return <Badge className="bg-purple-600">平空</Badge>;
       default:
         return <Badge variant="secondary">观望</Badge>;
     }
