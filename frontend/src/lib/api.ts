@@ -11,12 +11,20 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,  // send Cookie on every request
 });
 
 // 响应拦截器
 api.interceptors.response.use(
   (response: AxiosResponse) => response.data,
   (error) => {
+    const url: string = error.config?.url ?? "";
+    // Redirect to login on 401, but NOT for /auth/* paths (avoid redirect loop)
+    if (error.response?.status === 401 && !url.startsWith("/auth/")) {
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
     console.error("API Error:", error.response?.data || error.message);
     return Promise.reject(error);
   }
@@ -93,3 +101,15 @@ export const resetAccount = () => apiCall(api.post("/account/reset"));
 
 export const fetchPositions = (params?: { strategy_id?: number }) =>
   apiCall(api.get("/positions", { params }));
+
+// ==================== 认证 ====================
+
+export const authMe = () => apiCall<{ user: any | null }>(api.get("/auth/me"));
+
+export const authLogin = (data: { username: string; password: string }) =>
+  apiCall<{ user: any }>(api.post("/auth/login", data));
+
+export const authRegister = (data: { username: string; password: string }) =>
+  apiCall<{ user: any }>(api.post("/auth/register", data));
+
+export const authLogout = () => apiCall(api.post("/auth/logout"));
