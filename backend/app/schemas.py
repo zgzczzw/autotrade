@@ -131,6 +131,14 @@ class PositionList(BaseModel):
     total: int
 
 
+class PositionHistoryList(BaseModel):
+    """历史持仓列表响应（含分页信息）"""
+    items: List[PositionResponse]
+    total: int
+    page: int
+    page_size: int
+
+
 # ==================== 账户相关 ====================
 
 class AccountResponse(BaseModel):

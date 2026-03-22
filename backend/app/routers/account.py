@@ -6,7 +6,7 @@ import os
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -15,7 +15,7 @@ from app.deps import get_current_user
 from app.engine.scheduler import scheduler
 from app.logger import get_logger
 from app.models import Position, SimAccount, User
-from app.schemas import AccountResponse, MessageResponse, PositionList, PositionResponse
+from app.schemas import AccountResponse, MessageResponse, PositionHistoryList, PositionList, PositionResponse
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["账户"])
@@ -93,6 +93,44 @@ async def reset_account(
     await db.commit()
     logger.info(f"模拟账户已重置 (user_id={current_user.id})")
     return MessageResponse(message="模拟账户已重置")
+
+
+@router.get("/positions/history", response_model=PositionHistoryList)
+async def list_position_history(
+    strategy_id: Optional[int] = Query(None, description="筛选特定策略"),
+    page: int = Query(1, ge=1, description="页码（从 1 开始）"),
+    page_size: int = Query(20, ge=1, le=100, description="每页条数"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取当前用户的历史平仓记录（已平仓持仓，分页）"""
+    base_query = select(Position).where(
+        Position.user_id == current_user.id,
+        Position.closed_at.isnot(None),
+    )
+
+    if strategy_id:
+        base_query = base_query.where(Position.strategy_id == strategy_id)
+
+    # 总数
+    count_result = await db.execute(
+        select(func.count()).select_from(base_query.subquery())
+    )
+    total = count_result.scalar_one()
+
+    # 分页查询
+    query = base_query.order_by(Position.closed_at.desc())
+    query = query.offset((page - 1) * page_size).limit(page_size)
+
+    result = await db.execute(query)
+    items = result.scalars().all()
+
+    return PositionHistoryList(
+        items=[PositionResponse.model_validate(item) for item in items],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get("/positions", response_model=PositionList)
