@@ -18,7 +18,7 @@ from app.engine.market_data import market_data_service
 from app.engine.sandbox import sandbox_executor
 from app.logger import get_logger
 from app.models import Position, Strategy, TriggerLog
-from app.services.feishu import check_webhook_configured, notification_service
+from app.services.feishu import notification_service
 from app.services.simulator import simulator
 
 
@@ -222,17 +222,14 @@ class StrategyExecutor:
         strategy: Strategy,
         db: AsyncSession,
     ):
-        """发送通知"""
-        if not check_webhook_configured():
-            logger.warning("Feishu webhook not configured, skipping notification")
-            return
-
+        """发送通知（Feishu + Bark，各自独立判断）"""
         try:
             await notification_service.send_strategy_notification(
                 trigger_log=trigger,
                 strategy_name=strategy.name,
                 symbol=strategy.symbol,
                 db=db,
+                user_id=getattr(strategy, "user_id", None),
             )
         except Exception as e:
             logger.error(f"Failed to send notification: {e}")
