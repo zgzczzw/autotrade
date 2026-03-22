@@ -8,9 +8,11 @@ from typing import Optional
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from app.logger import get_logger
-from app.models import NotificationLog, TriggerLog
+from app.models import NotificationLog, TriggerLog, UserSetting
+from app.services.bark import bark_client
 
 logger = get_logger(__name__)
 
@@ -162,46 +164,87 @@ class NotificationService:
         strategy_name: str,
         symbol: str,
         db: AsyncSession,
-    ) -> NotificationLog:
+        user_id: Optional[int] = None,
+    ) -> None:
         """
-        发送策略通知
+        发送策略通知（飞书 + Bark，各自独立判断是否发送）
 
         Args:
             trigger_log: 触发记录
             strategy_name: 策略名称
             symbol: 交易对
             db: 数据库会话
-
-        Returns:
-            NotificationLog 记录
+            user_id: 策略所属用户 ID（用于查询 Bark 配置）
         """
-        # 发送飞书通知
-        success, error_msg = await self.feishu.send_trade_signal(
-            strategy_name=strategy_name,
-            signal_type=trigger_log.signal_type,
-            signal_detail=trigger_log.signal_detail or "",
-            action=trigger_log.action or "hold",
-            symbol=symbol,
-            price=trigger_log.price,
-            pnl=trigger_log.simulated_pnl,
-        )
+        # ── Feishu ──
+        if self.feishu.webhook_url:
+            success, error_msg = await self.feishu.send_trade_signal(
+                strategy_name=strategy_name,
+                signal_type=trigger_log.signal_type,
+                signal_detail=trigger_log.signal_detail or "",
+                action=trigger_log.action or "hold",
+                symbol=symbol,
+                price=trigger_log.price,
+                pnl=trigger_log.simulated_pnl,
+            )
+            notification = NotificationLog(
+                trigger_log_id=trigger_log.id,
+                channel="feishu",
+                status="sent" if success else "failed",
+                error_message=error_msg,
+            )
+            db.add(notification)
+            if success:
+                logger.info(f"Feishu notification sent for trigger {trigger_log.id}")
+            else:
+                logger.error(f"Feishu notification failed: {error_msg}")
 
-        # 记录通知日志
-        notification = NotificationLog(
-            trigger_log_id=trigger_log.id,
-            channel="feishu",
-            status="sent" if success else "failed",
-            error_message=error_msg,
-        )
-        db.add(notification)
+        # ── Bark ──
+        if user_id is not None:
+            bark_key, bark_enabled = await self._get_bark_config(db, user_id)
+            if bark_enabled and bark_key:
+                action_map = {"buy": "买入", "sell": "卖出", "hold": "观望"}
+                action_text = action_map.get(trigger_log.action or "hold", trigger_log.action or "hold")
+                price_text = f"{trigger_log.price:.2f}" if trigger_log.price else "-"
+                title = f"AutoTrade: {strategy_name}"
+                body = f"{action_text} {symbol} @ {price_text} USDT"
+                if trigger_log.simulated_pnl is not None:
+                    pnl_sign = "+" if trigger_log.simulated_pnl >= 0 else ""
+                    body += f"  盈亏: {pnl_sign}{trigger_log.simulated_pnl:.2f}"
+
+                success, error_msg = await bark_client.send(
+                    key=bark_key,
+                    title=title,
+                    body=body,
+                )
+                bark_log = NotificationLog(
+                    trigger_log_id=trigger_log.id,
+                    channel="bark",
+                    status="sent" if success else "failed",
+                    error_message=error_msg,
+                )
+                db.add(bark_log)
+                if success:
+                    logger.info(f"Bark notification sent for trigger {trigger_log.id}")
+                else:
+                    logger.error(f"Bark notification failed: {error_msg}")
+
         await db.commit()
 
-        if success:
-            logger.info(f"Notification sent for trigger {trigger_log.id}")
-        else:
-            logger.error(f"Failed to send notification: {error_msg}")
-
-        return notification
+    async def _get_bark_config(
+        self, db: AsyncSession, user_id: int
+    ) -> tuple[Optional[str], bool]:
+        """读取用户的 Bark 配置，返回 (bark_key, bark_enabled)"""
+        result = await db.execute(
+            select(UserSetting).where(
+                UserSetting.user_id == user_id,
+                UserSetting.key.in_(["bark_key", "bark_enabled"]),
+            )
+        )
+        rows = {row.key: row.value for row in result.scalars().all()}
+        bark_key = rows.get("bark_key") or None
+        bark_enabled = rows.get("bark_enabled", "false").lower() == "true"
+        return bark_key, bark_enabled
 
     async def close(self):
         """关闭服务"""
