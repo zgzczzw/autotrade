@@ -266,3 +266,17 @@ class AuthResponse(BaseModel):
 class MeResponse(BaseModel):
     """当前用户响应（未登录时 user 为 null）"""
     user: Optional[UserResponse] = None
+
+
+# ==================== 通知设置 ====================
+
+class NotificationSettingsResponse(BaseModel):
+    """通知设置响应"""
+    bark_key: Optional[str] = None
+    bark_enabled: bool = False
+
+
+class NotificationSettingsUpdate(BaseModel):
+    """通知设置更新请求"""
+    bark_key: Optional[str] = None
+    bark_enabled: Optional[bool] = None
