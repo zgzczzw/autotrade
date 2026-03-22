@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchSettings, updateSettings, testConnection, authLogout } from "@/lib/api";
+import { setTimezone } from "@/lib/utils";
 import { CheckCircle, XCircle, Loader2, FlaskConical, Bell, LogOut } from "lucide-react";
 
 type DataSource = "binance" | "cryptocompare" | "mock";
@@ -27,6 +28,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const [dataSource, setDataSource] = useState<DataSource>("binance");
   const [apiKey, setApiKey] = useState("");
+  const [timezone, setTimezoneState] = useState("Asia/Shanghai");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -38,6 +40,9 @@ export default function SettingsPage() {
       .then((data: any) => {
         setDataSource(data.data_source as DataSource);
         setApiKey(data.cryptocompare_api_key || "");
+        const tz = data.timezone || "Asia/Shanghai";
+        setTimezoneState(tz);
+        setTimezone(tz);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -49,8 +54,10 @@ export default function SettingsPage() {
       await updateSettings({
         data_source: dataSource,
         cryptocompare_api_key: apiKey,
+        timezone,
       });
-      setSaveMsg({ ok: true, text: "保存成功，数据源已切换" });
+      setTimezone(timezone);
+      setSaveMsg({ ok: true, text: "保存成功" });
     } catch {
       setSaveMsg({ ok: false, text: "保存失败，请重试" });
     } finally {
@@ -154,6 +161,30 @@ export default function SettingsPage() {
           />
         </section>
       )}
+
+      {/* 时区设置 */}
+      <section className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
+        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
+          时区
+        </h2>
+        <select
+          value={timezone}
+          onChange={(e) => setTimezoneState(e.target.value)}
+          className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 text-sm"
+        >
+          <option value="Asia/Shanghai">UTC+8 中国标准时间（北京/上海）</option>
+          <option value="Asia/Tokyo">UTC+9 日本标准时间（东京）</option>
+          <option value="Asia/Seoul">UTC+9 韩国标准时间（首尔）</option>
+          <option value="Asia/Singapore">UTC+8 新加坡标准时间</option>
+          <option value="Asia/Hong_Kong">UTC+8 香港时间</option>
+          <option value="Europe/London">UTC+0/+1 英国时间（伦敦）</option>
+          <option value="Europe/Berlin">UTC+1/+2 中欧时间（柏林）</option>
+          <option value="America/New_York">UTC-5/-4 美东时间（纽约）</option>
+          <option value="America/Chicago">UTC-6/-5 美中时间（芝加哥）</option>
+          <option value="America/Los_Angeles">UTC-8/-7 美西时间（洛杉矶）</option>
+          <option value="UTC">UTC+0 协调世界时</option>
+        </select>
+      </section>
 
       {/* 测试连接 */}
       <div className="flex items-center gap-4 mb-6">

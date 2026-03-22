@@ -58,6 +58,7 @@ export const fetchSettings = () => apiCall(api.get("/settings"));
 export const updateSettings = (data: {
   data_source: string;
   cryptocompare_api_key?: string;
+  timezone?: string;
 }) => apiCall(api.put("/settings", data));
 
 export const testConnection = (data: {

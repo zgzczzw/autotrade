@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatDateTime } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Activity, Zap } from "lucide-react";
 import axios from "axios";
 
@@ -93,7 +93,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="font-medium">{trigger.strategy_name || `策略 #${trigger.strategy_id}`}</p>
                     <p className="text-sm text-slate-400">
-                      {new Date(trigger.triggered_at).toLocaleString()}
+                      {formatDateTime(trigger.triggered_at)}
                     </p>
                   </div>
                   <div className="text-right">

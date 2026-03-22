@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BacktestPanel } from "@/components/backtest-panel";
-import { formatPrice, formatSymbol } from "@/lib/utils";
+import { formatPrice, formatSymbol, formatDateTime } from "@/lib/utils";
 import { ArrowLeft, ChevronLeft, ChevronRight, History, Pencil, Play, Square } from "lucide-react";
 import axios from "axios";
 import {
@@ -289,11 +289,11 @@ export default function StrategyDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">创建时间</span>
-                  <span>{new Date(strategy.created_at).toLocaleString()}</span>
+                  <span>{formatDateTime(strategy.created_at)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">更新时间</span>
-                  <span>{new Date(strategy.updated_at).toLocaleString()}</span>
+                  <span>{formatDateTime(strategy.updated_at)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -335,7 +335,7 @@ export default function StrategyDetailPage() {
                         {triggers.map((trigger) => (
                           <tr key={trigger.id} className="border-b border-slate-800 last:border-0">
                             <td className="p-4 whitespace-nowrap">
-                              {new Date(trigger.triggered_at).toLocaleString()}
+                              {formatDateTime(trigger.triggered_at)}
                             </td>
                             <td className="p-4">{getActionBadge(trigger.action)}</td>
                             <td className="p-4">

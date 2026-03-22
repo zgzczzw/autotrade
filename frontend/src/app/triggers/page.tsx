@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatDateTime } from "@/lib/utils";
 import { History } from "lucide-react";
 import axios from "axios";
 
@@ -92,7 +92,7 @@ export default function TriggersPage() {
                   {triggers.map((trigger) => (
                     <tr key={trigger.id} className="border-b border-slate-800 last:border-0">
                       <td className="p-4">
-                        {new Date(trigger.triggered_at).toLocaleString()}
+                        {formatDateTime(trigger.triggered_at)}
                       </td>
                       <td className="p-4">
                         {trigger.strategy_name || `策略 #${trigger.strategy_id}`}

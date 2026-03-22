@@ -202,12 +202,14 @@ class SettingsResponse(BaseModel):
     """系统设置响应"""
     data_source: str  # binance | cryptocompare | mock
     cryptocompare_api_key: str = ""
+    timezone: str = "Asia/Shanghai"
 
 
 class SettingsUpdate(BaseModel):
     """系统设置更新请求"""
     data_source: str = Field(..., pattern="^(binance|cryptocompare|mock)$")
     cryptocompare_api_key: Optional[str] = None
+    timezone: Optional[str] = None
 
 
 class TestConnectionRequest(BaseModel):
