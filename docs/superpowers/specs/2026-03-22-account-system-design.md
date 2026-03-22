@@ -37,7 +37,12 @@ CREATE TABLE users (
 - `sim_accounts`
 - `backtest_results`
 
-`trigger_logs` 和 `notification_logs` **不加** `user_id`，通过 JOIN `strategies` 实现隔离（`trigger_logs.strategy_id → strategies.user_id`）。所有查询需通过 JOIN 验证归属，避免冗余列带来的数据不一致风险。
+`trigger_logs` 和 `notification_logs` **不加** `user_id`，通过 JOIN 实现隔离：
+
+- `trigger_logs`：`trigger_logs.strategy_id → strategies.user_id`
+- `notification_logs`：`notification_logs.trigger_log_id → trigger_logs.strategy_id → strategies.user_id`
+
+所有涉及这两张表的查询需通过 JOIN 验证归属，避免冗余列带来的数据不一致风险。
 
 ### 全局共享模型（不加 user_id）
 
@@ -46,12 +51,14 @@ CREATE TABLE users (
 
 ### 数据迁移策略
 
-1. Alembic migration：新增 `users` 表
-2. Alembic migration：给 `strategies`、`positions`、`sim_accounts`、`backtest_results` 加 `user_id`（先允许 NULL）
-3. 迁移脚本：自动创建第一个 admin 用户（用户名 `admin`，密码从环境变量 `ADMIN_PASSWORD` 读取，默认 `changeme`）
-4. 将所有现有数据的 `user_id` 设为 admin 的 id
-5. 将 `user_id` 列改为 NOT NULL
-6. 更新 `init_db()`：停止自动 seed 全局 `SimAccount`，改为在用户注册时为每个用户创建独立的 `SimAccount`
+**步骤顺序严格，代码变更与迁移必须同步部署：**
+
+1. **代码变更（先于迁移部署）：** 更新 `init_db()` 停止自动 seed 全局 `SimAccount`（否则迁移运行时可能产生无 `user_id` 的孤立行，导致步骤 5 的 NOT NULL 约束失败）
+2. Alembic migration：新增 `users` 表
+3. Alembic migration：给 `strategies`、`positions`、`sim_accounts`、`backtest_results` 加 `user_id`（先允许 NULL）
+4. 迁移数据脚本：自动创建第一个 admin 用户（用户名 `admin`，密码从环境变量 `ADMIN_PASSWORD` 读取，默认 `changeme`）；将所有现有数据的 `user_id` 设为 admin 的 id
+5. Alembic migration：将 `user_id` 列改为 NOT NULL
+6. 注册流程更新：在 `POST /api/auth/register` 中为新用户自动创建 `SimAccount`
 
 ### SimAccount 生命周期
 
@@ -85,6 +92,7 @@ async def lifespan(app: FastAPI):
 - Cookie 名：`session`
 - Cookie 属性：`HttpOnly=True`，`SameSite=Lax`，`Max-Age=604800`（7 天）
 - `Secure=True`（生产环境）；本地开发通过 `ENV=development` 环境变量禁用
+- **实现方式：** 在 `lifespan` 启动时读取 `ENV`，计算 `COOKIE_SECURE = (os.environ.get("ENV") != "development")`，存入 `app.state.cookie_secure`。`login` 和 `register` handler 统一从 `request.app.state.cookie_secure` 读取，不在各路由中重复判断。
 - 内容：签名后的 `user_id`
 
 ### 新增路由：`/api/auth/`
@@ -94,7 +102,7 @@ async def lifespan(app: FastAPI):
 | POST | `/api/auth/register` | `{username, password}` | 用户信息 + Set-Cookie | 注册并自动登录，同时创建 SimAccount |
 | POST | `/api/auth/login` | `{username, password}` | 用户信息 + Set-Cookie | 登录 |
 | POST | `/api/auth/logout` | — | 200 + 清除 Cookie | 退出 |
-| GET  | `/api/auth/me` | — | 用户信息 | 获取当前用户，无需认证也不触发 401 跳转 |
+| GET  | `/api/auth/me` | — | 用户信息 或 `{"user": null}` | 已登录返回用户信息（200），未登录返回 `{"user": null}`（200，不返回 401）|
 
 **注册开放性：** 注册端点当前无访问控制，任何能访问服务器的人均可注册。这是已知的权衡，适用于内部/可信网络环境。生产部署建议在反向代理（nginx/Caddy）层限制访问来源，或在未来版本中通过 `ALLOW_REGISTRATION` 环境变量控制开关。
 
@@ -107,7 +115,9 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=401, detail="未登录")
     try:
         user_id = request.app.state.serializer.loads(session_cookie, max_age=604800)
-    except Exception:
+    except itsdangerous.BadData:
+        # 仅捕获签名/过期相关异常（BadSignature、SignatureExpired 的父类）
+        # 其他异常（如 AttributeError）应向上传播为 500
         raise HTTPException(status_code=401, detail="Session 无效或已过期")
     user = await db.get(User, user_id)
     if not user:
@@ -128,11 +138,23 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
 `POST /api/account/reset`（当前无 WHERE 子句，会删除全表数据）必须改为：
 
 ```sql
+-- 1. 停止当前用户所有运行中的策略（通知 scheduler 取消任务）
+-- 2. 删除历史数据
 DELETE FROM positions WHERE user_id = current_user.id;
 DELETE FROM trigger_logs WHERE strategy_id IN (
     SELECT id FROM strategies WHERE user_id = current_user.id
 );
+DELETE FROM notification_logs WHERE trigger_log_id IN (
+    SELECT tl.id FROM trigger_logs tl
+    JOIN strategies s ON tl.strategy_id = s.id
+    WHERE s.user_id = current_user.id
+);
+-- 3. 重置 sim_accounts 余额至初始值（从 SystemSetting 或默认值读取）
+UPDATE sim_accounts SET balance = 100000, total_pnl = 0
+WHERE user_id = current_user.id;
 ```
+
+**调度器交互：** reset 前必须先调用 `scheduler.stop_user_strategies(user_id)` 停止该用户所有运行中的策略，flush 其内存中的 `StrategyContext`，再执行 DB 清理。策略状态重置为 `stopped`。
 
 ### 调度器多用户适配
 
