@@ -221,12 +221,12 @@ class SandboxExecutor:
             data: 传给 on_tick 的数据字典
 
         Returns:
-            "buy", "sell", 或 None
+            "buy", "sell", "short", "cover", "hold", 或 None
         """
         try:
             with time_limit(self.timeout):
                 signal = instance.on_tick(data)
-                if signal in ("buy", "sell"):
+                if signal in ("buy", "sell", "short", "cover", "hold"):
                     return signal
                 return None
         except TimeoutException:
@@ -256,7 +256,7 @@ class SandboxExecutor:
             current_kline: 当前 K 线
 
         Returns:
-            "buy", "sell", 或 None
+            "buy", "sell", "short", "cover", "hold", 或 None
         """
         # 兼容 BacktestContext（同步 get_klines）
         if klines is None:
