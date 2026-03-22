@@ -133,6 +133,27 @@ class StrategyScheduler:
 
         logger.info(f"Strategy {strategy_id} stopped, all jobs removed")
 
+    async def stop_user_strategies(self, user_id: int):
+        """
+        停止某用户所有运行中的策略并重置状态为 stopped。
+        在 account reset 前调用，确保 scheduler 内存状态和 DB 一致。
+        """
+        async with async_session() as db:
+            result = await db.execute(
+                select(Strategy).where(
+                    Strategy.user_id == user_id,
+                    Strategy.status == "running",
+                )
+            )
+            strategies = result.scalars().all()
+
+            for strategy in strategies:
+                self.stop_strategy(strategy.id)
+                strategy.status = "stopped"
+
+            await db.commit()
+            logger.info(f"Stopped {len(strategies)} strategies for user {user_id}")
+
     async def _execute_strategy(self, strategy_id: int, timeframe: str):
         """执行策略任务（由调度器按时间周期触发）"""
         async with async_session() as db:
