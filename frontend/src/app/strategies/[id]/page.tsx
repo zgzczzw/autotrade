@@ -128,6 +128,7 @@ export default function StrategyDetailPage() {
         setPosHistory(historyRes.data.items || []);
         setPosHistoryTotal(historyRes.data.total || 0);
         setPosHistoryPage(1);
+        setPositionsLoaded(true);
       } else {
         const historyRes = await axios.get(
           `${API_BASE_URL}/api/positions/history?strategy_id=${id}&page=${page}&page_size=20`
@@ -135,12 +136,12 @@ export default function StrategyDetailPage() {
         setPosHistory(historyRes.data.items || []);
         setPosHistoryTotal(historyRes.data.total || 0);
         setPosHistoryPage(page);
+        setPositionsLoaded(true);
       }
     } catch (error) {
       console.error("Failed to load positions:", error);
     } finally {
       setPositionsLoading(false);
-      setPositionsLoaded(true);
     }
   };
 
