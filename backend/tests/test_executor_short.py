@@ -176,3 +176,133 @@ async def test_execute_routes_short_signal():
                 await executor.execute(strategy)
 
             ctx_instance.short.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_execute_routes_cover_signal():
+    """execute() 接收 cover 信号时调用 ctx.cover()"""
+    from app.engine.executor import StrategyExecutor
+
+    executor = StrategyExecutor()
+
+    strategy = make_strategy()
+    strategy.type = "code"
+    strategy.code = "def on_tick(data): return 'cover'"
+    strategy.notify_enabled = False
+    strategy.stop_loss = None
+    strategy.take_profit = None
+    strategy.timeframe = "1h"
+    strategy.status = "running"
+
+    with patch("app.engine.executor.async_session") as mock_session_cls, \
+         patch("app.engine.executor.market_data_service") as mock_mds, \
+         patch("app.engine.executor.sandbox_executor") as mock_sandbox:
+
+        db = AsyncMock()
+        db.__aenter__ = AsyncMock(return_value=db)
+        db.__aexit__ = AsyncMock(return_value=False)
+        mock_session_cls.return_value = db
+
+        mock_mds.get_klines = AsyncMock(return_value=[make_kline()])
+
+        with patch("app.engine.executor.simulator") as mock_sim:
+            mock_sim.check_stop_loss_take_profit = AsyncMock(return_value=None)
+
+            cover_trigger = MagicMock()
+            cover_trigger.action = "cover"
+
+            with patch("app.engine.executor.StrategyContext") as MockCtx:
+                ctx_instance = AsyncMock()
+                ctx_instance.cover = AsyncMock(return_value=cover_trigger)
+                ctx_instance.buy = AsyncMock()
+                ctx_instance.sell = AsyncMock()
+                ctx_instance.short = AsyncMock()
+                MockCtx.return_value = ctx_instance
+
+                mock_sandbox.create_instance = MagicMock(return_value=MagicMock())
+                mock_sandbox.call_on_tick = MagicMock(return_value="cover")
+
+                await executor.execute(strategy)
+
+            ctx_instance.cover.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_visual_strategy_no_position_buy():
+    """可视化策略：无持仓，买入条件满足 → buy"""
+    from app.engine.executor import StrategyExecutor, StrategyContext
+
+    executor = StrategyExecutor()
+    strategy = make_strategy()
+    strategy.config_json = '{"buy_conditions": {"logic": "AND", "rules": [{"indicator": "PRICE", "operator": ">", "value": "100"}]}, "sell_conditions": {"logic": "AND", "rules": []}}'
+
+    db = AsyncMock()
+    kline = make_kline(40000.0)
+    ctx = StrategyContext(strategy, db, current_kline=kline)
+
+    # get_position → None
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none = MagicMock(return_value=None)
+    db.execute = AsyncMock(return_value=result_mock)
+
+    with patch("app.engine.executor.market_data_service") as mock_mds:
+        # 100 klines all close=40000
+        klines = [make_kline(40000.0)] * 100
+        mock_mds.get_klines = AsyncMock(return_value=klines)
+        signal = await executor._execute_visual_strategy(strategy, ctx)
+
+    assert signal == "buy"
+
+
+@pytest.mark.asyncio
+async def test_visual_strategy_short_position_cover():
+    """可视化策略：持空仓，cover条件满足 → cover"""
+    from app.engine.executor import StrategyExecutor, StrategyContext
+    from app.models import Position
+
+    executor = StrategyExecutor()
+    strategy = make_strategy()
+    strategy.config_json = '{"buy_conditions": {"logic": "AND", "rules": []}, "sell_conditions": {"logic": "AND", "rules": []}, "cover_conditions": {"logic": "AND", "rules": [{"indicator": "PRICE", "operator": ">", "value": "100"}]}}'
+
+    db = AsyncMock()
+    kline = make_kline(40000.0)
+    ctx = StrategyContext(strategy, db, current_kline=kline)
+
+    short_pos = MagicMock(spec=Position)
+    short_pos.side = "short"
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none = MagicMock(return_value=short_pos)
+    db.execute = AsyncMock(return_value=result_mock)
+
+    with patch("app.engine.executor.market_data_service") as mock_mds:
+        klines = [make_kline(40000.0)] * 100
+        mock_mds.get_klines = AsyncMock(return_value=klines)
+        signal = await executor._execute_visual_strategy(strategy, ctx)
+
+    assert signal == "cover"
+
+
+@pytest.mark.asyncio
+async def test_visual_strategy_short_position_no_cover_conditions():
+    """可视化策略：持空仓，未配置cover条件 → None（依赖止盈止损）"""
+    from app.engine.executor import StrategyExecutor, StrategyContext
+    from app.models import Position
+
+    executor = StrategyExecutor()
+    strategy = make_strategy()
+    strategy.config_json = '{"buy_conditions": {"logic": "AND", "rules": []}, "sell_conditions": {"logic": "AND", "rules": []}}'
+
+    db = AsyncMock()
+    ctx = StrategyContext(strategy, db, current_kline=make_kline())
+
+    short_pos = MagicMock(spec=Position)
+    short_pos.side = "short"
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none = MagicMock(return_value=short_pos)
+    db.execute = AsyncMock(return_value=result_mock)
+
+    with patch("app.engine.executor.market_data_service") as mock_mds:
+        mock_mds.get_klines = AsyncMock(return_value=[make_kline()] * 100)
+        signal = await executor._execute_visual_strategy(strategy, ctx)
+
+    assert signal is None
