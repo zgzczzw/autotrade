@@ -32,6 +32,8 @@ export interface ConditionGroup {
 export interface StrategyConfig {
   buy_conditions: ConditionGroup;
   sell_conditions: ConditionGroup;
+  short_conditions?: ConditionGroup;  // 可选，不配置则不做空
+  cover_conditions?: ConditionGroup;  // 可选，不配置则依赖止盈止损
 }
 
 // 每种指标的元信息

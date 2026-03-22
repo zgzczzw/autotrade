@@ -9,7 +9,17 @@ import {
 // ─── 序列化 ────────────────────────────────────────────────
 
 export function serializeConfig(config: StrategyConfig): string {
-  return JSON.stringify(config);
+  const obj: Record<string, unknown> = {
+    buy_conditions: config.buy_conditions,
+    sell_conditions: config.sell_conditions,
+  };
+  if (config.short_conditions && config.short_conditions.rules.length > 0) {
+    obj.short_conditions = config.short_conditions;
+  }
+  if (config.cover_conditions && config.cover_conditions.rules.length > 0) {
+    obj.cover_conditions = config.cover_conditions;
+  }
+  return JSON.stringify(obj);
 }
 
 // ─── 反序列化（兼容旧格式） ───────────────────────────────
@@ -39,10 +49,17 @@ function normalizeRule(raw: any): ConditionRule {
 export function deserializeConfig(json: string): StrategyConfig {
   try {
     const parsed = JSON.parse(json);
-    return {
+    const config: StrategyConfig = {
       buy_conditions: normalizeGroup(parsed.buy_conditions ?? { logic: "AND", rules: [] }),
       sell_conditions: normalizeGroup(parsed.sell_conditions ?? { logic: "AND", rules: [] }),
     };
+    if (parsed.short_conditions) {
+      config.short_conditions = normalizeGroup(parsed.short_conditions);
+    }
+    if (parsed.cover_conditions) {
+      config.cover_conditions = normalizeGroup(parsed.cover_conditions);
+    }
+    return config;
   } catch {
     return makeEmptyConfig();
   }
@@ -106,8 +123,17 @@ export function generatePreviewText(config: StrategyConfig): string {
   const buyLogic = config.buy_conditions.logic === "AND" ? "全部" : "任一";
   const sellLogic = config.sell_conditions.logic === "AND" ? "全部" : "任一";
 
-  const buyDesc = describeGroup(config.buy_conditions);
-  const sellDesc = describeGroup(config.sell_conditions);
+  let text = `买入信号（满足${buyLogic}条件时买入）：\n${describeGroup(config.buy_conditions)}`;
+  text += `\n\n卖出信号（满足${sellLogic}条件时卖出）：\n${describeGroup(config.sell_conditions)}`;
 
-  return `买入信号（满足${buyLogic}条件时买入）：\n${buyDesc}\n\n卖出信号（满足${sellLogic}条件时卖出）：\n${sellDesc}`;
+  if (config.short_conditions && config.short_conditions.rules.length > 0) {
+    const shortLogic = config.short_conditions.logic === "AND" ? "全部" : "任一";
+    text += `\n\n开空信号（满足${shortLogic}条件时开空）：\n${describeGroup(config.short_conditions)}`;
+  }
+  if (config.cover_conditions && config.cover_conditions.rules.length > 0) {
+    const coverLogic = config.cover_conditions.logic === "AND" ? "全部" : "任一";
+    text += `\n\n平空信号（满足${coverLogic}条件时平空）：\n${describeGroup(config.cover_conditions)}`;
+  }
+
+  return text;
 }
