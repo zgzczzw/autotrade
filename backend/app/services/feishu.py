@@ -90,15 +90,10 @@ class FeishuClient:
     ) -> dict:
         """构建交易通知卡片"""
         # 颜色配置
-        if action == "buy":
-            header_color = "green"
-            action_text = "买入"
-        elif action == "sell":
-            header_color = "red"
-            action_text = "卖出"
-        else:
-            header_color = "grey"
-            action_text = "观望"
+        action_labels = {"buy": "买入", "sell": "卖出", "short": "开空", "cover": "平空"}
+        action_colors = {"buy": "green", "sell": "red", "short": "orange", "cover": "purple"}
+        action_text = action_labels.get(action, "观望")
+        header_color = action_colors.get(action, "grey")
 
         # 价格显示
         price_text = f"{price:.2f}" if price else "-"
@@ -203,7 +198,7 @@ class NotificationService:
         if user_id is not None:
             bark_key, bark_enabled = await self._get_bark_config(db, user_id)
             if bark_enabled and bark_key:
-                action_map = {"buy": "买入", "sell": "卖出", "hold": "观望"}
+                action_map = {"buy": "买入", "sell": "卖出", "short": "开空", "cover": "平空", "hold": "观望"}
                 action_text = action_map.get(trigger_log.action or "hold", trigger_log.action or "hold")
                 price_text = f"{trigger_log.price:.2f}" if trigger_log.price else "-"
                 title = f"AutoTrade: {strategy_name}"

@@ -396,7 +396,7 @@ export default function EditStrategyPage() {
 
             {/* 通知开关 */}
             <div className="flex items-center justify-between">
-              <Label htmlFor="notify_enabled">启用飞书通知</Label>
+              <Label htmlFor="notify_enabled">启用通知（飞书 / Bark）</Label>
               <Switch
                 id="notify_enabled"
                 checked={formData.notify_enabled}
