@@ -113,3 +113,16 @@ export const authRegister = (data: { username: string; password: string }) =>
   apiCall<{ user: any }>(api.post("/auth/register", data));
 
 export const authLogout = () => apiCall(api.post("/auth/logout"));
+
+// ==================== 通知设置 ====================
+
+export const fetchNotificationSettings = () =>
+  apiCall(api.get("/notifications/settings"));
+
+export const updateNotificationSettings = (data: {
+  bark_key?: string;
+  bark_enabled?: boolean;
+}) => apiCall(api.put("/notifications/settings", data));
+
+export const testNotification = () =>
+  apiCall(api.post("/notifications/test"));

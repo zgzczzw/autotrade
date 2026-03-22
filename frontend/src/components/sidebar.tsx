@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Bot, History, BarChart2, Settings, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Bot, History, BarChart2, Settings, LogOut, User, Bell } from "lucide-react";
 import { authLogout } from "@/lib/api";
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { icon: Bot, label: "策略", href: "/strategies" },
   { icon: History, label: "日志", href: "/triggers" },
   { icon: BarChart2, label: "大盘", href: "/market" },
+  { icon: Bell, label: "消息", href: "/notifications" },
   { icon: Settings, label: "设置", href: "/settings" },
 ];
 
