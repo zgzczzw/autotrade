@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description: "支持可视化配置和代码编写的策略交易平台",
 };
 
+export const viewport = {
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

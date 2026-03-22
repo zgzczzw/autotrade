@@ -84,7 +84,7 @@ export function Sidebar({ username }: SidebarProps) {
       </aside>
 
       {/* 移动端底部导航栏 */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 pb-[env(safe-area-inset-bottom)]">
         <ul className="flex items-center justify-around">
           {navItems.map((item) => (
             <li key={item.href} className="flex-1">
