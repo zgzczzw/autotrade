@@ -87,8 +87,8 @@ export default function StrategiesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">策略管理</h1>
+      <div className="flex items-center justify-between mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold">策略管理</h1>
         <Link href="/strategies/new">
           <Button>
             <Plus className="w-4 h-4 mr-2" />

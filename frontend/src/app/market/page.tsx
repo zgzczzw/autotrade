@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { fetchMarketKlines, fetchTicker } from "@/lib/api";
 import { KlineChartModule } from "@/components/kline-chart";
 import { SymbolSelector } from "@/components/symbol-selector";
@@ -18,6 +18,17 @@ export default function MarketPage() {
   const [ticker, setTicker] = useState<any>(null);
   const [klinesLoading, setKlinesLoading] = useState(false);
   const [tickerLoading, setTickerLoading] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const chartHeight = useMemo(() => (windowWidth < 768 ? 320 : 560), [windowWidth]);
 
   // 轮询 interval refs
   const tickerTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -85,7 +96,7 @@ export default function MarketPage() {
           <KlineChartModule
             data={klines}
             indicators={{ ma: true, volume: true }}
-            height={560}
+            height={chartHeight}
             title={symbol}
             subtitle={timeframe}
             activePeriod={timeframe}

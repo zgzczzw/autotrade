@@ -70,10 +70,10 @@ export default function NewStrategyPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold">创建策略</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">创建策略</h1>
       </div>
 
-      <Card className="bg-slate-900 border-slate-800 max-w-2xl">
+      <Card className="bg-slate-900 border-slate-800 w-full max-w-2xl">
         <form onSubmit={handleSubmit}>
           <CardHeader>
             <CardTitle>基础配置</CardTitle>
@@ -135,7 +135,7 @@ export default function NewStrategyPage() {
             </Tabs>
 
             {/* 交易对和时间周期 */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="symbol">交易对</Label>
                 <Select
@@ -175,7 +175,7 @@ export default function NewStrategyPage() {
             {/* 仓位配置 */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">仓位配置</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="position_size" className="text-xs text-slate-400">
                     每次买入
@@ -245,7 +245,7 @@ export default function NewStrategyPage() {
             </div>
 
             {/* 止盈止损 */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="stop_loss">止损 (%)</Label>
                 <Input

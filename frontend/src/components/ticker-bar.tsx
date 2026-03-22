@@ -43,38 +43,56 @@ export function TickerBar({ ticker, loading }: TickerBarProps) {
   const TrendIcon = isUp ? TrendingUp : TrendingDown;
 
   return (
-    <div className="flex items-center gap-6 px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl flex-wrap">
-      {/* 当前价 */}
-      <div className="flex items-baseline gap-2">
-        <span className={`text-2xl font-bold font-mono ${changeColor}`}>
-          ${fmt(ticker.price)}
-        </span>
-        <span className={`flex items-center gap-1 text-sm font-medium ${changeColor}`}>
-          <TrendIcon className="w-3.5 h-3.5" />
-          {isUp ? "+" : ""}{ticker.change_pct.toFixed(2)}%
-        </span>
-      </div>
-
-      <div className="h-8 w-px bg-slate-700" />
-
-      {/* 24h 高低 */}
-      <div className="flex items-center gap-4 text-sm">
-        <div>
-          <span className="text-slate-500 mr-1.5">24h 高</span>
-          <span className="text-slate-200 font-mono">${fmt(ticker.high_24h)}</span>
+    <div className="px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl">
+      {/* 移动端：紧凑两行布局 */}
+      <div className="flex items-center justify-between md:hidden">
+        <div className="flex items-baseline gap-2">
+          <span className={`text-xl font-bold font-mono ${changeColor}`}>
+            ${fmt(ticker.price)}
+          </span>
+          <span className={`flex items-center gap-0.5 text-sm font-medium ${changeColor}`}>
+            <TrendIcon className="w-3 h-3" />
+            {isUp ? "+" : ""}{ticker.change_pct.toFixed(2)}%
+          </span>
         </div>
-        <div>
-          <span className="text-slate-500 mr-1.5">24h 低</span>
-          <span className="text-slate-200 font-mono">${fmt(ticker.low_24h)}</span>
+        <div className="flex items-center gap-3 text-xs text-slate-400">
+          <span><span className="text-slate-500">高</span> <span className="font-mono text-slate-200">${fmt(ticker.high_24h)}</span></span>
+          <span><span className="text-slate-500">低</span> <span className="font-mono text-slate-200">${fmt(ticker.low_24h)}</span></span>
+          <span><span className="text-slate-500">量</span> <span className="font-mono text-slate-200">{fmtVol(ticker.volume_24h)}</span></span>
         </div>
       </div>
 
-      <div className="h-8 w-px bg-slate-700" />
+      {/* 桌面端：单行展开布局 */}
+      <div className="hidden md:flex items-center gap-6 flex-wrap">
+        <div className="flex items-baseline gap-2">
+          <span className={`text-2xl font-bold font-mono ${changeColor}`}>
+            ${fmt(ticker.price)}
+          </span>
+          <span className={`flex items-center gap-1 text-sm font-medium ${changeColor}`}>
+            <TrendIcon className="w-3.5 h-3.5" />
+            {isUp ? "+" : ""}{ticker.change_pct.toFixed(2)}%
+          </span>
+        </div>
 
-      {/* 24h 成交量 */}
-      <div className="text-sm">
-        <span className="text-slate-500 mr-1.5">24h 量</span>
-        <span className="text-slate-200 font-mono">{fmtVol(ticker.volume_24h)}</span>
+        <div className="h-8 w-px bg-slate-700" />
+
+        <div className="flex items-center gap-4 text-sm">
+          <div>
+            <span className="text-slate-500 mr-1.5">24h 高</span>
+            <span className="text-slate-200 font-mono">${fmt(ticker.high_24h)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 mr-1.5">24h 低</span>
+            <span className="text-slate-200 font-mono">${fmt(ticker.low_24h)}</span>
+          </div>
+        </div>
+
+        <div className="h-8 w-px bg-slate-700" />
+
+        <div className="text-sm">
+          <span className="text-slate-500 mr-1.5">24h 量</span>
+          <span className="text-slate-200 font-mono">{fmtVol(ticker.volume_24h)}</span>
+        </div>
       </div>
     </div>
   );

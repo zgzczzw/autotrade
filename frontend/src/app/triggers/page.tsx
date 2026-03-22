@@ -58,7 +58,7 @@ export default function TriggersPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">触发日志</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">触发日志</h1>
 
       {triggers.length === 0 ? (
         <Card className="bg-slate-900 border-slate-800">
