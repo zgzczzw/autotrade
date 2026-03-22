@@ -275,6 +275,10 @@ class StrategyExecutor:
                         trigger = await ctx.buy()
                     elif signal == "sell":
                         trigger = await ctx.sell()
+                    elif signal == "short":
+                        trigger = await ctx.short()
+                    elif signal == "cover":
+                        trigger = await ctx.cover()
 
                 # 4. 发送通知
                 if trigger and strategy.notify_enabled:
@@ -309,7 +313,7 @@ class StrategyExecutor:
         strategy: Strategy,
         ctx: StrategyContext,
     ) -> Optional[str]:
-        """执行可视化策略"""
+        """执行可视化策略（支持多空四路信号）"""
         if not strategy.config_json:
             return None
 
@@ -326,14 +330,30 @@ class StrategyExecutor:
         calculator = IndicatorCalculator(klines)
         position = await ctx.get_position()
 
-        if position:
-            sell_conditions = config.get("sell_conditions", {})
-            if self._check_conditions(sell_conditions, calculator):
-                return "sell"
-        else:
-            buy_conditions = config.get("buy_conditions", {})
+        buy_conditions = config.get("buy_conditions", {})
+        sell_conditions = config.get("sell_conditions", {})
+        short_conditions = config.get("short_conditions")   # 可选，None 表示不做空
+        cover_conditions = config.get("cover_conditions")   # 可选，None 表示依赖止盈止损
+
+        if position is None:
+            # 无持仓：先检查 buy，再检查 short（buy 优先）
             if self._check_conditions(buy_conditions, calculator):
                 return "buy"
+            if short_conditions and self._check_conditions(short_conditions, calculator):
+                return "short"
+            return None
+
+        if position.side == "long":
+            # 持多仓：检查卖出条件
+            if self._check_conditions(sell_conditions, calculator):
+                return "sell"
+            return None
+
+        if position.side == "short":
+            # 持空仓：检查平空条件（未配置则返回 None，依赖止盈止损）
+            if cover_conditions and self._check_conditions(cover_conditions, calculator):
+                return "cover"
+            return None
 
         return None
 

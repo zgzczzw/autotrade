@@ -122,3 +122,57 @@ async def test_ctx_buy_flips_from_short():
     mock_sim.execute_cover.assert_called_once()
     mock_sim.execute_buy.assert_called_once()
     assert result == buy_trigger
+
+
+@pytest.mark.asyncio
+async def test_execute_routes_short_signal():
+    """execute() 接收 short 信号时调用 ctx.short()"""
+    from app.engine.executor import StrategyExecutor
+    from unittest.mock import patch, AsyncMock, MagicMock
+
+    executor = StrategyExecutor()
+
+    strategy = make_strategy()
+    strategy.type = "code"
+    strategy.code = "def on_tick(data): return 'short'"
+    strategy.notify_enabled = False
+    strategy.stop_loss = None
+    strategy.take_profit = None
+    strategy.timeframe = "1h"
+    strategy.status = "running"
+
+    with patch("app.engine.executor.async_session") as mock_session_cls, \
+         patch("app.engine.executor.market_data_service") as mock_mds, \
+         patch("app.engine.executor.sandbox_executor") as mock_sandbox:
+
+        db = AsyncMock()
+        db.__aenter__ = AsyncMock(return_value=db)
+        db.__aexit__ = AsyncMock(return_value=False)
+        mock_session_cls.return_value = db
+
+        klines = [make_kline()]
+        mock_mds.get_klines = AsyncMock(return_value=klines)
+
+        # stop-loss check → None
+        with patch("app.engine.executor.simulator") as mock_sim:
+            mock_sim.check_stop_loss_take_profit = AsyncMock(return_value=None)
+
+            short_trigger = MagicMock()
+            short_trigger.action = "short"
+
+            # StrategyContext.short() mock
+            with patch("app.engine.executor.StrategyContext") as MockCtx:
+                ctx_instance = AsyncMock()
+                ctx_instance.short = AsyncMock(return_value=short_trigger)
+                ctx_instance.buy = AsyncMock()
+                ctx_instance.sell = AsyncMock()
+                ctx_instance.cover = AsyncMock()
+                MockCtx.return_value = ctx_instance
+
+                # sandbox returns "short"
+                mock_sandbox.create_instance = MagicMock(return_value=MagicMock())
+                mock_sandbox.call_on_tick = MagicMock(return_value="short")
+
+                await executor.execute(strategy)
+
+            ctx_instance.short.assert_called_once()
