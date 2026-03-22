@@ -238,3 +238,31 @@ class ErrorResponse(BaseModel):
 class HealthResponse(BaseModel):
     """健康检查响应"""
     status: str
+
+
+# ==================== 认证相关 ====================
+
+class UserResponse(BaseModel):
+    """用户信息响应"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    is_admin: bool
+    created_at: datetime
+
+
+class AuthRequest(BaseModel):
+    """登录/注册请求"""
+    username: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=6)
+
+
+class AuthResponse(BaseModel):
+    """认证响应"""
+    user: UserResponse
+
+
+class MeResponse(BaseModel):
+    """当前用户响应（未登录时 user 为 null）"""
+    user: Optional[UserResponse] = None
