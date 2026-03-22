@@ -25,6 +25,7 @@ class Simulator:
         quantity: float,
         price: float,
         db: AsyncSession,
+        user_id: Optional[int] = None,
     ) -> Optional[TriggerLog]:
         """
         执行模拟买入
@@ -43,7 +44,12 @@ class Simulator:
         required_funds = quantity * price
 
         # 检查账户余额
-        account_result = await db.execute(select(SimAccount).limit(1))
+        if user_id is not None:
+            account_result = await db.execute(
+                select(SimAccount).where(SimAccount.user_id == user_id)
+            )
+        else:
+            account_result = await db.execute(select(SimAccount).limit(1))
         account = account_result.scalar_one()
 
         if account.balance < required_funds:
@@ -101,6 +107,7 @@ class Simulator:
         price: float,
         db: AsyncSession,
         sell_size_pct: float = 100.0,
+        user_id: Optional[int] = None,
     ) -> Optional[TriggerLog]:
         """
         执行模拟卖出（平多仓）
@@ -145,7 +152,12 @@ class Simulator:
         sell_value = price * sell_qty
 
         # 返还资金
-        account_result = await db.execute(select(SimAccount).limit(1))
+        if user_id is not None:
+            account_result = await db.execute(
+                select(SimAccount).where(SimAccount.user_id == user_id)
+            )
+        else:
+            account_result = await db.execute(select(SimAccount).limit(1))
         account = account_result.scalar_one()
         account.balance += sell_value
         account.total_pnl += pnl
@@ -185,6 +197,7 @@ class Simulator:
         stop_loss_pct: Optional[float],
         take_profit_pct: Optional[float],
         db: AsyncSession,
+        user_id: Optional[int] = None,
     ) -> Optional[TriggerLog]:
         """
         检查止盈止损
@@ -219,7 +232,7 @@ class Simulator:
         # 检查止损
         if stop_loss_pct and price_change_pct <= -stop_loss_pct:
             logger.info(f"Stop loss triggered: {price_change_pct:.2f}%")
-            trigger = await self.execute_sell(strategy_id, symbol, current_price, db)
+            trigger = await self.execute_sell(strategy_id, symbol, current_price, db, user_id=user_id)
             trigger.signal_detail = f"[止损] {trigger.signal_detail}"
             await db.commit()
             return trigger
@@ -227,7 +240,7 @@ class Simulator:
         # 检查止盈
         if take_profit_pct and price_change_pct >= take_profit_pct:
             logger.info(f"Take profit triggered: {price_change_pct:.2f}%")
-            trigger = await self.execute_sell(strategy_id, symbol, current_price, db)
+            trigger = await self.execute_sell(strategy_id, symbol, current_price, db, user_id=user_id)
             trigger.signal_detail = f"[止盈] {trigger.signal_detail}"
             await db.commit()
             return trigger
