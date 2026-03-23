@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatPrice, formatDateTime } from "@/lib/utils";
-import { History } from "lucide-react";
+import { History, Trash2 } from "lucide-react";
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -25,6 +26,51 @@ interface Trigger {
 export default function TriggersPage() {
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === triggers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(triggers.map((t) => t.id)));
+    }
+  };
+
+  const deleteTrigger = async (id: number) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/api/triggers/${id}`);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      loadTriggers();
+    } catch (error) {
+      console.error("Failed to delete trigger:", error);
+    }
+  };
+
+  const batchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      await axios.delete(`${API_BASE_URL}/api/triggers`, {
+        data: { ids: Array.from(selectedIds) },
+      });
+      setSelectedIds(new Set());
+      loadTriggers();
+    } catch (error) {
+      console.error("Failed to batch delete triggers:", error);
+    }
+  };
 
   useEffect(() => {
     loadTriggers();
@@ -66,7 +112,19 @@ export default function TriggersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">触发日志</h1>
+      <div className="flex items-center justify-between mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold">触发日志</h1>
+        {selectedIds.size > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={batchDelete}
+          >
+            <Trash2 className="w-4 h-4 mr-1" />
+            删除 ({selectedIds.size})
+          </Button>
+        )}
+      </div>
 
       {triggers.length === 0 ? (
         <Card className="bg-slate-900 border-slate-800">
@@ -85,16 +143,33 @@ export default function TriggersPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-800">
+                    <th className="p-4 w-12">
+                      <input
+                        type="checkbox"
+                        checked={triggers.length > 0 && selectedIds.size === triggers.length}
+                        onChange={toggleSelectAll}
+                        className="rounded border-slate-600"
+                      />
+                    </th>
                     <th className="text-left p-4 text-slate-400 font-medium">时间</th>
                     <th className="text-left p-4 text-slate-400 font-medium">策略</th>
                     <th className="text-left p-4 text-slate-400 font-medium">操作</th>
                     <th className="text-left p-4 text-slate-400 font-medium">价格</th>
                     <th className="text-right p-4 text-slate-400 font-medium">盈亏</th>
+                    <th className="p-4 w-12"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {triggers.map((trigger) => (
                     <tr key={trigger.id} className="border-b border-slate-800 last:border-0">
+                      <td className="p-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(trigger.id)}
+                          onChange={() => toggleSelect(trigger.id)}
+                          className="rounded border-slate-600"
+                        />
+                      </td>
                       <td className="p-4">
                         {formatDateTime(trigger.triggered_at)}
                       </td>
@@ -120,6 +195,14 @@ export default function TriggersPage() {
                         ) : (
                           "-"
                         )}
+                      </td>
+                      <td className="p-4">
+                        <button
+                          onClick={() => deleteTrigger(trigger.id)}
+                          className="text-slate-500 hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}
