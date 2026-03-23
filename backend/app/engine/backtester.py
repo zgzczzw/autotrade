@@ -779,12 +779,12 @@ class BacktestEngine:
         total_pnl = realized_pnl
         pnl_percent = (total_pnl / initial_balance) * 100
 
-        buy_trades = [t for t in account.trades if t["side"] == "buy"]
-        sell_trades = [t for t in account.trades if t["side"] == "sell"]
-        total_trades = len(buy_trades) + len(sell_trades)
-        completed_trades = len(sell_trades)
+        open_trades = [t for t in account.trades if t["side"] in ("buy", "short")]
+        close_trades = [t for t in account.trades if t["side"] in ("sell", "cover")]
+        total_trades = len(open_trades) + len(close_trades)
+        completed_trades = len(close_trades)
 
-        winning_trades = [t for t in sell_trades if t.get("pnl", 0) > 0]
+        winning_trades = [t for t in close_trades if t.get("pnl", 0) > 0]
         win_rate = (len(winning_trades) / completed_trades * 100) if completed_trades > 0 else 0
 
         max_drawdown = self._calculate_max_drawdown(equity_curve)
