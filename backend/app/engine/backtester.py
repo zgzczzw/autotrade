@@ -93,8 +93,35 @@ class BacktestContext:
         return self.all_klines[start:]
 
     def buy(self, quantity: Optional[float] = None, trigger_reason: str = "") -> bool:
-        """买入（回测模式）"""
+        """买入：空仓→开多，持空→平空，持多→跳过"""
         price = self.current_kline["close"]
+        position = self.get_position()
+
+        if position and position.side == "long":
+            return False
+
+        if position and position.side == "short":
+            # 平空
+            raw_pos = self.account.positions[0]
+            pnl = (raw_pos.entry_price - price) * raw_pos.quantity
+            margin_returned = raw_pos.entry_price * raw_pos.quantity
+            self.account.balance += margin_returned + pnl
+            self.account.total_pnl += pnl
+            raw_pos.pnl = pnl
+            raw_pos.current_price = price
+            raw_pos.closed_at = self.current_kline["open_time"]
+            self.account.positions.remove(raw_pos)
+            self.account.trades.append({
+                "time": self.current_kline["open_time"].isoformat(),
+                "side": "cover",
+                "price": price,
+                "quantity": raw_pos.quantity,
+                "pnl": pnl,
+                "trigger": trigger_reason,
+            })
+            return True
+
+        # 空仓 → 开多
         if quantity is not None:
             qty = quantity
         elif self.strategy.position_size_type == "percent":
@@ -107,7 +134,6 @@ class BacktestContext:
             return False
 
         self.account.balance -= cost
-
         position = Position(
             strategy_id=self.strategy.id,
             symbol=self.strategy.symbol,
@@ -117,7 +143,6 @@ class BacktestContext:
             opened_at=self.current_kline["open_time"],
         )
         self.account.positions.append(position)
-
         self.account.trades.append({
             "time": self.current_kline["open_time"].isoformat(),
             "side": "buy",
@@ -129,36 +154,71 @@ class BacktestContext:
         return True
 
     def sell(self, quantity: Optional[float] = None, trigger_reason: str = "") -> bool:
-        """卖出（回测模式）"""
-        if not self.account.positions:
+        """卖出：空仓→开空，持多→平多，持空→跳过"""
+        price = self.current_kline["close"]
+        position = self.get_position()
+
+        if position and position.side == "short":
             return False
 
-        position = self.account.positions[0]
-        price = self.current_kline["close"]
-        sell_size_pct = getattr(self.strategy, "sell_size_pct", 100.0) or 100.0
-        sell_qty = quantity if quantity is not None else position.quantity * min(sell_size_pct, 100.0) / 100.0
+        if position and position.side == "long":
+            # 平多
+            raw_pos = self.account.positions[0]
+            sell_size_pct = getattr(self.strategy, "sell_size_pct", 100.0) or 100.0
+            sell_qty = quantity if quantity is not None else raw_pos.quantity * min(sell_size_pct, 100.0) / 100.0
 
-        pnl = (price - position.entry_price) * sell_qty
-        self.account.balance += price * sell_qty
-        self.account.total_pnl += pnl
+            pnl = (price - raw_pos.entry_price) * sell_qty
+            self.account.balance += price * sell_qty
+            self.account.total_pnl += pnl
 
+            self.account.trades.append({
+                "time": self.current_kline["open_time"].isoformat(),
+                "side": "sell",
+                "price": price,
+                "quantity": sell_qty,
+                "pnl": pnl,
+                "trigger": trigger_reason,
+            })
+
+            if sell_size_pct >= 100.0 or (quantity is None and sell_qty >= raw_pos.quantity):
+                raw_pos.current_price = price
+                raw_pos.pnl = pnl
+                raw_pos.closed_at = self.current_kline["open_time"]
+                self.account.positions.remove(raw_pos)
+            else:
+                raw_pos.quantity -= sell_qty
+            return True
+
+        # 空仓 → 开空
+        if quantity is not None:
+            qty = quantity
+        elif self.strategy.position_size_type == "percent":
+            qty = self.account.balance * self.strategy.position_size / 100.0 / price
+        else:
+            qty = self.strategy.position_size / price
+
+        margin = qty * price
+        if self.account.balance < margin:
+            return False
+
+        self.account.balance -= margin
+        position = Position(
+            strategy_id=self.strategy.id,
+            symbol=self.strategy.symbol,
+            side="short",
+            entry_price=price,
+            quantity=qty,
+            opened_at=self.current_kline["open_time"],
+        )
+        self.account.positions.append(position)
         self.account.trades.append({
             "time": self.current_kline["open_time"].isoformat(),
-            "side": "sell",
+            "side": "short",
             "price": price,
-            "quantity": sell_qty,
-            "pnl": pnl,
+            "quantity": qty,
+            "pnl": 0,
             "trigger": trigger_reason,
         })
-
-        if sell_size_pct >= 100.0 or (quantity is None and sell_qty >= position.quantity):
-            position.current_price = price
-            position.pnl = pnl
-            position.closed_at = self.current_kline["open_time"]
-            self.account.positions.remove(position)
-        else:
-            position.quantity -= sell_qty
-
         return True
 
     def get_position(self) -> Optional[PositionView]:
@@ -269,12 +329,16 @@ class BacktestEngine:
                 last_kline = primary_klines[-1]
                 for pos in list(account.positions):
                     price = last_kline["close"]
-                    pnl = (price - pos.entry_price) * pos.quantity
-                    account.balance += price * pos.quantity
+                    if pos.side == "long":
+                        pnl = (price - pos.entry_price) * pos.quantity
+                        account.balance += price * pos.quantity
+                    else:  # short
+                        pnl = (pos.entry_price - price) * pos.quantity
+                        account.balance += pos.entry_price * pos.quantity + pnl
                     account.total_pnl += pnl
                     account.trades.append({
                         "time": last_kline["open_time"].isoformat(),
-                        "side": "sell",
+                        "side": "sell" if pos.side == "long" else "cover",
                         "price": price,
                         "quantity": pos.quantity,
                         "pnl": pnl,
@@ -393,7 +457,9 @@ class BacktestEngine:
                             code_instance = None  # 出错后下次重新创建
 
             total_value = account.balance + sum(
-                p.quantity * kline["close"] for p in account.positions
+                p.quantity * kline["close"] if p.side == "long"
+                else p.entry_price * p.quantity + (p.entry_price - kline["close"]) * p.quantity
+                for p in account.positions
             )
             equity_curve.append({
                 "time": kline["open_time"].isoformat(),
@@ -515,7 +581,9 @@ class BacktestEngine:
                         code_instance = None
 
             total_value = account.balance + sum(
-                p.quantity * kline["close"] for p in account.positions
+                p.quantity * kline["close"] if p.side == "long"
+                else p.entry_price * p.quantity + (p.entry_price - kline["close"]) * p.quantity
+                for p in account.positions
             )
             equity_curve.append({
                 "time": current_time.isoformat(),
@@ -545,13 +613,20 @@ class BacktestEngine:
         entry_price = position.entry_price
         price_change_pct = (current_price - entry_price) / entry_price * 100
 
-        if strategy.stop_loss and price_change_pct <= -strategy.stop_loss:
-            ctx.sell(trigger_reason=f"止损 ({price_change_pct:+.2f}%)")
-            return True
-
-        if strategy.take_profit and price_change_pct >= strategy.take_profit:
-            ctx.sell(trigger_reason=f"止盈 ({price_change_pct:+.2f}%)")
-            return True
+        if position.side == "long":
+            if strategy.stop_loss and price_change_pct <= -strategy.stop_loss:
+                ctx.sell(trigger_reason=f"止损 ({price_change_pct:+.2f}%)")
+                return True
+            if strategy.take_profit and price_change_pct >= strategy.take_profit:
+                ctx.sell(trigger_reason=f"止盈 ({price_change_pct:+.2f}%)")
+                return True
+        elif position.side == "short":
+            if strategy.stop_loss and price_change_pct >= strategy.stop_loss:
+                ctx.buy(trigger_reason=f"止损 ({price_change_pct:+.2f}%)")
+                return True
+            if strategy.take_profit and price_change_pct <= -strategy.take_profit:
+                ctx.buy(trigger_reason=f"止盈 ({price_change_pct:+.2f}%)")
+                return True
 
         return False
 
@@ -740,14 +815,14 @@ class BacktestEngine:
 
     def _calculate_avg_hold_time(self, trades: List[dict]) -> Optional[int]:
         hold_times = []
-        buy_time = None
+        open_time = None
         for trade in trades:
-            if trade["side"] == "buy":
-                buy_time = datetime.fromisoformat(trade["time"])
-            elif trade["side"] == "sell" and buy_time:
-                sell_time = datetime.fromisoformat(trade["time"])
-                hold_times.append(int((sell_time - buy_time).total_seconds()))
-                buy_time = None
+            if trade["side"] in ("buy", "short"):
+                open_time = datetime.fromisoformat(trade["time"])
+            elif trade["side"] in ("sell", "cover") and open_time:
+                close_time = datetime.fromisoformat(trade["time"])
+                hold_times.append(int((close_time - open_time).total_seconds()))
+                open_time = None
         return int(sum(hold_times) / len(hold_times)) if hold_times else None
 
 
