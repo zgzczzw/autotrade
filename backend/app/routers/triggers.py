@@ -99,7 +99,7 @@ async def delete_trigger(
     return MessageResponse(message="触发记录已删除")
 
 
-@router.delete("/triggers", response_model=dict)
+@router.post("/triggers/batch-delete", response_model=dict)
 async def batch_delete_triggers(
     request: TriggerDeleteRequest,
     db: AsyncSession = Depends(get_db),

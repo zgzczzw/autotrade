@@ -62,8 +62,8 @@ export default function TriggersPage() {
   const batchDelete = async () => {
     if (selectedIds.size === 0) return;
     try {
-      await axios.delete(`${API_BASE_URL}/api/triggers`, {
-        data: { ids: Array.from(selectedIds) },
+      await axios.post(`${API_BASE_URL}/api/triggers/batch-delete`, {
+        ids: Array.from(selectedIds),
       });
       setSelectedIds(new Set());
       loadTriggers();
