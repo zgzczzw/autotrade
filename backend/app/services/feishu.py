@@ -36,6 +36,7 @@ class FeishuClient:
         symbol: str,
         price: Optional[float],
         pnl: Optional[float],
+        position_effect: Optional[str] = None,
     ) -> tuple[bool, Optional[str]]:
         """
         发送交易信号通知
@@ -49,7 +50,7 @@ class FeishuClient:
 
         # 构建富文本卡片
         card = self._build_trade_card(
-            strategy_name, signal_type, signal_detail, action, symbol, price, pnl
+            strategy_name, signal_type, signal_detail, action, symbol, price, pnl, position_effect
         )
 
         try:
@@ -87,12 +88,12 @@ class FeishuClient:
         symbol: str,
         price: Optional[float],
         pnl: Optional[float],
+        position_effect: Optional[str] = None,
     ) -> dict:
         """构建交易通知卡片"""
         # 颜色配置
-        action_labels = {"buy": "买入", "sell": "卖出", "short": "开空", "cover": "平空"}
-        action_colors = {"buy": "green", "sell": "red", "short": "orange", "cover": "purple"}
-        action_text = action_labels.get(action, "观望")
+        action_colors = {"买入": "green", "卖出": "red"}
+        action_text = action  # action is already Chinese
         header_color = action_colors.get(action, "grey")
 
         # 价格显示
@@ -103,6 +104,9 @@ class FeishuClient:
         if pnl is not None:
             pnl_emoji = "📈" if pnl >= 0 else "📉"
             pnl_text = f"\\n{pnl_emoji} 盈亏: {pnl:+.2f} USDT"
+
+        # 持仓效果显示
+        effect_text = f"（{position_effect}）" if position_effect else ""
 
         card = {
             "header": {
@@ -117,7 +121,7 @@ class FeishuClient:
                     "tag": "div",
                     "text": {
                         "tag": "lark_md",
-                        "content": f"**操作:** {action_text}\\n**交易对:** {symbol}\\n**价格:** {price_text} USDT{pnl_text}",
+                        "content": f"**操作:** {action_text}{effect_text}\\n**交易对:** {symbol}\\n**价格:** {price_text} USDT{pnl_text}",
                     },
                 },
                 {"tag": "hr"},
@@ -177,10 +181,11 @@ class NotificationService:
                 strategy_name=strategy_name,
                 signal_type=trigger_log.signal_type,
                 signal_detail=trigger_log.signal_detail or "",
-                action=trigger_log.action or "hold",
+                action=trigger_log.action or "观望",
                 symbol=symbol,
                 price=trigger_log.price,
                 pnl=trigger_log.simulated_pnl,
+                position_effect=getattr(trigger_log, "position_effect", None),
             )
             notification = NotificationLog(
                 trigger_log_id=trigger_log.id,
@@ -198,11 +203,11 @@ class NotificationService:
         if user_id is not None:
             bark_key, bark_enabled = await self._get_bark_config(db, user_id)
             if bark_enabled and bark_key:
-                action_map = {"buy": "买入", "sell": "卖出", "short": "开空", "cover": "平空", "hold": "观望"}
-                action_text = action_map.get(trigger_log.action or "hold", trigger_log.action or "hold")
+                action_text = trigger_log.action or "观望"
+                effect_text = f"（{trigger_log.position_effect}）" if getattr(trigger_log, "position_effect", None) else ""
                 price_text = f"{trigger_log.price:.2f}" if trigger_log.price else "-"
                 title = f"AutoTrade: {strategy_name}"
-                body = f"{action_text} {symbol} @ {price_text} USDT"
+                body = f"{action_text}{effect_text} {symbol} @ {price_text} USDT"
                 if trigger_log.simulated_pnl is not None:
                     pnl_sign = "+" if trigger_log.simulated_pnl >= 0 else ""
                     body += f"  盈亏: {pnl_sign}{trigger_log.simulated_pnl:.2f}"
