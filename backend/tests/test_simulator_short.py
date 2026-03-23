@@ -11,6 +11,22 @@ def make_account(balance=100000.0, total_pnl=0.0):
     return acc
 
 
+def make_scalars_result(items):
+    """创建支持 result.scalars().all() 的 mock"""
+    result = MagicMock()
+    scalars_mock = MagicMock()
+    scalars_mock.all = MagicMock(return_value=items)
+    result.scalars = MagicMock(return_value=scalars_mock)
+    return result
+
+
+def make_scalar_one_result(item):
+    """创建支持 result.scalar_one() 的 mock"""
+    result = MagicMock()
+    result.scalar_one = MagicMock(return_value=item)
+    return result
+
+
 def make_db(account=None, position=None):
     """返回一个 mock AsyncSession"""
     db = AsyncMock()
@@ -84,13 +100,14 @@ async def test_execute_cover_success():
     calls = [0]
 
     async def mock_execute(stmt):
-        result = MagicMock()
-        if calls[0] == 0:
-            result.scalar_one_or_none = MagicMock(return_value=position)
-        else:
-            result.scalar_one = MagicMock(return_value=account)
+        n = calls[0]
         calls[0] += 1
-        return result
+        if n == 0:
+            # First call: query short positions → [position]
+            return make_scalars_result([position])
+        else:
+            # Second call: query account
+            return make_scalar_one_result(account)
 
     db.execute = mock_execute
 
@@ -128,22 +145,20 @@ async def test_check_sl_tp_short_stop_loss():
 
     call_count = [0]
     async def mock_execute(stmt):
-        result = MagicMock()
         n = call_count[0]
         call_count[0] += 1
         if n == 0:
-            # First call: check_sl_tp queries long position → None
-            result.scalar_one_or_none = MagicMock(return_value=None)
+            # check_sl_tp queries long positions → empty
+            return make_scalars_result([])
         elif n == 1:
-            # Second call: check_sl_tp queries short position → position
-            result.scalar_one_or_none = MagicMock(return_value=position)
+            # check_sl_tp queries short positions → [position]
+            return make_scalars_result([position])
         elif n == 2:
-            # Third call: execute_cover re-queries short position → position
-            result.scalar_one_or_none = MagicMock(return_value=position)
+            # execute_cover queries short positions → [position]
+            return make_scalars_result([position])
         else:
-            # Fourth call: execute_cover queries account
-            result.scalar_one = MagicMock(return_value=account)
-        return result
+            # execute_cover queries account
+            return make_scalar_one_result(account)
 
     db.execute = mock_execute
 
@@ -183,22 +198,20 @@ async def test_check_sl_tp_short_take_profit():
 
     call_count = [0]
     async def mock_execute(stmt):
-        result = MagicMock()
         n = call_count[0]
         call_count[0] += 1
         if n == 0:
-            # First call: check_sl_tp queries long position → None
-            result.scalar_one_or_none = MagicMock(return_value=None)
+            # check_sl_tp queries long positions → empty
+            return make_scalars_result([])
         elif n == 1:
-            # Second call: check_sl_tp queries short position → position
-            result.scalar_one_or_none = MagicMock(return_value=position)
+            # check_sl_tp queries short positions → [position]
+            return make_scalars_result([position])
         elif n == 2:
-            # Third call: execute_cover re-queries short position → position
-            result.scalar_one_or_none = MagicMock(return_value=position)
+            # execute_cover queries short positions → [position]
+            return make_scalars_result([position])
         else:
-            # Fourth call: execute_cover queries account
-            result.scalar_one = MagicMock(return_value=account)
-        return result
+            # execute_cover queries account
+            return make_scalar_one_result(account)
 
     db.execute = mock_execute
 
