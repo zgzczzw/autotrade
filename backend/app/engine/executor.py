@@ -365,9 +365,9 @@ class StrategyExecutor:
             # 记录错误
             error_trigger = TriggerLog(
                 strategy_id=strategy.id,
-                signal_type="error",
+                signal_type="错误",
                 signal_detail=f"代码执行错误: {str(e)}",
-                action="hold",
+                action="观望",
             )
             ctx.db.add(error_trigger)
             await ctx.db.commit()
