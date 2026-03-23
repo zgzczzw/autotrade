@@ -48,27 +48,30 @@ class StrategyContext:
         )
 
     async def buy(self, quantity: Optional[float] = None) -> Optional[TriggerLog]:
-        """买入（自动翻仓：若持空仓先全额平空）"""
+        """买入：空仓→开多，持空→平空，持多→跳过"""
         klines = await self.get_klines(limit=1)
         if not klines:
             logger.error("No kline data available for buy")
             return None
 
-        price = klines[-1]["close"]
-
-        # 自动翻仓：若持有空仓，先全额平空
+        price = self.current_kline["close"] if self.current_kline else klines[-1]["close"]
         position = await self.get_position()
+
+        if position and position.side == "long":
+            # 已持多，跳过
+            return None
+
         if position and position.side == "short":
-            flip_price = self.current_kline["close"] if self.current_kline else price
-            await simulator.execute_cover(
+            # 持空 → 平空
+            return await simulator.execute_cover(
                 strategy_id=self.strategy.id,
                 symbol=self.strategy.symbol,
-                price=flip_price,
+                price=price,
                 db=self.db,
                 user_id=getattr(self.strategy, "user_id", None),
-            )  # 返回值有意丢弃（TriggerLog 已 commit 到 DB）
+            )
 
-        # 计算数量
+        # 空仓 → 开多
         if quantity is not None:
             qty = quantity
         elif self.strategy.position_size_type == "percent":
@@ -87,46 +90,32 @@ class StrategyContext:
         )
 
     async def sell(self, quantity: Optional[float] = None) -> Optional[TriggerLog]:
-        """卖出"""
+        """卖出：空仓→开空，持多→平多，持空→跳过"""
         klines = await self.get_klines(limit=1)
         if not klines:
             logger.error("No kline data available for sell")
             return None
 
-        price = klines[-1]["close"]
-        sell_size_pct = getattr(self.strategy, "sell_size_pct", 100.0) or 100.0
+        price = self.current_kline["close"] if self.current_kline else klines[-1]["close"]
+        position = await self.get_position()
 
-        return await simulator.execute_sell(
-            strategy_id=self.strategy.id,
-            symbol=self.strategy.symbol,
-            price=price,
-            db=self.db,
-            sell_size_pct=sell_size_pct,
-            user_id=getattr(self.strategy, "user_id", None),
-        )
-
-    async def short(self, quantity: Optional[float] = None) -> Optional[TriggerLog]:
-        """开空（自动翻仓：若持多仓先全额平多）"""
-        klines = await self.get_klines(limit=1)
-        if not klines:
-            logger.error("No kline data available for short")
+        if position and position.side == "short":
+            # 已持空，跳过
             return None
 
-        price = self.current_kline["close"] if self.current_kline else klines[-1]["close"]
-
-        # 自动翻仓：若持有多仓，先全额平多
-        position = await self.get_position()
         if position and position.side == "long":
-            await simulator.execute_sell(
+            # 持多 → 平多
+            sell_size_pct = getattr(self.strategy, "sell_size_pct", 100.0) or 100.0
+            return await simulator.execute_sell(
                 strategy_id=self.strategy.id,
                 symbol=self.strategy.symbol,
                 price=price,
                 db=self.db,
-                sell_size_pct=100.0,
+                sell_size_pct=sell_size_pct,
                 user_id=getattr(self.strategy, "user_id", None),
-            )  # 返回值有意丢弃（TriggerLog 已 commit 到 DB）
+            )
 
-        # 计算开空数量
+        # 空仓 → 开空
         if quantity is not None:
             qty = quantity
         elif self.strategy.position_size_type == "percent":
@@ -144,33 +133,16 @@ class StrategyContext:
             user_id=getattr(self.strategy, "user_id", None),
         )
 
-    async def cover(self, quantity: Optional[float] = None) -> Optional[TriggerLog]:
-        """平空（始终全额平仓，quantity 参数保留但未使用）"""
-        klines = await self.get_klines(limit=1)
-        if not klines:
-            logger.error("No kline data available for cover")
-            return None
-
-        price = self.current_kline["close"] if self.current_kline else klines[-1]["close"]
-
-        return await simulator.execute_cover(
-            strategy_id=self.strategy.id,
-            symbol=self.strategy.symbol,
-            price=price,
-            db=self.db,
-            user_id=getattr(self.strategy, "user_id", None),
-        )
-
     async def get_position(self) -> Optional[Position]:
-        """获取当前持仓（任意方向）"""
+        """获取当前持仓（任意方向），如有多条取最新一条"""
         result = await self.db.execute(
             select(Position).where(
                 Position.strategy_id == self.strategy.id,
                 Position.symbol == self.strategy.symbol,
                 Position.closed_at.is_(None),
-            )
+            ).order_by(Position.id.desc())
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_balance(self) -> float:
         """获取账户余额（当前用户的 SimAccount）"""
@@ -186,11 +158,6 @@ class StrategyContext:
         account = result.scalar_one()
         return account.balance
 
-    def _calculate_buy_quantity(self, price: float, balance: float = 0.0) -> float:
-        """计算买入数量"""
-        if self.strategy.position_size_type == "percent":
-            return balance * self.strategy.position_size / 100.0 / price
-        return self.strategy.position_size / price
 
 
 class StrategyExecutor:
@@ -271,14 +238,10 @@ class StrategyExecutor:
                         )
 
                     # 3. 执行交易信号
-                    if signal == "buy":
+                    if signal in ("buy", "cover"):
                         trigger = await ctx.buy()
-                    elif signal == "sell":
+                    elif signal in ("sell", "short"):
                         trigger = await ctx.sell()
-                    elif signal == "short":
-                        trigger = await ctx.short()
-                    elif signal == "cover":
-                        trigger = await ctx.cover()
 
                 # 4. 发送通知
                 if trigger and strategy.notify_enabled:
