@@ -31,6 +31,7 @@ async def init_db():
             "ALTER TABLE positions ADD COLUMN user_id INTEGER REFERENCES users(id)",
             "ALTER TABLE sim_accounts ADD COLUMN user_id INTEGER REFERENCES users(id)",
             "ALTER TABLE backtest_results ADD COLUMN user_id INTEGER REFERENCES users(id)",
+            "ALTER TABLE trigger_logs ADD COLUMN position_effect VARCHAR",
         ]
         for sql in migrations:
             try:

@@ -93,6 +93,7 @@ class TriggerLogResponse(BaseModel):
     signal_type: str
     signal_detail: Optional[str] = None
     action: Optional[str] = None
+    position_effect: Optional[str] = None
     price: Optional[float] = None
     quantity: Optional[float] = None
     simulated_pnl: Optional[float] = None

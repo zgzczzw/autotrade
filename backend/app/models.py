@@ -87,6 +87,7 @@ class TriggerLog(Base):
     signal_type = Column(String, nullable=False)
     signal_detail = Column(Text, nullable=True)
     action = Column(String, nullable=True)
+    position_effect = Column(String, nullable=True)  # 开仓 / 平仓
     price = Column(Float, nullable=True)
     quantity = Column(Float, nullable=True)
     simulated_pnl = Column(Float, nullable=True)
