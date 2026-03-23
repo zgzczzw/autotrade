@@ -165,3 +165,80 @@ async def test_sell_holding_short_holds():
     mock_sim.execute_sell.assert_not_called()
     mock_sim.execute_short.assert_not_called()
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_visual_strategy_no_position_sell_opens_short():
+    """可视化策略：无持仓，sell条件满足 → sell（开空）"""
+    from app.engine.executor import StrategyExecutor, StrategyContext
+    import json
+
+    executor = StrategyExecutor()
+    strategy = make_strategy()
+    # buy_conditions won't match (PRICE > 999999), sell_conditions will match (PRICE > 100)
+    strategy.config_json = json.dumps({
+        "buy_conditions": {"logic": "AND", "rules": [{"indicator": "PRICE", "operator": ">", "value": "999999"}]},
+        "sell_conditions": {"logic": "AND", "rules": [{"indicator": "PRICE", "operator": ">", "value": "100"}]},
+    })
+
+    db = AsyncMock()
+    ctx = StrategyContext(strategy, db, current_kline=make_kline())
+
+    with patch.object(ctx, "get_position", new_callable=AsyncMock, return_value=None), \
+         patch("app.engine.executor.market_data_service") as mock_mds:
+        mock_mds.get_klines = AsyncMock(return_value=[make_kline()] * 100)
+        signal = await executor._execute_visual_strategy(strategy, ctx)
+
+    assert signal == "sell"
+
+
+@pytest.mark.asyncio
+async def test_visual_strategy_short_position_buy_covers():
+    """可视化策略：持空仓，buy条件满足 → buy（平空）"""
+    from app.engine.executor import StrategyExecutor, StrategyContext
+    from app.models import Position
+    import json
+
+    executor = StrategyExecutor()
+    strategy = make_strategy()
+    strategy.config_json = json.dumps({
+        "buy_conditions": {"logic": "AND", "rules": [{"indicator": "PRICE", "operator": ">", "value": "100"}]},
+        "sell_conditions": {"logic": "AND", "rules": []},
+    })
+
+    db = AsyncMock()
+    ctx = StrategyContext(strategy, db, current_kline=make_kline())
+
+    short_pos = MagicMock(spec=Position, side="short")
+
+    with patch.object(ctx, "get_position", new_callable=AsyncMock, return_value=short_pos), \
+         patch("app.engine.executor.market_data_service") as mock_mds:
+        mock_mds.get_klines = AsyncMock(return_value=[make_kline()] * 100)
+        signal = await executor._execute_visual_strategy(strategy, ctx)
+
+    assert signal == "buy"
+
+
+@pytest.mark.asyncio
+async def test_visual_strategy_no_position_buy():
+    """可视化策略：无持仓，买入条件满足 → buy（buy优先于sell）"""
+    from app.engine.executor import StrategyExecutor, StrategyContext
+    import json
+
+    executor = StrategyExecutor()
+    strategy = make_strategy()
+    strategy.config_json = json.dumps({
+        "buy_conditions": {"logic": "AND", "rules": [{"indicator": "PRICE", "operator": ">", "value": "100"}]},
+        "sell_conditions": {"logic": "AND", "rules": [{"indicator": "PRICE", "operator": ">", "value": "100"}]},
+    })
+
+    db = AsyncMock()
+    ctx = StrategyContext(strategy, db, current_kline=make_kline())
+
+    with patch.object(ctx, "get_position", new_callable=AsyncMock, return_value=None), \
+         patch("app.engine.executor.market_data_service") as mock_mds:
+        mock_mds.get_klines = AsyncMock(return_value=[make_kline()] * 100)
+        signal = await executor._execute_visual_strategy(strategy, ctx)
+
+    # buy has priority over sell when both conditions match
+    assert signal == "buy"

@@ -276,7 +276,7 @@ class StrategyExecutor:
         strategy: Strategy,
         ctx: StrategyContext,
     ) -> Optional[str]:
-        """执行可视化策略（支持多空四路信号）"""
+        """执行可视化策略（buy/sell 两路信号，根据持仓自动判断操作）"""
         if not strategy.config_json:
             return None
 
@@ -295,27 +295,25 @@ class StrategyExecutor:
 
         buy_conditions = config.get("buy_conditions", {})
         sell_conditions = config.get("sell_conditions", {})
-        short_conditions = config.get("short_conditions")   # 可选，None 表示不做空
-        cover_conditions = config.get("cover_conditions")   # 可选，None 表示依赖止盈止损
 
         if position is None:
-            # 无持仓：先检查 buy，再检查 short（buy 优先）
+            # 无持仓：buy_conditions → buy（开多），sell_conditions → sell（开空）
             if self._check_conditions(buy_conditions, calculator):
                 return "buy"
-            if short_conditions and self._check_conditions(short_conditions, calculator):
-                return "short"
+            if self._check_conditions(sell_conditions, calculator):
+                return "sell"
             return None
 
         if position.side == "long":
-            # 持多仓：检查卖出条件
+            # 持多：sell_conditions → sell（平多）
             if self._check_conditions(sell_conditions, calculator):
                 return "sell"
             return None
 
         if position.side == "short":
-            # 持空仓：检查平空条件（未配置则返回 None，依赖止盈止损）
-            if cover_conditions and self._check_conditions(cover_conditions, calculator):
-                return "cover"
+            # 持空：buy_conditions → buy（平空）
+            if self._check_conditions(buy_conditions, calculator):
+                return "buy"
             return None
 
         return None
