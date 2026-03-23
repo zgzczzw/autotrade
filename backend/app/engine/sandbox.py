@@ -221,13 +221,18 @@ class SandboxExecutor:
             data: 传给 on_tick 的数据字典
 
         Returns:
-            "buy", "sell", "short", "cover", "hold", 或 None
+            "buy", "sell", "hold", 或 None
         """
         try:
             with time_limit(self.timeout):
                 signal = instance.on_tick(data)
-                if signal in ("buy", "sell", "short", "cover", "hold"):
+                if signal in ("buy", "sell", "hold"):
                     return signal
+                if signal in ("short", "cover"):
+                    logger.warning(
+                        f"Strategy returned deprecated signal '{signal}', ignoring. "
+                        f"Use 'buy'/'sell' instead."
+                    )
                 return None
         except TimeoutException:
             logger.error(f"Strategy on_tick timed out")

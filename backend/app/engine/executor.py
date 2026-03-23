@@ -238,9 +238,9 @@ class StrategyExecutor:
                         )
 
                     # 3. 执行交易信号
-                    if signal in ("buy", "cover"):
+                    if signal == "buy":
                         trigger = await ctx.buy()
-                    elif signal in ("sell", "short"):
+                    elif signal == "sell":
                         trigger = await ctx.sell()
 
                 # 4. 发送通知
