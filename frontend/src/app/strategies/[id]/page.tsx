@@ -176,12 +176,16 @@ export default function StrategyDetailPage() {
   const getActionBadge = (action?: string) => {
     switch (action) {
       case "buy":
+      case "买入":
         return <Badge className="bg-green-600">买入</Badge>;
       case "sell":
+      case "卖出":
         return <Badge className="bg-red-600">卖出</Badge>;
       case "short":
+      case "开空":
         return <Badge className="bg-orange-600">开空</Badge>;
       case "cover":
+      case "平空":
         return <Badge className="bg-purple-600">平空</Badge>;
       default:
         return <Badge variant="secondary">观望</Badge>;

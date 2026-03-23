@@ -99,14 +99,14 @@ export default function DashboardPage() {
                   <div className="text-right">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
-                        trigger.action === "buy"
+                        ["buy", "买入"].includes(trigger.action || "")
                           ? "bg-green-900 text-green-300"
-                          : trigger.action === "sell"
+                          : ["sell", "卖出"].includes(trigger.action || "")
                           ? "bg-red-900 text-red-300"
                           : "bg-slate-700 text-slate-300"
                       }`}
                     >
-                      {trigger.action?.toUpperCase() || "HOLD"}
+                      {trigger.action || "观望"}
                     </span>
                     {trigger.price && (
                       <p className="text-sm text-slate-400 mt-1">
