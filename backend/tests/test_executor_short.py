@@ -32,7 +32,7 @@ async def test_buy_no_position_opens_long():
          patch("app.engine.executor.simulator") as mock_sim, \
          patch("app.engine.executor.market_data_service") as mock_mds:
         mock_mds.get_klines = AsyncMock(return_value=[make_kline()])
-        buy_trigger = MagicMock(action="buy")
+        buy_trigger = MagicMock(action="买入", position_effect="开仓")
         mock_sim.execute_buy = AsyncMock(return_value=buy_trigger)
 
         result = await ctx.buy()
@@ -57,7 +57,7 @@ async def test_buy_holding_short_covers():
          patch("app.engine.executor.simulator") as mock_sim, \
          patch("app.engine.executor.market_data_service") as mock_mds:
         mock_mds.get_klines = AsyncMock(return_value=[make_kline()])
-        cover_trigger = MagicMock(action="cover")
+        cover_trigger = MagicMock(action="买入", position_effect="平仓")
         mock_sim.execute_cover = AsyncMock(return_value=cover_trigger)
         mock_sim.execute_buy = AsyncMock()
 
@@ -107,7 +107,7 @@ async def test_sell_no_position_opens_short():
          patch("app.engine.executor.simulator") as mock_sim, \
          patch("app.engine.executor.market_data_service") as mock_mds:
         mock_mds.get_klines = AsyncMock(return_value=[make_kline()])
-        short_trigger = MagicMock(action="short")
+        short_trigger = MagicMock(action="卖出", position_effect="开仓")
         mock_sim.execute_short = AsyncMock(return_value=short_trigger)
 
         result = await ctx.sell()
@@ -132,7 +132,7 @@ async def test_sell_holding_long_closes():
          patch("app.engine.executor.simulator") as mock_sim, \
          patch("app.engine.executor.market_data_service") as mock_mds:
         mock_mds.get_klines = AsyncMock(return_value=[make_kline()])
-        sell_trigger = MagicMock(action="sell")
+        sell_trigger = MagicMock(action="卖出", position_effect="平仓")
         mock_sim.execute_sell = AsyncMock(return_value=sell_trigger)
 
         result = await ctx.sell()
