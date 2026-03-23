@@ -107,6 +107,10 @@ class TriggerLogList(BaseModel):
     page_size: int
 
 
+class TriggerDeleteRequest(BaseModel):
+    ids: List[int]
+
+
 # ==================== 持仓相关 ====================
 
 class PositionResponse(BaseModel):

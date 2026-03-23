@@ -94,7 +94,7 @@ class TriggerLog(Base):
 
     # 关系
     strategy = relationship("Strategy", back_populates="trigger_logs")
-    notification_logs = relationship("NotificationLog", back_populates="trigger_log")
+    notification_logs = relationship("NotificationLog", back_populates="trigger_log", cascade="all, delete-orphan")
 
 
 class Position(Base):
