@@ -61,8 +61,9 @@ async def test_execute_short_success():
     assert account.balance == pytest.approx(46000.0)
     db.add.assert_called()
     assert trigger is not None
-    assert trigger.action == "short"
-    assert trigger.signal_type == "short"
+    assert trigger.action == "卖出"
+    assert trigger.signal_type == "卖出"
+    assert trigger.position_effect == "开仓"
 
 
 @pytest.mark.asyncio
@@ -73,7 +74,9 @@ async def test_execute_short_insufficient_balance():
     trigger = await simulator.execute_short(
         strategy_id=1, symbol="BTCUSDT", quantity=1.0, price=40000.0, db=db
     )
-    assert trigger.action == "hold"
+    assert trigger.action == "观望"
+    assert trigger.signal_type == "卖出"
+    assert trigger.position_effect is None
     assert "余额不足" in trigger.signal_detail
     assert account.balance == pytest.approx(100.0)
 
@@ -119,7 +122,9 @@ async def test_execute_cover_success():
     assert account.balance == pytest.approx(96000.0 + 4000.0 + expected_pnl)
     assert account.total_pnl == pytest.approx(expected_pnl)
     assert position.closed_at is not None
-    assert trigger.action == "cover"
+    assert trigger.action == "买入"
+    assert trigger.signal_type == "买入"
+    assert trigger.position_effect == "平仓"
     assert trigger.simulated_pnl == pytest.approx(expected_pnl)
 
 
@@ -227,3 +232,41 @@ async def test_check_sl_tp_short_take_profit():
 
     assert trigger is not None
     assert "[止盈]" in trigger.signal_detail
+
+
+@pytest.mark.asyncio
+async def test_execute_buy_success_chinese():
+    """买入成功：action/signal_type 为中文，position_effect 为开仓"""
+    from app.services.simulator import simulator
+
+    account = make_account(balance=50000.0)
+    db = make_db(account=account)
+
+    trigger = await simulator.execute_buy(
+        strategy_id=1,
+        symbol="BTCUSDT",
+        quantity=0.1,
+        price=40000.0,
+        db=db,
+        user_id=1,
+    )
+
+    assert trigger.action == "买入"
+    assert trigger.signal_type == "买入"
+    assert trigger.position_effect == "开仓"
+
+
+@pytest.mark.asyncio
+async def test_execute_buy_insufficient_balance_chinese():
+    """买入余额不足：action 为观望"""
+    from app.services.simulator import simulator
+
+    account = make_account(balance=100.0)
+    db = make_db(account=account)
+
+    trigger = await simulator.execute_buy(
+        strategy_id=1, symbol="BTCUSDT", quantity=1.0, price=40000.0, db=db
+    )
+    assert trigger.action == "观望"
+    assert trigger.signal_type == "买入"
+    assert trigger.position_effect is None
