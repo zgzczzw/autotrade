@@ -5,7 +5,7 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -13,7 +13,7 @@ from sqlalchemy.future import select
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Strategy, TriggerLog, User
-from app.schemas import TriggerLogList, TriggerLogResponse
+from app.schemas import MessageResponse, TriggerDeleteRequest, TriggerLogList, TriggerLogResponse
 
 router = APIRouter(tags=["触发日志"])
 
@@ -72,3 +72,49 @@ async def list_triggers(
         page=page,
         page_size=page_size,
     )
+
+
+@router.delete("/triggers/{trigger_id}", response_model=MessageResponse)
+async def delete_trigger(
+    trigger_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """删除单条触发日志"""
+    result = await db.execute(
+        select(TriggerLog)
+        .join(Strategy, TriggerLog.strategy_id == Strategy.id)
+        .where(TriggerLog.id == trigger_id, Strategy.user_id == current_user.id)
+    )
+    trigger = result.scalar_one_or_none()
+
+    if not trigger:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="触发记录不存在",
+        )
+
+    await db.delete(trigger)
+    await db.commit()
+    return MessageResponse(message="触发记录已删除")
+
+
+@router.delete("/triggers", response_model=dict)
+async def batch_delete_triggers(
+    request: TriggerDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """批量删除触发日志"""
+    result = await db.execute(
+        select(TriggerLog)
+        .join(Strategy, TriggerLog.strategy_id == Strategy.id)
+        .where(TriggerLog.id.in_(request.ids), Strategy.user_id == current_user.id)
+    )
+    triggers = result.scalars().all()
+
+    for trigger in triggers:
+        await db.delete(trigger)
+    await db.commit()
+
+    return {"deleted": len(triggers)}
