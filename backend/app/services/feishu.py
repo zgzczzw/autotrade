@@ -210,7 +210,7 @@ class NotificationService:
                 body = f"{action_text}{effect_text} {symbol} @ {price_text} USDT"
                 if trigger_log.simulated_pnl is not None:
                     pnl_sign = "+" if trigger_log.simulated_pnl >= 0 else ""
-                    body += f"  盈亏: {pnl_sign}{trigger_log.simulated_pnl:.2f}"
+                    body += f"  盈亏: {pnl_sign}{trigger_log.simulated_pnl:.2f} USDT"
 
                 success, error_msg = await bark_client.send(
                     key=bark_key,

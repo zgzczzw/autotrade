@@ -88,11 +88,12 @@ class MarketDataService:
         cached_data = await self._get_cached_klines(symbol, primary_tf, limit)
 
         if len(cached_data) >= limit:
-            # 新鲜度检查：最新缓存 bar 的时间不能超过 2 个周期
+            # 新鲜度检查：最新缓存 bar 的时间不能超过 1 个周期
+            # 使用 1 个周期确保新 K 线开始后立即刷新，避免使用上根 K 线的中间价
             newest = cached_data[-1]["open_time"]
             tf_seconds = _TF_SECONDS.get(primary_tf, 3600)
             staleness = (datetime.now() - newest).total_seconds()
-            if staleness <= tf_seconds * 2:
+            if staleness <= tf_seconds:
                 return cached_data[-limit:]
             # 缓存过期，继续走增量拉取流程
 

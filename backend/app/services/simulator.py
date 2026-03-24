@@ -181,7 +181,7 @@ class Simulator:
         trigger = TriggerLog(
             strategy_id=strategy_id,
             signal_type="卖出",
-            signal_detail=f"卖出 {total_sell_qty:.4f} {symbol} @ {price} ({sell_size_pct:.0f}%), 盈亏: {total_pnl:.2f}",
+            signal_detail=f"卖出 {total_sell_qty:.4f} {symbol} @ {price} ({sell_size_pct:.0f}%), 盈亏: {total_pnl:.2f} USDT",
             action="卖出",
             price=price,
             quantity=total_sell_qty,
@@ -345,7 +345,7 @@ class Simulator:
         trigger = TriggerLog(
             strategy_id=strategy_id,
             signal_type="买入",
-            signal_detail=f"平空 {total_quantity:.4f} {symbol} @ {price}, 盈亏: {total_pnl:.2f}",
+            signal_detail=f"平空 {total_quantity:.4f} {symbol} @ {price}, 盈亏: {total_pnl:.2f} USDT",
             action="买入",
             price=price,
             quantity=total_quantity,
