@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BacktestPanel } from "@/components/backtest-panel";
+import { KlineChartModule } from "@/components/kline-chart";
+import { TradeMarker } from "@/components/kline-chart/types";
+import { fetchMarketKlines } from "@/lib/api";
 import { formatPrice, formatSymbol, formatDateTime } from "@/lib/utils";
 import { ArrowLeft, ChevronLeft, ChevronRight, History, Pencil, Play, Square, TrendingUp } from "lucide-react";
 import axios from "axios";
@@ -81,6 +84,11 @@ export default function StrategyDetailPage() {
   const [posHistoryPage, setPosHistoryPage] = useState(1);
   const [positionsLoading, setPositionsLoading] = useState(false);
   const [positionsLoaded, setPositionsLoaded] = useState(false);
+  const [klines, setKlines] = useState<any[]>([]);
+  const [klinesLoading, setKlinesLoading] = useState(false);
+  const [chartPeriod, setChartPeriod] = useState("1h");
+  const [focusTimestamp, setFocusTimestamp] = useState<number | undefined>();
+  const [allTriggers, setAllTriggers] = useState<Trigger[]>([]);
 
   useEffect(() => {
     loadStrategy();
@@ -115,6 +123,48 @@ export default function StrategyDetailPage() {
       setTriggersLoaded(true);
     }
   };
+
+  const loadKlines = async (sym: string, tf: string) => {
+    setKlinesLoading(true);
+    try {
+      const data = await fetchMarketKlines(sym, tf, 500);
+      setKlines(data as any[]);
+    } catch (error) {
+      console.error("Failed to load klines:", error);
+    } finally {
+      setKlinesLoading(false);
+    }
+  };
+
+  const loadAllTriggers = async () => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/triggers?strategy_id=${id}&page=1&page_size=500`
+      );
+      setAllTriggers(response.data.items || []);
+    } catch (error) {
+      console.error("Failed to load all triggers:", error);
+    }
+  };
+
+  const handleChartPeriodChange = (period: string) => {
+    setChartPeriod(period);
+    if (strategy) {
+      loadKlines(strategy.symbol, period);
+    }
+  };
+
+  const tradeMarkers: TradeMarker[] = useMemo(() => {
+    return allTriggers
+      .filter((t) => t.action && t.action !== "观望" && t.price)
+      .map((t) => ({
+        timestamp: new Date(t.triggered_at).getTime(),
+        price: t.price!,
+        side: (t.action === "买入" ? "buy" : "sell") as "buy" | "sell",
+        quantity: t.quantity,
+        pnl: t.simulated_pnl,
+      }));
+  }, [allTriggers]);
 
   const loadPositions = async (page = 1) => {
     setPositionsLoading(true);
@@ -250,6 +300,10 @@ export default function StrategyDetailPage() {
         onValueChange={(value) => {
           if (value === "triggers" && !triggersLoaded) {
             loadTriggers(1);
+            if (strategy) {
+              loadKlines(strategy.symbol, chartPeriod);
+              loadAllTriggers();
+            }
           }
           if (value === "positions" && !positionsLoaded) {
             loadPositions(1);
@@ -371,6 +425,21 @@ export default function StrategyDetailPage() {
         </TabsContent>
 
         <TabsContent value="triggers">
+          {strategy && triggersLoaded && (
+            <div className="mb-4">
+              <KlineChartModule
+                data={klines}
+                markers={tradeMarkers}
+                indicators={{ ma: true, volume: true }}
+                height={400}
+                title={strategy.name}
+                subtitle={`${strategy.symbol} · ${chartPeriod}`}
+                activePeriod={chartPeriod}
+                onPeriodChange={handleChartPeriodChange}
+                focusTimestamp={focusTimestamp}
+              />
+            </div>
+          )}
           {!triggersLoaded ? (
             triggersLoading ? (
               <div className="text-center py-12 text-slate-400">加载中...</div>
@@ -403,7 +472,15 @@ export default function StrategyDetailPage() {
                       </thead>
                       <tbody>
                         {triggers.map((trigger) => (
-                          <tr key={trigger.id} className="border-b border-slate-800 last:border-0">
+                          <tr
+                            key={trigger.id}
+                            className="border-b border-slate-800 last:border-0 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                            onClick={() => {
+                              if (trigger.triggered_at) {
+                                setFocusTimestamp(new Date(trigger.triggered_at).getTime());
+                              }
+                            }}
+                          >
                             <td className="p-4 whitespace-nowrap">
                               {formatDateTime(trigger.triggered_at)}
                             </td>
