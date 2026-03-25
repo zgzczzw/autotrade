@@ -8,8 +8,9 @@ GET  /api/auth/me        — 当前用户（未登录返回 {"user": null}）
 
 import os
 
+import bcrypt as _bcrypt
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +20,19 @@ from app.models import SimAccount, User
 from app.schemas import AuthRequest, AuthResponse, MeResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["认证"])
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def _hash_password(password: str) -> str:
+    """Hash password using bcrypt directly (passlib incompatible with bcrypt 5.x)."""
+    return _bcrypt.hashpw(password.encode("utf-8"), _bcrypt.gensalt()).decode("utf-8")
+
+
+def _verify_password(password: str, password_hash: str) -> bool:
+    """Verify password against bcrypt hash."""
+    try:
+        return _bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
+    except Exception:
+        return False
 
 COOKIE_NAME = "session"
 COOKIE_MAX_AGE = 604800  # 7 days
@@ -54,7 +67,7 @@ async def register(
 
     user = User(
         username=payload.username,
-        password_hash=pwd_context.hash(payload.password),
+        password_hash=_hash_password(payload.password),
         is_admin=False,
     )
     db.add(user)
@@ -85,7 +98,7 @@ async def login(
     result = await db.execute(select(User).where(User.username == payload.username))
     user = result.scalar_one_or_none()
 
-    if not user or not pwd_context.verify(payload.password, user.password_hash):
+    if not user or not _verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     _set_session_cookie(response, request, user.id)

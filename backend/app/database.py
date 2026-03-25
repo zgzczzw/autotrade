@@ -43,9 +43,10 @@ async def init_db():
     async with async_session() as session:
         from sqlalchemy import select
         from app.models import BacktestResult, Position, SimAccount, Strategy, User
-        from passlib.context import CryptContext
+        import bcrypt as _bcrypt
 
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        def _hash_pw(pw: str) -> str:
+            return _bcrypt.hashpw(pw.encode("utf-8"), _bcrypt.gensalt()).decode("utf-8")
 
         # Check if admin user exists
         result = await session.execute(select(User).where(User.username == "admin"))
@@ -55,7 +56,7 @@ async def init_db():
             admin_password = os.getenv("ADMIN_PASSWORD", "changeme")
             admin = User(
                 username="admin",
-                password_hash=pwd_context.hash(admin_password),
+                password_hash=_hash_pw(admin_password),
                 is_admin=True,
             )
             session.add(admin)

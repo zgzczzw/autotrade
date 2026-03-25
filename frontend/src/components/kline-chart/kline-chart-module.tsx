@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { init, dispose, Chart, IndicatorCreate, KLineData } from "klinecharts";
+import { init, dispose, Chart, IndicatorCreate, KLineData, registerOverlay } from "klinecharts";
 import { KlineChartModuleProps, TradeMarker } from "./types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,62 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TrendingUp, TrendingDown, Maximize2, X } from "lucide-react";
+
+// 注册自定义买卖点 overlay — 虚线 + 文字标签
+// 锚点已经是 candle low(买) / high(卖)，绘制时只需向外延伸
+let _overlayRegistered = false;
+function ensureTradeMarkerOverlay() {
+  if (_overlayRegistered) return;
+  _overlayRegistered = true;
+
+  registerOverlay({
+    name: "tradeMarker",
+    totalStep: 2,
+    needDefaultPointFigure: false,
+    createPointFigures: ({ overlay, coordinates }: any) => {
+      const label: string = overlay.extendData ?? "";
+      const isBuy = label === "B";
+      const color: string = overlay.styles?.line?.color || (isBuy ? "#22c55e" : "#ef4444");
+      const x = coordinates[0].x;
+      const y = coordinates[0].y;
+      // canvas y 轴向下增大：买入向下延伸(+)，卖出向上延伸(-)
+      const d = isBuy ? 1 : -1;
+      const lineStart = y + d * 4;
+      const lineEnd = y + d * 40;
+      const textY = lineEnd + d * 4;
+
+      return [
+        // 虚线
+        {
+          type: "line",
+          attrs: { coordinates: [{ x, y: lineStart }, { x, y: lineEnd }] },
+          styles: { style: "dashed", color, dashedValue: [4, 3], size: 1.5 },
+          ignoreEvent: true,
+        },
+        // 小圆点（锚点位置）
+        {
+          type: "circle",
+          attrs: { x, y: lineStart, r: 3 },
+          styles: { style: "fill", color },
+          ignoreEvent: true,
+        },
+        // B / S 文字
+        {
+          type: "text",
+          attrs: {
+            x,
+            y: textY,
+            text: label,
+            align: "center",
+            baseline: isBuy ? "top" : "bottom",
+          },
+          styles: { color: "#fff", backgroundColor: color, size: 11, paddingLeft: 4, paddingRight: 4, paddingTop: 2, paddingBottom: 2, borderRadius: 2 },
+          ignoreEvent: true,
+        },
+      ];
+    },
+  } as any);
+}
 
 // 转换K线数据
 function transformKlineData(data: any[]): KLineData[] {
@@ -85,9 +141,60 @@ export function KlineChartModule({
   const klineDataRef = useRef(klineData);
   klineDataRef.current = klineData;
 
+  // 将 activePeriod 转换为 klinecharts 的 Period 格式
+  const periodMap: Record<string, { type: string; span: number }> = {
+    "1m":  { type: "minute", span: 1 },
+    "15m": { type: "minute", span: 15 },
+    "1h":  { type: "hour",   span: 1 },
+    "4h":  { type: "hour",   span: 4 },
+    "1d":  { type: "day",    span: 1 },
+  };
+
+  // 添加买卖点标记的辅助函数
+  const applyMarkers = useCallback((chart: Chart, markersToApply: TradeMarker[]) => {
+    // 清除旧的标记
+    chart.removeOverlay({ groupId: "trade_markers" });
+
+    if (!markersToApply || markersToApply.length === 0) return;
+
+    // 构建 timestamp→candle 索引，用于取 low/high 作为锚点
+    const dataList = chart.getDataList();
+    const candleMap = new Map<number, KLineData>();
+    dataList.forEach((c) => candleMap.set(c.timestamp, c));
+
+    // 逐个创建 overlay
+    markersToApply.forEach((marker) => {
+      const isBuy = marker.side === "buy";
+      const color = isBuy ? "#22c55e" : "#ef4444";
+      // 买入锚定在 candle low，卖出锚定在 candle high，确保不与K线重叠
+      const candle = candleMap.get(marker.timestamp);
+      const anchorPrice = candle
+        ? (isBuy ? candle.low : candle.high)
+        : marker.price;
+
+      chart.createOverlay({
+        name: "tradeMarker",
+        groupId: "trade_markers",
+        lock: true,
+        visible: true,
+        points: [{ timestamp: marker.timestamp, value: anchorPrice }],
+        extendData: isBuy ? "B" : "S",
+        styles: {
+          line: { color },
+        },
+      } as any);
+    });
+  }, []);
+
+  // 用 ref 持有最新 markers，供数据加载回调使用
+  const markersRef = useRef(markers);
+  markersRef.current = markers;
+
   // 初始化图表
   useEffect(() => {
     if (!chartRef.current) return;
+
+    ensureTradeMarkerOverlay();
 
     if (chartInstance.current) {
       dispose(chartInstance.current);
@@ -105,11 +212,18 @@ export function KlineChartModule({
     if (chart) {
       chartInstance.current = chart;
 
+      const period = periodMap[activePeriod] || { type: "hour", span: 1 };
       chart.setSymbol({ ticker: subtitle || "UNKNOWN", pricePrecision: 2, volumePrecision: 4 });
-      chart.setPeriod({ type: "hour", span: 1 });
+      chart.setPeriod(period as any);
       chart.setDataLoader({
         getBars: (params) => {
           params.callback(klineDataRef.current, false);
+          // 数据加载后立即添加标记
+          requestAnimationFrame(() => {
+            if (markersRef.current && markersRef.current.length > 0) {
+              applyMarkers(chart, markersRef.current);
+            }
+          });
         },
       });
 
@@ -126,51 +240,41 @@ export function KlineChartModule({
 
   // 数据更新时重新加载
   useEffect(() => {
-    if (!chartInstance.current) return;
-    chartInstance.current.setDataLoader({
+    const chart = chartInstance.current;
+    if (!chart) return;
+
+    const period = periodMap[activePeriod] || { type: "hour", span: 1 };
+    chart.setPeriod(period as any);
+    chart.setDataLoader({
       getBars: (params) => {
         params.callback(klineData, false);
+        // 数据加载后添加标记
+        requestAnimationFrame(() => {
+          if (markersRef.current && markersRef.current.length > 0) {
+            applyMarkers(chart, markersRef.current);
+          }
+        });
       },
     });
-  }, [klineData]);
+  }, [klineData, activePeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 买卖点标记
+  // 买卖点标记变化时重新添加（仅当 markers 引用变化时触发）
   useEffect(() => {
     const chart = chartInstance.current;
     if (!chart || !markers || markers.length === 0) return;
 
-    // 等数据加载完毕后再添加标记
-    const timer = setTimeout(() => {
-      // 清除旧的标记
-      chart.removeOverlay({ groupId: "trade_markers" });
+    // 使用 double-RAF 确保图表已完成渲染
+    let cancelled = false;
+    requestAnimationFrame(() => {
+      if (cancelled) return;
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        applyMarkers(chart, markers);
+      });
+    });
 
-      // 添加买卖点
-      const overlays = markers.map((marker) => ({
-        name: "simpleAnnotation",
-        groupId: "trade_markers",
-        lock: true,
-        points: [{ timestamp: marker.timestamp, value: marker.price }],
-        extendData: marker.side === "buy" ? "B" : "S",
-        styles: {
-          polygon: {
-            color: marker.side === "buy" ? "#22c55e" : "#ef4444",
-            borderColor: marker.side === "buy" ? "#22c55e" : "#ef4444",
-          },
-          text: {
-            color: "#ffffff",
-            backgroundColor: marker.side === "buy" ? "#22c55e" : "#ef4444",
-          },
-          line: {
-            color: marker.side === "buy" ? "#22c55e" : "#ef4444",
-          },
-        },
-      }));
-
-      chart.createOverlay(overlays as any);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [markers, klineData]);
+    return () => { cancelled = true; };
+  }, [markers, applyMarkers]);
 
   // 聚焦到指定时间戳
   useEffect(() => {
