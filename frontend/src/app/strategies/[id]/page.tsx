@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BacktestPanel } from "@/components/backtest-panel";
-import { KlineChartModule } from "@/components/kline-chart";
+import dynamic from "next/dynamic";
 import { TradeMarker } from "@/components/kline-chart/types";
+
+const KlineChartModule = dynamic(
+  () => import("@/components/kline-chart").then((mod) => mod.KlineChartModule),
+  { ssr: false }
+);
 import { fetchMarketKlines } from "@/lib/api";
 import { formatPrice, formatSymbol, formatDateTime } from "@/lib/utils";
 import { ArrowLeft, ChevronLeft, ChevronRight, History, Pencil, Play, Square, TrendingUp } from "lucide-react";
