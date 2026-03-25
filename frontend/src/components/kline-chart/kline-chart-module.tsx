@@ -206,6 +206,47 @@ export function KlineChartModule({
         grid: {
           show: false,
         },
+        candle: {
+          tooltip: {
+            showRule: "follow_cross",
+            title: { show: false },
+            legend: {
+              size: 10,
+              marginLeft: 4,
+              marginTop: 2,
+              marginRight: 4,
+              marginBottom: 2,
+              template: [
+                { title: "T", value: "{time}" },
+                { title: "O", value: "{open}" },
+                { title: "H", value: "{high}" },
+                { title: "L", value: "{low}" },
+                { title: "C", value: "{close}" },
+              ],
+            },
+          },
+        },
+        indicator: {
+          tooltip: {
+            showRule: "follow_cross",
+            title: {
+              showName: false,
+              showParams: false,
+              size: 10,
+              marginLeft: 4,
+              marginTop: 2,
+              marginRight: 4,
+              marginBottom: 2,
+            },
+            legend: {
+              size: 10,
+              marginLeft: 4,
+              marginTop: 2,
+              marginRight: 4,
+              marginBottom: 2,
+            },
+          },
+        },
       },
     });
 
