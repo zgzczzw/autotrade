@@ -331,6 +331,19 @@ export function KlineChartModule({
     return () => clearTimeout(timer);
   }, [focusTimestamp]);
 
+  // 容器高度变化后通知 klinecharts 重新布局，并固定主图高度
+  useEffect(() => {
+    const chart = chartInstance.current;
+    if (!chart) return;
+    // DOM 更新后 resize，再强制主图高度
+    requestAnimationFrame(() => {
+      chart.resize();
+      requestAnimationFrame(() => {
+        chart.setPaneOptions({ id: "candle_pane", height: height, minHeight: height });
+      });
+    });
+  }, [totalHeight, height]);
+
   // 切换指标
   const toggleIndicator = useCallback((name: keyof typeof activeIndicators) => {
     setActiveIndicators((prev) => {
@@ -547,7 +560,7 @@ function applyIndicators(chart: Chart, config: Record<string, boolean>) {
     );
   }
 
-  // 固定主图高度，不随子图增减变化
+  // 固定主图高度，不随子图增减变化（minHeight 保底）
   chart.setPaneOptions({ id: "candle_pane", minHeight: 300 });
 }
 
