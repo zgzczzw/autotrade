@@ -80,6 +80,7 @@ class Simulator:
             side="long",
             entry_price=price,
             quantity=quantity,
+            user_id=user_id,
         )
         db.add(position)
 
@@ -253,6 +254,7 @@ class Simulator:
             side="short",
             entry_price=price,
             quantity=quantity,
+            user_id=user_id,
         )
         db.add(position)
 
