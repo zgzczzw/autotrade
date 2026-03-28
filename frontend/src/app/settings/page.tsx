@@ -93,12 +93,14 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-white mb-2">系统设置</h1>
-      <p className="text-slate-400 mb-8">配置市场数据来源，切换后立即生效，无需重启。</p>
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">系统设置</h1>
+        <p className="text-sm text-slate-500 mt-1">配置市场数据来源，切换后立即生效</p>
+      </div>
 
       {/* 数据源选择 */}
-      <section className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
+      <section className="bg-slate-900 rounded-xl p-6 border border-slate-800">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
           数据源
         </h2>
@@ -139,7 +141,7 @@ export default function SettingsPage() {
 
       {/* CryptoCompare API Key */}
       {dataSource === "cryptocompare" && (
-        <section className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
+        <section className="bg-slate-900 rounded-xl p-6 border border-slate-800">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
             CryptoCompare API Key
           </h2>
@@ -166,7 +168,7 @@ export default function SettingsPage() {
       )}
 
       {/* 时区设置 */}
-      <section className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
+      <section className="bg-slate-900 rounded-xl p-6 border border-slate-800">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
           时区
         </h2>
@@ -190,7 +192,7 @@ export default function SettingsPage() {
       </section>
 
       {/* 测试连接 */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4">
         <button
           onClick={handleTest}
           disabled={testing}
@@ -221,7 +223,7 @@ export default function SettingsPage() {
       </div>
 
       {/* 保存按钮 */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4">
         <button
           onClick={handleSave}
           disabled={saving}

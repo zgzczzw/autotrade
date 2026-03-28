@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPrice, formatDateTime } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Activity, Zap } from "lucide-react";
+import {
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Zap,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+} from "lucide-react";
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -38,132 +46,159 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return <div className="text-center py-12">加载中...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-32 bg-slate-800 rounded-lg animate-pulse" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-28 bg-slate-900 rounded-xl border border-slate-800 animate-pulse" />
+          ))}
+        </div>
+        <div className="h-64 bg-slate-900 rounded-xl border border-slate-800 animate-pulse" />
+      </div>
+    );
   }
 
   if (!data) {
     return <div className="text-center py-12 text-red-400">加载失败</div>;
   }
 
+  const pnlPercent = data.balance > 0 ? ((data.total_pnl / (data.balance - data.total_pnl)) * 100) : 0;
+
   return (
-    <div>
-      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">仪表盘</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-white">仪表盘</h1>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="账户余额"
           value={formatPrice(data.balance)}
-          icon={Activity}
-          trend={data.balance >= 100000 ? "up" : "down"}
+          icon={Wallet}
+          accent="blue"
         />
         <StatCard
           title="总盈亏"
-          value={formatPrice(data.total_pnl)}
+          value={`${data.total_pnl >= 0 ? "+" : ""}${formatPrice(data.total_pnl)}`}
+          subtitle={`${pnlPercent >= 0 ? "+" : ""}${pnlPercent.toFixed(2)}%`}
           icon={data.total_pnl >= 0 ? TrendingUp : TrendingDown}
-          valueClass={data.total_pnl >= 0 ? "text-green-400" : "text-red-400"}
+          accent={data.total_pnl >= 0 ? "green" : "red"}
         />
         <StatCard
           title="运行中策略"
           value={data.running_strategies.toString()}
           icon={Zap}
+          accent="amber"
         />
         <StatCard
           title="今日触发"
           value={data.today_triggers.toString()}
           icon={Activity}
+          accent="purple"
         />
       </div>
 
       {/* 最近触发记录 */}
-      <Card className="bg-slate-900 border-slate-800">
-        <CardHeader>
-          <CardTitle>最近触发记录</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.recent_triggers.length === 0 ? (
-            <p className="text-slate-400 text-center py-8">暂无触发记录</p>
-          ) : (
-            <div className="space-y-3">
-              {data.recent_triggers.map((trigger: any) => (
+      <div className="bg-slate-900 rounded-xl border border-slate-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+          <h2 className="font-semibold text-white flex items-center gap-2">
+            <Clock className="w-4 h-4 text-slate-400" />
+            最近触发
+          </h2>
+          <span className="text-xs text-slate-500">{data.recent_triggers.length} 条记录</span>
+        </div>
+        {data.recent_triggers.length === 0 ? (
+          <div className="py-12 text-center">
+            <Activity className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+            <p className="text-slate-500 text-sm">暂无触发记录</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-800/50">
+            {data.recent_triggers.map((trigger: any) => {
+              const isBuy = ["buy", "买入"].includes(trigger.action || "");
+              const isSell = ["sell", "卖出"].includes(trigger.action || "");
+              return (
                 <div
                   key={trigger.id}
-                  className="flex items-center justify-between p-3 bg-slate-800 rounded-lg"
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-slate-800/30 transition-colors"
                 >
-                  <div>
-                    <p className="font-medium">{trigger.strategy_name || `策略 #${trigger.strategy_id}`}</p>
-                    <p className="text-sm text-slate-400">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    isBuy ? "bg-green-500/10" : isSell ? "bg-red-500/10" : "bg-slate-800"
+                  }`}>
+                    {isBuy ? (
+                      <ArrowUpRight className="w-4 h-4 text-green-400" />
+                    ) : isSell ? (
+                      <ArrowDownRight className="w-4 h-4 text-red-400" />
+                    ) : (
+                      <Activity className="w-4 h-4 text-slate-500" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-200 truncate">
+                      {trigger.strategy_name || `策略 #${trigger.strategy_id}`}
+                    </p>
+                    <p className="text-xs text-slate-500">
                       {formatDateTime(trigger.triggered_at)}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        ["buy", "买入"].includes(trigger.action || "")
-                          ? "bg-green-900 text-green-300"
-                          : ["sell", "卖出"].includes(trigger.action || "")
-                          ? "bg-red-900 text-red-300"
-                          : "bg-slate-700 text-slate-300"
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                        isBuy
+                          ? "bg-green-500/15 text-green-400"
+                          : isSell
+                          ? "bg-red-500/15 text-red-400"
+                          : "bg-slate-800 text-slate-400"
                       }`}
                     >
                       {trigger.action || "观望"}
                     </span>
                     {trigger.price && (
-                      <p className="text-sm text-slate-400 mt-1">
-                        @ {formatPrice(trigger.price)}
+                      <p className="text-xs text-slate-500 mt-0.5 font-mono">
+                        {formatPrice(trigger.price)}
                       </p>
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
+const ACCENT_STYLES = {
+  blue:   { bg: "bg-blue-500/10",   icon: "text-blue-400",   value: "text-white" },
+  green:  { bg: "bg-green-500/10",  icon: "text-green-400",  value: "text-green-400" },
+  red:    { bg: "bg-red-500/10",    icon: "text-red-400",    value: "text-red-400" },
+  amber:  { bg: "bg-amber-500/10",  icon: "text-amber-400",  value: "text-white" },
+  purple: { bg: "bg-purple-500/10", icon: "text-purple-400", value: "text-white" },
+};
+
 interface StatCardProps {
   title: string;
   value: string;
+  subtitle?: string;
   icon: React.ElementType;
-  trend?: "up" | "down";
-  valueClass?: string;
+  accent: keyof typeof ACCENT_STYLES;
 }
 
-function StatCard({ title, value, icon: Icon, trend, valueClass }: StatCardProps) {
+function StatCard({ title, value, subtitle, icon: Icon, accent }: StatCardProps) {
+  const style = ACCENT_STYLES[accent];
   return (
-    <Card className="bg-slate-900 border-slate-800">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-400 mb-1">{title}</p>
-            <p className={`text-2xl font-bold ${valueClass || "text-white"}`}>
-              {value}
-            </p>
-          </div>
-          <div
-            className={`p-3 rounded-lg ${
-              trend === "up"
-                ? "bg-green-900/50"
-                : trend === "down"
-                ? "bg-red-900/50"
-                : "bg-slate-800"
-            }`}
-          >
-            <Icon
-              className={`w-6 h-6 ${
-                trend === "up"
-                  ? "text-green-400"
-                  : trend === "down"
-                  ? "text-red-400"
-                  : "text-slate-400"
-              }`}
-            />
-          </div>
+    <div className="bg-slate-900 rounded-xl border border-slate-800 p-4 hover:border-slate-700 transition-colors">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">{title}</span>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.bg}`}>
+          <Icon className={`w-4 h-4 ${style.icon}`} />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <p className={`text-xl font-bold font-mono ${style.value}`}>{value}</p>
+      {subtitle && (
+        <p className={`text-xs mt-0.5 ${style.icon}`}>{subtitle}</p>
+      )}
+    </div>
   );
 }

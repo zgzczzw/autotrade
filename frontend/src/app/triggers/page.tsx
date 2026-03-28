@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice, formatDateTime } from "@/lib/utils";
-import { History, Trash2 } from "lucide-react";
+import { History, Trash2, ArrowUpRight, ArrowDownRight, ArrowDown, ArrowUp } from "lucide-react";
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -87,130 +86,145 @@ export default function TriggersPage() {
     }
   };
 
-  const getActionBadge = (action?: string) => {
+  const getActionStyle = (action?: string) => {
     switch (action) {
       case "buy":
       case "买入":
-        return <Badge className="bg-green-600">买入</Badge>;
+        return { label: "买入", class: "bg-green-500/15 text-green-400", icon: ArrowUpRight };
       case "sell":
       case "卖出":
-        return <Badge className="bg-red-600">卖出</Badge>;
+        return { label: "卖出", class: "bg-red-500/15 text-red-400", icon: ArrowDownRight };
       case "short":
       case "开空":
-        return <Badge className="bg-orange-600">开空</Badge>;
+        return { label: "开空", class: "bg-orange-500/15 text-orange-400", icon: ArrowDown };
       case "cover":
       case "平空":
-        return <Badge className="bg-purple-600">平空</Badge>;
+        return { label: "平空", class: "bg-purple-500/15 text-purple-400", icon: ArrowUp };
       default:
-        return <Badge variant="secondary">观望</Badge>;
+        return { label: "观望", class: "bg-slate-800 text-slate-400", icon: History };
     }
   };
 
   if (loading) {
-    return <div className="text-center py-12">加载中...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-32 bg-slate-800 rounded-lg animate-pulse" />
+        <div className="bg-slate-900 rounded-xl border border-slate-800 animate-pulse h-96" />
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold">触发日志</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">触发日志</h1>
+          <p className="text-sm text-slate-500 mt-1">共 {triggers.length} 条记录</p>
+        </div>
         {selectedIds.size > 0 && (
           <Button
             variant="destructive"
             size="sm"
             onClick={batchDelete}
+            className="gap-1.5"
           >
-            <Trash2 className="w-4 h-4 mr-1" />
+            <Trash2 className="w-3.5 h-3.5" />
             删除 ({selectedIds.size})
           </Button>
         )}
       </div>
 
       {triggers.length === 0 ? (
-        <Card className="bg-slate-900 border-slate-800">
-          <CardContent className="py-12 text-center">
-            <History className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">暂无触发记录</p>
-            <p className="text-sm text-slate-500 mt-2">
-              启动策略后将在此显示触发记录
-            </p>
-          </CardContent>
-        </Card>
+        <div className="bg-slate-900 rounded-xl border border-slate-800 py-16 text-center">
+          <History className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+          <p className="text-slate-400 mb-1">暂无触发记录</p>
+          <p className="text-sm text-slate-500">启动策略后将在此显示触发记录</p>
+        </div>
       ) : (
-        <Card className="bg-slate-900 border-slate-800">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-800">
-                    <th className="p-4 w-12">
-                      <input
-                        type="checkbox"
-                        checked={triggers.length > 0 && selectedIds.size === triggers.length}
-                        onChange={toggleSelectAll}
-                        className="rounded border-slate-600"
-                      />
-                    </th>
-                    <th className="text-left p-4 text-slate-400 font-medium">时间</th>
-                    <th className="text-left p-4 text-slate-400 font-medium">策略</th>
-                    <th className="text-left p-4 text-slate-400 font-medium">操作</th>
-                    <th className="text-left p-4 text-slate-400 font-medium">价格</th>
-                    <th className="text-right p-4 text-slate-400 font-medium">盈亏</th>
-                    <th className="p-4 w-12"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {triggers.map((trigger) => (
-                    <tr key={trigger.id} className="border-b border-slate-800 last:border-0">
-                      <td className="p-4">
+        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-800">
+                  <th className="p-3 md:p-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={triggers.length > 0 && selectedIds.size === triggers.length}
+                      onChange={toggleSelectAll}
+                      className="rounded border-slate-600 accent-blue-500"
+                    />
+                  </th>
+                  <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">时间</th>
+                  <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">策略</th>
+                  <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">操作</th>
+                  <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">价格</th>
+                  <th className="text-right p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">盈亏</th>
+                  <th className="p-3 md:p-4 w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {triggers.map((trigger) => {
+                  const actionStyle = getActionStyle(trigger.action);
+                  const ActionIcon = actionStyle.icon;
+                  return (
+                    <tr
+                      key={trigger.id}
+                      className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30 transition-colors"
+                    >
+                      <td className="p-3 md:p-4">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(trigger.id)}
                           onChange={() => toggleSelect(trigger.id)}
-                          className="rounded border-slate-600"
+                          className="rounded border-slate-600 accent-blue-500"
                         />
                       </td>
-                      <td className="p-4">
+                      <td className="p-3 md:p-4 text-sm text-slate-300 whitespace-nowrap">
                         {formatDateTime(trigger.triggered_at)}
                       </td>
-                      <td className="p-4">
+                      <td className="p-3 md:p-4 text-sm text-slate-200 font-medium">
                         {trigger.strategy_name || `策略 #${trigger.strategy_id}`}
                       </td>
-                      <td className="p-4">{getActionBadge(trigger.action)}</td>
-                      <td className="p-4">
+                      <td className="p-3 md:p-4">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${actionStyle.class}`}>
+                          <ActionIcon className="w-3 h-3" />
+                          {actionStyle.label}
+                        </span>
+                      </td>
+                      <td className="p-3 md:p-4 text-sm font-mono text-slate-300">
                         {trigger.price ? formatPrice(trigger.price) : "-"}
                       </td>
-                      <td className="p-4 text-right">
-                        {trigger.simulated_pnl !== undefined ? (
+                      <td className="p-3 md:p-4 text-right">
+                        {trigger.simulated_pnl !== undefined && trigger.simulated_pnl !== null ? (
                           <span
-                            className={
+                            className={`text-sm font-mono font-medium ${
                               trigger.simulated_pnl >= 0
                                 ? "text-green-400"
                                 : "text-red-400"
-                            }
+                            }`}
                           >
                             {trigger.simulated_pnl >= 0 ? "+" : ""}
                             {formatPrice(trigger.simulated_pnl)}
                           </span>
                         ) : (
-                          "-"
+                          <span className="text-slate-600">-</span>
                         )}
                       </td>
-                      <td className="p-4">
+                      <td className="p-3 md:p-4">
                         <button
                           onClick={() => deleteTrigger(trigger.id)}
-                          className="text-slate-500 hover:text-red-400 transition-colors"
+                          className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   );

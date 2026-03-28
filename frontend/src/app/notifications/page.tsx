@@ -58,7 +58,7 @@ export default function NotificationsPage() {
     <div className="max-w-xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">通知设置</h1>
-        <p className="text-slate-400 text-sm mt-1">配置策略触发时的推送通知</p>
+        <p className="text-sm text-slate-500 mt-1">配置策略触发时的推送通知</p>
       </div>
 
       <Card className="bg-slate-900 border-slate-800">

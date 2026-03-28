@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { formatSymbol } from "@/lib/utils";
-import { Plus, Settings, Trash2 } from "lucide-react";
+import { Plus, Settings, Trash2, Zap, Code, Eye, Bot } from "lucide-react";
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -68,94 +67,125 @@ export default function StrategiesPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "running":
-        return <Badge className="bg-green-600">运行中</Badge>;
-      case "stopped":
-        return <Badge variant="secondary">已停止</Badge>;
-      case "error":
-        return <Badge variant="destructive">错误</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
   if (loading) {
-    return <div className="text-center py-12">加载中...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-32 bg-slate-800 rounded-lg animate-pulse" />
+          <div className="h-9 w-24 bg-slate-800 rounded-lg animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-36 bg-slate-900 rounded-xl border border-slate-800 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold">策略管理</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">策略管理</h1>
         <Link href="/strategies/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button size="sm" className="gap-1.5">
+            <Plus className="w-4 h-4" />
             创建策略
           </Button>
         </Link>
       </div>
 
       {strategies.length === 0 ? (
-        <Card className="bg-slate-900 border-slate-800">
-          <CardContent className="py-12 text-center">
-            <p className="text-slate-400 mb-4">暂无策略</p>
-            <Link href="/strategies/new">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                创建第一个策略
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <div className="bg-slate-900 rounded-xl border border-slate-800 py-16 text-center">
+          <Bot className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+          <p className="text-slate-400 mb-1">暂无策略</p>
+          <p className="text-sm text-slate-500 mb-5">创建你的第一个交易策略开始自动化交易</p>
+          <Link href="/strategies/new">
+            <Button size="sm" className="gap-1.5">
+              <Plus className="w-4 h-4" />
+              创建策略
+            </Button>
+          </Link>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {strategies.map((strategy) => (
-            <Card key={strategy.id} className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{strategy.name}</CardTitle>
-                    <p className="text-sm text-slate-400 mt-1">
-                      {formatSymbol(strategy.symbol)} · {strategy.timeframe}
-                    </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {strategies.map((strategy) => {
+            const isRunning = strategy.status === "running";
+            const isError = strategy.status === "error";
+            return (
+              <div
+                key={strategy.id}
+                className={`bg-slate-900 rounded-xl border transition-all hover:border-slate-700 ${
+                  isRunning ? "border-slate-700/80" : isError ? "border-red-900/50" : "border-slate-800"
+                }`}
+              >
+                <div className="p-4">
+                  {/* 头部 */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <Link href={`/strategies/${strategy.id}`} className="group">
+                        <h3 className="font-semibold text-white truncate group-hover:text-blue-400 transition-colors">
+                          {strategy.name}
+                        </h3>
+                      </Link>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-slate-500 font-mono">
+                          {formatSymbol(strategy.symbol)}
+                        </span>
+                        <span className="text-slate-700">·</span>
+                        <span className="text-xs text-slate-500">{strategy.timeframe}</span>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={isRunning}
+                      onCheckedChange={() => handleToggle(strategy)}
+                      disabled={isError}
+                    />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Link href={`/strategies/${strategy.id}`}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Settings className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-red-400 hover:text-red-300"
-                      onClick={() => handleDelete(strategy.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+
+                  {/* 底部信息 */}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
+                    <div className="flex items-center gap-2">
+                      {/* 状态指示 */}
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          isRunning ? "bg-green-400 animate-pulse" : isError ? "bg-red-400" : "bg-slate-600"
+                        }`} />
+                        <span className={`text-xs ${
+                          isRunning ? "text-green-400" : isError ? "text-red-400" : "text-slate-500"
+                        }`}>
+                          {isRunning ? "运行中" : isError ? "错误" : "已停止"}
+                        </span>
+                      </div>
+                      <span className="text-slate-700">·</span>
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        {strategy.type === "visual" ? <Eye className="w-3 h-3" /> : <Code className="w-3 h-3" />}
+                        {strategy.type === "visual" ? "可视化" : "代码"}
+                      </span>
+                      <span className="text-slate-700">·</span>
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <Zap className="w-3 h-3" />
+                        {strategy.trigger_count || 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Link href={`/strategies/${strategy.id}`}>
+                        <button className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors">
+                          <Settings className="w-3.5 h-3.5" />
+                        </button>
+                      </Link>
+                      <button
+                        className="p-1.5 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        onClick={() => handleDelete(strategy.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    {getStatusBadge(strategy.status)}
-                    <p className="text-xs text-slate-400">
-                      {strategy.type === "visual" ? "可视化策略" : "代码策略"} · 
-                      触发 {strategy.trigger_count || 0} 次
-                    </p>
-                  </div>
-                  <Switch
-                    checked={strategy.status === "running"}
-                    onCheckedChange={() => handleToggle(strategy)}
-                    disabled={strategy.status === "error"}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
