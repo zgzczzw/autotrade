@@ -6,13 +6,12 @@ import os
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, text
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.engine.scheduler import scheduler
 from app.logger import get_logger
 from app.models import Position, SimAccount, User
 from app.schemas import AccountResponse, MessageResponse, PositionHistoryList, PositionList, PositionResponse
@@ -52,36 +51,7 @@ async def reset_account(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """重置当前用户的模拟账户"""
-    # 1. Stop all running strategies for this user (flushes scheduler memory)
-    await scheduler.stop_user_strategies(current_user.id)
-
-    # 2. Delete notification_logs for this user's trigger_logs
-    await db.execute(text(
-        """
-        DELETE FROM notification_logs WHERE trigger_log_id IN (
-            SELECT tl.id FROM trigger_logs tl
-            JOIN strategies s ON tl.strategy_id = s.id
-            WHERE s.user_id = :uid
-        )
-        """
-    ), {"uid": current_user.id})
-
-    # 3. Delete trigger_logs for this user's strategies
-    await db.execute(text(
-        """
-        DELETE FROM trigger_logs WHERE strategy_id IN (
-            SELECT id FROM strategies WHERE user_id = :uid
-        )
-        """
-    ), {"uid": current_user.id})
-
-    # 4. Delete positions for this user
-    await db.execute(text(
-        "DELETE FROM positions WHERE user_id = :uid"
-    ), {"uid": current_user.id})
-
-    # 5. Reset sim_account balance
+    """重置当前用户的模拟账户余额"""
     result = await db.execute(
         select(SimAccount).where(SimAccount.user_id == current_user.id)
     )
@@ -91,8 +61,8 @@ async def reset_account(
         account.total_pnl = 0.0
 
     await db.commit()
-    logger.info(f"模拟账户已重置 (user_id={current_user.id})")
-    return MessageResponse(message="模拟账户已重置")
+    logger.info(f"模拟账户余额已重置 (user_id={current_user.id})")
+    return MessageResponse(message="账户余额已重置")
 
 
 @router.get("/positions/history", response_model=PositionHistoryList)

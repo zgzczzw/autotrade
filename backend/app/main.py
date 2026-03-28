@@ -2,6 +2,7 @@
 AutoTrade FastAPI 入口
 """
 
+import asyncio
 import os
 import time
 from contextlib import asynccontextmanager
@@ -93,9 +94,21 @@ async def lifespan(app: FastAPI):
     await scheduler.restore_running_strategies()
     logger.info("✅ 运行中策略已恢复")
 
+    # 启动策略文件同步后台任务
+    from app.services.strategy_sync import strategy_sync_loop
+    sync_task = asyncio.create_task(strategy_sync_loop())
+    logger.info("✅ 策略文件同步服务已启动")
+
     logger.info("🚀 AutoTrade 启动完成")
 
     yield
+
+    # 停止策略文件同步
+    sync_task.cancel()
+    try:
+        await sync_task
+    except asyncio.CancelledError:
+        pass
 
     # 关闭调度器
     scheduler.shutdown()

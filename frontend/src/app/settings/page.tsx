@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { fetchSettings, updateSettings, testConnection, authLogout } from "@/lib/api";
+import { fetchSettings, updateSettings, testConnection, authLogout, resetAccount } from "@/lib/api";
 import { setTimezone } from "@/lib/utils";
-import { CheckCircle, XCircle, Loader2, FlaskConical, Bell, LogOut } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, FlaskConical, Bell, LogOut, RotateCcw } from "lucide-react";
 
 type DataSource = "binance" | "cryptocompare" | "mock";
 
@@ -34,6 +34,9 @@ export default function SettingsPage() {
   const [testing, setTesting] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetMsg, setResetMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     fetchSettings()
@@ -256,6 +259,62 @@ export default function SettingsPage() {
           <Bell className="w-4 h-4 text-slate-400" />
           <span>消息通知</span>
         </Link>
+        <div className="border-b border-slate-800">
+          {!showResetConfirm ? (
+            <button
+              onClick={() => { setShowResetConfirm(true); setResetMsg(null); }}
+              className="flex items-center gap-3 px-6 py-4 w-full text-left text-orange-400 hover:bg-slate-800 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <div>
+                <span>重置余额</span>
+                <p className="text-xs text-slate-500 mt-0.5">将账户余额恢复为初始值，盈亏归零，不影响策略和持仓</p>
+              </div>
+            </button>
+          ) : (
+            <div className="px-6 py-4 space-y-3">
+              <p className="text-sm text-orange-300">确认重置余额？将会：</p>
+              <ul className="text-xs text-slate-400 list-disc list-inside space-y-1">
+                <li>余额恢复为初始值</li>
+                <li>累计盈亏归零</li>
+              </ul>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    setResetting(true);
+                    setResetMsg(null);
+                    try {
+                      await resetAccount();
+                      setResetMsg({ ok: true, text: "余额已重置" });
+                      setShowResetConfirm(false);
+                    } catch {
+                      setResetMsg({ ok: false, text: "重置失败，请重试" });
+                    } finally {
+                      setResetting(false);
+                    }
+                  }}
+                  disabled={resetting}
+                  className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
+                >
+                  {resetting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  确认重置
+                </button>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors"
+                >
+                  取消
+                </button>
+                {resetMsg && (
+                  <span className={`flex items-center gap-1.5 text-sm ${resetMsg.ok ? "text-green-400" : "text-red-400"}`}>
+                    {resetMsg.ok ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                    {resetMsg.text}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         <button
           onClick={async () => {
             try { await authLogout(); } finally { router.push("/login"); }
