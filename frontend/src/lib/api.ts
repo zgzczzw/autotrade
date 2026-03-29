@@ -166,7 +166,7 @@ export const importStrategies = async (file: File): Promise<{ message: string }>
 
 // ==================== 触发日志 ====================
 
-export const fetchTriggers = (params?: { strategy_id?: number; page?: number; page_size?: number }) =>
+export const fetchTriggers = (params?: { strategy_id?: number; symbol?: string; page?: number; page_size?: number }) =>
   cachedGet("/triggers", 5000, params);
 
 // ==================== 账户和持仓 ====================
@@ -211,3 +211,16 @@ export const updateNotificationSettings = (data: {
 
 export const testNotification = () =>
   apiCall(api.post("/notifications/test"));
+
+// ==================== 回测 ====================
+
+export const deleteBatchBacktest = (batchId: string) => {
+  invalidateCache("/backtests");
+  invalidateCache("/strategies");
+  return apiCall(api.delete(`/backtests/batch/${batchId}`));
+};
+
+export const fetchBacktestStatus = (strategyId: string | number) =>
+  cachedGet<{ running: boolean; current_symbol: string | null; completed: number; total: number }>(
+    `/strategies/${strategyId}/backtest/status`, 2000
+  );
