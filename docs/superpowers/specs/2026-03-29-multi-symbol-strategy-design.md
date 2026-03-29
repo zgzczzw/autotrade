@@ -32,6 +32,7 @@ class StrategySymbol(Base):
 
     __table_args__ = (
         PrimaryKeyConstraint("strategy_id", "symbol"),
+        Index("ix_strategy_symbols_symbol", "symbol"),  # for "find strategies by symbol" queries
     )
 
     strategy = relationship("Strategy", back_populates="symbols")
@@ -47,6 +48,7 @@ The `strategy.symbol` field is retained solely for code strategy compatibility. 
 ### 3. `trigger_logs` Table Changes
 
 - **Add** `symbol` column: `Column(String, nullable=True)` — nullable to accommodate existing records without symbol data
+- **Add** index on `symbol` column for efficient filtering: `Index("ix_trigger_logs_symbol", "symbol")`
 
 ### 4. `notification_logs` — No Changes
 
@@ -59,6 +61,7 @@ Already has a `symbol` field. Works as-is.
 ### 6. `backtest_results` Table Changes
 
 - **Add** `batch_id` column: `Column(String, nullable=True)` — UUID string to group results from the same backtest run
+- **Add** index on `batch_id` column: `Index("ix_backtest_results_batch_id", "batch_id")`
 
 Each backtest run targets one symbol and produces one record. When user triggers "backtest all", the backend generates a single `batch_id` (UUID), runs independent backtests for each symbol, and tags all resulting rows with the same `batch_id`. Frontend groups results by `batch_id` for display.
 
@@ -208,26 +211,101 @@ All internal `strategy.symbol` references replaced with the passed `symbol` para
 - `Position(symbol=symbol, ...)`
 - `BacktestResult(symbol=symbol, ...)`
 
-### Route Changes (`routers/backtests.py`)
+### Engine Changes (`BacktestEngine`)
 
-The backtest route loops over strategy symbols and runs independent backtests:
+Multi-symbol backtest loop must be managed **inside the engine**, not in the route handler. This ensures consistent state tracking, cancellation, and progress reporting.
+
+```python
+class BacktestEngine:
+    def __init__(self):
+        self._running_tasks: Dict[int, asyncio.Event] = {}
+        self._progress: Dict[int, dict] = {}  # {strategy_id: {current_symbol, completed, total}}
+
+    async def run_multi_backtest(
+        self, strategy, symbols: List[str], start_date, end_date, initial_balance
+    ) -> List[BacktestResult]:
+        """Run backtests for multiple symbols sequentially, with unified state tracking."""
+        if strategy.id in self._running_tasks:
+            raise ValueError("该策略已有回测正在运行")
+
+        cancel_event = asyncio.Event()
+        self._running_tasks[strategy.id] = cancel_event
+        batch_id = str(uuid.uuid4())
+        results = []
+
+        try:
+            self._progress[strategy.id] = {
+                "current_symbol": None, "completed": 0, "total": len(symbols)
+            }
+            for i, symbol in enumerate(symbols):
+                if cancel_event.is_set():
+                    break  # cancel stops the entire loop
+                self._progress[strategy.id]["current_symbol"] = symbol
+                result = await self._run_single_backtest(
+                    strategy, symbol, start_date, end_date, initial_balance, cancel_event
+                )
+                result.batch_id = batch_id
+                results.append(result)
+                self._progress[strategy.id]["completed"] = i + 1
+        finally:
+            self._running_tasks.pop(strategy.id, None)
+            self._progress.pop(strategy.id, None)
+
+        return results
+
+    def get_progress(self, strategy_id: int) -> Optional[dict]:
+        return self._progress.get(strategy_id)
+```
+
+Key behaviors:
+- `is_running()` returns `True` for the **entire** multi-symbol loop, not just individual runs
+- `cancel_backtest()` stops the entire loop (no more symbols processed after current one finishes)
+- `get_progress()` returns current symbol and completion count for frontend display
+
+### Route Changes (`routers/backtests.py`)
 
 ```python
 @router.post("/strategies/{strategy_id}/backtest")
 async def create_backtest(strategy_id: int, req: BacktestCreate):
     strategy = ...  # load with selectinload(Strategy.symbols)
-    batch_id = str(uuid.uuid4())
-    results = []
-    for sym in strategy.symbols:
-        result = await run_backtest(strategy, sym.symbol, req.start_date, req.end_date, req.initial_balance)
-        result.batch_id = batch_id
-        results.append(result)
-    return results
+    symbols = [s.symbol for s in strategy.symbols]
+    results = await backtest_engine.run_multi_backtest(
+        strategy, symbols, req.start_date, req.end_date, req.initial_balance
+    )
+    # save all results to DB
+    return [BacktestResponse.model_validate(r) for r in results]
 ```
 
 **Response type changes** from `BacktestResponse` to `List[BacktestResponse]`. This is a breaking change for frontend — frontend must be updated to handle the list.
 
 **`BacktestResponse` schema** adds `batch_id: Optional[str] = None`.
+
+### Status Endpoint Enhancement
+
+```python
+@router.get("/strategies/{strategy_id}/backtest/status")
+async def get_backtest_status(strategy_id: int):
+    engine = get_backtest_engine()
+    progress = engine.get_progress(strategy_id)
+    return {
+        "running": engine.is_running(strategy_id),
+        "current_symbol": progress["current_symbol"] if progress else None,
+        "completed": progress["completed"] if progress else 0,
+        "total": progress["total"] if progress else 0,
+    }
+```
+
+Frontend can show: "正在回测 ETHUSDT (2/5)"
+
+### Delete Batch Endpoint
+
+New endpoint to delete all results in a batch:
+
+```
+DELETE /api/backtests/batch/{batch_id}
+```
+
+Deletes all `backtest_results` where `batch_id` matches. Frontend uses this when user deletes from the batch-grouped list view. Individual delete (`DELETE /api/backtests/{id}`) still works for legacy single results.
 
 ## API & Schema Changes
 
@@ -243,6 +321,14 @@ class StrategyCreate(StrategyBase):
     symbols: List[str] = Field(..., min_length=1)  # at least one symbol required
     config_json: Optional[str] = None
     code: Optional[str] = None
+
+    @field_validator("symbols")
+    @classmethod
+    def deduplicate_symbols(cls, v):
+        deduped = list(dict.fromkeys(v))  # preserve order, remove duplicates
+        if not deduped:
+            raise ValueError("至少需要一个交易对")
+        return deduped
 ```
 
 **`StrategyUpdate`:**
@@ -448,10 +534,13 @@ New layout:
 
 Key behaviors:
 - Backtest history list groups results by `batch_id` (all results from the same backtest run share one UUID)
+- **Null `batch_id` handling:** Old backtest results (before migration) have `batch_id = null`. Each null-batch_id result is displayed as its own independent entry — do NOT group all nulls together
 - Each batch shows the list of symbols that were backtested
 - Clicking a batch shows symbol tabs below
 - Each symbol tab renders the existing backtest result view (stats, equity curve, K-line, trades)
 - Single-symbol backtests look identical to current behavior (one tab only)
+- Delete batch: delete button removes all results in the batch via `DELETE /api/backtests/batch/{batch_id}`. For legacy results without batch_id, use existing `DELETE /api/backtests/{id}`
+- **Progress display during backtest:** Poll status endpoint, show "正在回测 ETHUSDT (2/5)" in the UI while running
 
 ### Strategy Import Dialog
 
