@@ -16,7 +16,7 @@ const KlineChartModule = dynamic(
   { ssr: false }
 );
 import { fetchMarketKlines } from "@/lib/api";
-import { formatPrice, formatSymbol, formatDateTime } from "@/lib/utils";
+import { formatPrice, formatSymbol, formatDateTime, parseUTCTimestamp } from "@/lib/utils";
 import { ArrowLeft, ChevronLeft, ChevronRight, History, Pencil, Play, Square, TrendingUp } from "lucide-react";
 import axios from "axios";
 import {
@@ -180,7 +180,7 @@ export default function StrategyDetailPage() {
     return allTriggers
       .filter((t) => t.action && t.action !== "观望" && t.price)
       .map((t) => ({
-        timestamp: new Date(t.triggered_at).getTime(),
+        timestamp: parseUTCTimestamp(t.triggered_at),
         price: t.price!,
         side: (t.action === "买入" ? "buy" : "sell") as "buy" | "sell",
         quantity: t.quantity,

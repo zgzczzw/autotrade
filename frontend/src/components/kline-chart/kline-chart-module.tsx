@@ -169,17 +169,39 @@ export function KlineChartModule({
 
     if (!markersToApply || markersToApply.length === 0) return;
 
-    // 构建 timestamp→candle 索引，用于取 low/high 作为锚点
+    // 构建有序时间戳数组和 timestamp→candle 索引
     const dataList = chart.getDataList();
     const candleMap = new Map<number, KLineData>();
-    dataList.forEach((c) => candleMap.set(c.timestamp, c));
+    const timestamps: number[] = [];
+    dataList.forEach((c) => {
+      candleMap.set(c.timestamp, c);
+      timestamps.push(c.timestamp);
+    });
+
+    // 二分查找最近的蜡烛时间戳
+    const findNearestTimestamp = (target: number): number => {
+      if (timestamps.length === 0) return target;
+      let lo = 0, hi = timestamps.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (timestamps[mid] < target) lo = mid + 1;
+        else hi = mid;
+      }
+      // lo 是第一个 >= target 的位置，比较 lo 和 lo-1 哪个更近
+      if (lo === 0) return timestamps[0];
+      const prev = timestamps[lo - 1];
+      const curr = timestamps[lo];
+      return (target - prev <= curr - target) ? prev : curr;
+    };
 
     // 逐个创建 overlay
     markersToApply.forEach((marker) => {
       const isBuy = marker.side === "buy";
       const color = isBuy ? "#22c55e" : "#ef4444";
+      // 对齐到最近的蜡烛时间戳
+      const alignedTs = findNearestTimestamp(marker.timestamp);
+      const candle = candleMap.get(alignedTs);
       // 买入锚定在 candle low，卖出锚定在 candle high，确保不与K线重叠
-      const candle = candleMap.get(marker.timestamp);
       const anchorPrice = candle
         ? (isBuy ? candle.low : candle.high)
         : marker.price;
@@ -189,7 +211,7 @@ export function KlineChartModule({
         groupId: "trade_markers",
         lock: true,
         visible: true,
-        points: [{ timestamp: marker.timestamp, value: anchorPrice }],
+        points: [{ timestamp: alignedTs, value: anchorPrice }],
         extendData: isBuy ? "B" : "S",
         styles: {
           line: { color },

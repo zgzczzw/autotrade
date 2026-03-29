@@ -44,6 +44,12 @@ export function setTimezone(tz: string): void {
   if (typeof window !== "undefined") localStorage.setItem(TZ_KEY, tz);
 }
 
+/** 将后端返回的 naive UTC 时间字符串解析为 UTC 毫秒时间戳 */
+export function parseUTCTimestamp(dateStr: string): number {
+  const utcStr = /[Z+\-]\d{0,2}:?\d{0,2}$/.test(dateStr) ? dateStr : dateStr + "Z";
+  return new Date(utcStr).getTime();
+}
+
 export function formatDateTime(dateStr: string): string {
   // Backend returns naive UTC strings without timezone indicator.
   // Append 'Z' so JavaScript parses them as UTC instead of local time.
