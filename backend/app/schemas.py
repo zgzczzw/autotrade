@@ -5,7 +5,7 @@ Pydantic Schema 定义
 from datetime import datetime
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ==================== 策略相关 ====================
@@ -14,7 +14,6 @@ class StrategyBase(BaseModel):
     """策略基础字段"""
     name: str = Field(..., min_length=1, max_length=100)
     type: str = Field(..., pattern="^(visual|code)$")
-    symbol: str = Field(..., min_length=1)
     timeframe: str = Field(..., pattern=r"^(\d+[mhdw])(,\d+[mhdw])*$")
     position_size: float = Field(..., gt=0)
     position_size_type: str = Field(..., pattern="^(fixed|percent)$")
@@ -26,8 +25,17 @@ class StrategyBase(BaseModel):
 
 class StrategyCreate(StrategyBase):
     """创建策略请求"""
-    config_json: Optional[str] = None  # JSON 字符串
+    symbols: List[str] = Field(..., min_length=1)
+    config_json: Optional[str] = None
     code: Optional[str] = None
+
+    @field_validator("symbols")
+    @classmethod
+    def deduplicate_symbols(cls, v):
+        deduped = list(dict.fromkeys(v))
+        if not deduped:
+            raise ValueError("至少需要一个交易对")
+        return deduped
 
 
 class StrategyUpdate(BaseModel):
@@ -41,6 +49,7 @@ class StrategyUpdate(BaseModel):
     take_profit: Optional[float] = Field(None, ge=0, le=1000)
     sell_size_pct: Optional[float] = Field(None, gt=0, le=100)
     notify_enabled: Optional[bool] = None
+    symbols: Optional[List[str]] = None
 
 
 class StrategyResponse(StrategyBase):
@@ -48,6 +57,7 @@ class StrategyResponse(StrategyBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    symbols: List[str] = []
     timeframe: str  # 覆盖基类限制，读库数据不做格式校验
     config_json: Optional[str] = None
     code: Optional[str] = None
@@ -89,6 +99,7 @@ class TriggerLogResponse(BaseModel):
     id: int
     strategy_id: int
     strategy_name: Optional[str] = None
+    symbol: Optional[str] = None
     triggered_at: datetime
     signal_type: str
     signal_detail: Optional[str] = None
@@ -199,6 +210,7 @@ class BacktestResponse(BaseModel):
     trades: str  # JSON 字符串
     klines: Optional[str] = None  # JSON 字符串，K线数据
     created_at: datetime
+    batch_id: Optional[str] = None
 
 
 class BacktestList(BaseModel):
