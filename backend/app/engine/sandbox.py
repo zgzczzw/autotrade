@@ -280,7 +280,7 @@ class SandboxExecutor:
             return None
 
         data = {
-            "symbol": context.strategy.symbol,
+            "symbol": context.symbol,
             "timeframe": context.strategy.timeframe,
             "price": current_kline["close"] if current_kline else 0,
             "klines": klines or [],
