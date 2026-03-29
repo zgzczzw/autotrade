@@ -32,16 +32,17 @@ class StrategyContext:
     提供给策略代码使用的 API
     """
 
-    def __init__(self, strategy: Strategy, db: AsyncSession, current_kline: Optional[dict] = None):
+    def __init__(self, strategy: Strategy, db: AsyncSession, symbol: str, current_kline: Optional[dict] = None):
         self.strategy = strategy
         self.db = db
+        self.symbol = symbol
         self.current_kline = current_kline
 
     async def get_klines(self, limit: int = 100) -> List[dict]:
         """获取 K 线数据（使用策略主时间周期）"""
         primary_tf = self.strategy.timeframe.split(",")[0].strip()
         return await market_data_service.get_klines(
-            symbol=self.strategy.symbol,
+            symbol=self.symbol,
             timeframe=primary_tf,
             limit=limit,
             db=self.db,
@@ -65,7 +66,7 @@ class StrategyContext:
             # 持空 → 平空
             return await simulator.execute_cover(
                 strategy_id=self.strategy.id,
-                symbol=self.strategy.symbol,
+                symbol=self.symbol,
                 price=price,
                 db=self.db,
                 user_id=getattr(self.strategy, "user_id", None),
@@ -82,7 +83,7 @@ class StrategyContext:
 
         return await simulator.execute_buy(
             strategy_id=self.strategy.id,
-            symbol=self.strategy.symbol,
+            symbol=self.symbol,
             quantity=qty,
             price=price,
             db=self.db,
@@ -108,7 +109,7 @@ class StrategyContext:
             sell_size_pct = getattr(self.strategy, "sell_size_pct", 100.0) or 100.0
             return await simulator.execute_sell(
                 strategy_id=self.strategy.id,
-                symbol=self.strategy.symbol,
+                symbol=self.symbol,
                 price=price,
                 db=self.db,
                 sell_size_pct=sell_size_pct,
@@ -126,7 +127,7 @@ class StrategyContext:
 
         return await simulator.execute_short(
             strategy_id=self.strategy.id,
-            symbol=self.strategy.symbol,
+            symbol=self.symbol,
             quantity=qty,
             price=price,
             db=self.db,
@@ -138,7 +139,7 @@ class StrategyContext:
         result = await self.db.execute(
             select(Position).where(
                 Position.strategy_id == self.strategy.id,
-                Position.symbol == self.strategy.symbol,
+                Position.symbol == self.symbol,
                 Position.closed_at.is_(None),
             ).order_by(Position.id.desc())
         )
@@ -166,23 +167,24 @@ class StrategyExecutor:
     def __init__(self):
         # 持久化代码策略实例，key = strategy_id
         # 跨 tick 保留状态（如缓存的多周期 K 线数据）
-        self._strategy_instances: Dict[int, Any] = {}
+        self._strategy_instances: Dict[tuple, Any] = {}
 
     def release_instance(self, strategy_id: int) -> None:
         """
         释放策略持久化实例（策略停止时调用）。
         调用 on_stop() 做清理，失败只 warning 不抛出。
         """
-        instance = self._strategy_instances.pop(strategy_id, None)
-        if instance is None:
-            return
-        try:
-            instance.on_stop()
-        except Exception as e:
-            logger.warning(f"Strategy {strategy_id} on_stop() error (ignored): {e}")
-        logger.info(f"Strategy {strategy_id} instance released")
+        keys_to_remove = [k for k in self._strategy_instances if k[0] == strategy_id]
+        for key in keys_to_remove:
+            instance = self._strategy_instances.pop(key)
+            try:
+                instance.on_stop()
+            except Exception as e:
+                logger.warning(f"Strategy {key} on_stop() error (ignored): {e}")
+        if keys_to_remove:
+            logger.info(f"Strategy {strategy_id}: released {len(keys_to_remove)} instance(s)")
 
-    async def execute(self, strategy: Strategy, timeframe: Optional[str] = None):
+    async def execute(self, strategy: Strategy, symbol: str, timeframe: Optional[str] = None):
         """
         执行策略。
 
@@ -201,14 +203,14 @@ class StrategyExecutor:
         async with async_session() as db:
             # 拉取当前时间周期的 K 线（ASC 顺序，[-1] 为最新）
             klines = await market_data_service.get_klines(
-                symbol=strategy.symbol,
+                symbol=symbol,
                 timeframe=active_tf,
                 limit=100,
                 db=db,
             )
             current_kline = klines[-1] if klines else None
 
-            ctx = StrategyContext(strategy, db, current_kline)
+            ctx = StrategyContext(strategy, db, symbol, current_kline)
 
             try:
                 sl_tp_trigger = None
@@ -217,7 +219,7 @@ class StrategyExecutor:
                     current_price = current_kline["close"]
                     sl_tp_trigger = await simulator.check_stop_loss_take_profit(
                         strategy_id=strategy.id,
-                        symbol=strategy.symbol,
+                        symbol=symbol,
                         current_price=current_price,
                         stop_loss_pct=strategy.stop_loss,
                         take_profit_pct=strategy.take_profit,
@@ -225,7 +227,7 @@ class StrategyExecutor:
                         user_id=getattr(strategy, "user_id", None),
                     )
                     if sl_tp_trigger and strategy.notify_enabled:
-                        await self._send_notification(sl_tp_trigger, strategy, db)
+                        await self._send_notification(sl_tp_trigger, strategy, db, symbol)
 
                 # 2. 执行策略逻辑（止盈止损已触发则跳过）
                 trigger = None
@@ -245,7 +247,7 @@ class StrategyExecutor:
 
                 # 4. 发送通知
                 if trigger and strategy.notify_enabled:
-                    await self._send_notification(trigger, strategy, db)
+                    await self._send_notification(trigger, strategy, db, symbol)
 
             except Exception as e:
                 logger.error(f"Error executing strategy {strategy.id}: {e}")
@@ -258,13 +260,14 @@ class StrategyExecutor:
         trigger: TriggerLog,
         strategy: Strategy,
         db: AsyncSession,
+        symbol: str,
     ):
         """发送通知（Feishu + Bark，各自独立判断）"""
         try:
             await notification_service.send_strategy_notification(
                 trigger_log=trigger,
                 strategy_name=strategy.name,
-                symbol=strategy.symbol,
+                symbol=symbol,
                 db=db,
                 user_id=getattr(strategy, "user_id", None),
             )
@@ -336,21 +339,23 @@ class StrategyExecutor:
 
         try:
             # 获取或创建持久化实例
-            instance = self._strategy_instances.get(strategy.id)
+            symbol = ctx.symbol
+            instance_key = (strategy.id, symbol)
+            instance = self._strategy_instances.get(instance_key)
             if instance is None:
                 instance = sandbox_executor.create_instance(
                     code=strategy.code,
                     context=ctx,
                     strategy_id=strategy.id,
                 )
-                self._strategy_instances[strategy.id] = instance
+                self._strategy_instances[instance_key] = instance
             else:
                 # 更新 ctx（db session 每次都是新的，必须注入最新的）
                 instance.ctx = ctx
 
             # 调用 on_tick，传入当前触发周期的数据
             data = {
-                "symbol": strategy.symbol,
+                "symbol": symbol,
                 "timeframe": active_tf,
                 "price": current_kline["close"] if current_kline else 0,
                 "klines": klines,
@@ -361,7 +366,7 @@ class StrategyExecutor:
         except Exception as e:
             logger.error(f"Code strategy {strategy.id} execution failed: {e}")
             # 实例出错，清除后下次重新创建
-            self._strategy_instances.pop(strategy.id, None)
+            self._strategy_instances.pop(instance_key, None)
             return None
 
     def _check_conditions(
