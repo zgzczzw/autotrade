@@ -17,7 +17,9 @@ from sqlalchemy import select
 from app.database import async_session
 from app.engine.executor import executor
 from app.logger import get_logger
-from app.models import Strategy
+from sqlalchemy.orm import selectinload
+
+from app.models import Strategy, StrategySymbol
 
 logger = get_logger(__name__)
 
@@ -70,7 +72,9 @@ class StrategyScheduler:
         """
         async with async_session() as db:
             result = await db.execute(
-                select(Strategy).where(Strategy.id == strategy_id)
+                select(Strategy)
+                .where(Strategy.id == strategy_id)
+                .options(selectinload(Strategy.symbols))
             )
             strategy = result.scalar_one_or_none()
 
@@ -86,31 +90,38 @@ class StrategyScheduler:
             if strategy_id in self.running_jobs:
                 self.stop_strategy(strategy_id)
 
+            # 提取交易对列表
+            symbols = [s.symbol for s in strategy.symbols]
+            if not symbols:
+                logger.error(f"Strategy {strategy_id} has no symbols configured")
+                return False
+
             # 解析时间周期列表
             timeframes = [tf.strip() for tf in strategy.timeframe.split(",") if tf.strip()]
 
             job_ids: List[str] = []
-            for tf in timeframes:
-                interval = self._timeframe_to_seconds(tf)
-                job_id = f"strategy_{strategy_id}_{tf}"
+            for sym in symbols:
+                for tf in timeframes:
+                    interval = self._timeframe_to_seconds(tf)
+                    job_id = f"strategy_{strategy_id}_{sym}_{tf}"
 
-                self.scheduler.add_job(
-                    func=self._execute_strategy,
-                    trigger=IntervalTrigger(seconds=interval),
-                    id=job_id,
-                    args=[strategy_id, tf],
-                    replace_existing=True,
-                )
-                job_ids.append(job_id)
-                logger.info(
-                    f"Strategy '{strategy.name}' (ID:{strategy_id}) "
-                    f"registered job for tf={tf} every {interval}s"
-                )
+                    self.scheduler.add_job(
+                        func=self._execute_strategy,
+                        trigger=IntervalTrigger(seconds=interval),
+                        id=job_id,
+                        args=[strategy_id, sym, tf],
+                        replace_existing=True,
+                    )
+                    job_ids.append(job_id)
+                    logger.info(
+                        f"Strategy '{strategy.name}' (ID:{strategy_id}) "
+                        f"registered job for symbol={sym}, tf={tf} every {interval}s"
+                    )
 
             self.running_jobs[strategy_id] = job_ids
             logger.info(
                 f"Strategy '{strategy.name}' (ID:{strategy_id}) "
-                f"started with {len(timeframes)} timeframe(s): {strategy.timeframe}"
+                f"started with {len(symbols)} symbol(s) x {len(timeframes)} timeframe(s)"
             )
             return True
 
@@ -154,8 +165,8 @@ class StrategyScheduler:
             await db.commit()
             logger.info(f"Stopped {len(strategies)} strategies for user {user_id}")
 
-    async def _execute_strategy(self, strategy_id: int, timeframe: str):
-        """执行策略任务（由调度器按时间周期触发）"""
+    async def _execute_strategy(self, strategy_id: int, symbol: str, timeframe: str):
+        """执行策略任务（由调度器按 symbol+timeframe 触发）"""
         async with async_session() as db:
             result = await db.execute(
                 select(Strategy).where(Strategy.id == strategy_id)
@@ -167,10 +178,10 @@ class StrategyScheduler:
                 return
 
             try:
-                await executor.execute(strategy, timeframe=timeframe)
+                await executor.execute(strategy, symbol=symbol, timeframe=timeframe)
             except Exception as e:
                 logger.error(
-                    f"Error executing strategy {strategy_id} (tf={timeframe}): {e}"
+                    f"Error executing strategy {strategy_id} (symbol={symbol}, tf={timeframe}): {e}"
                 )
 
     async def restore_running_strategies(self):
