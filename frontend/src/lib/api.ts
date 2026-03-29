@@ -149,6 +149,21 @@ export const stopStrategy = (id: string | number) => {
   return apiCall(api.post(`/strategies/${id}/stop`));
 };
 
+export const exportStrategies = async (): Promise<Blob> => {
+  const res = await axios.get(`${API_BASE_URL}/api/strategies/export`, {
+    responseType: "blob",
+    withCredentials: true,
+  });
+  return res.data;
+};
+
+export const importStrategies = async (file: File): Promise<{ message: string }> => {
+  invalidateCache("/strategies");
+  const form = new FormData();
+  form.append("file", file);
+  return apiCall(api.post("/strategies/import", form, { headers: { "Content-Type": "multipart/form-data" } }));
+};
+
 // ==================== 触发日志 ====================
 
 export const fetchTriggers = (params?: { strategy_id?: number; page?: number; page_size?: number }) =>

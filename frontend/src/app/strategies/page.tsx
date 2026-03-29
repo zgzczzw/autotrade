@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { formatSymbol } from "@/lib/utils";
-import { Plus, Settings, Trash2, Zap, Code, Eye, Bot } from "lucide-react";
+import { Plus, Settings, Trash2, Zap, Code, Eye, Bot, Download, Upload } from "lucide-react";
 import axios from "axios";
+import { exportStrategies, importStrategies } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -67,6 +68,40 @@ export default function StrategiesPage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const blob = await exportStrategies();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "autotrade-strategies.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export:", error);
+      alert("导出失败");
+    }
+  };
+
+  const handleImport = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const res = await importStrategies(file);
+        alert((res as any).message || "导入成功");
+        loadStrategies();
+      } catch (error: any) {
+        const msg = error.response?.data?.detail || "导入失败";
+        alert(msg);
+      }
+    };
+    input.click();
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -87,12 +122,22 @@ export default function StrategiesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">策略管理</h1>
-        <Link href="/strategies/new">
-          <Button size="sm" className="gap-1.5">
-            <Plus className="w-4 h-4" />
-            创建策略
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={handleImport}>
+            <Upload className="w-3.5 h-3.5" />
+            导入
           </Button>
-        </Link>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={handleExport} disabled={strategies.length === 0}>
+            <Download className="w-3.5 h-3.5" />
+            导出
+          </Button>
+          <Link href="/strategies/new">
+            <Button size="sm" className="gap-1.5">
+              <Plus className="w-4 h-4" />
+              创建策略
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {strategies.length === 0 ? (

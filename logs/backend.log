@@ -1,0 +1,432 @@
+INFO:     Started server process [899]
+INFO:     Waiting for application startup.
+2026-03-23 14:43:46 [INFO] app.logger: ============================================================
+2026-03-23 14:43:46 [INFO] app.logger: AutoTrade 系统启动
+2026-03-23 14:43:46 [INFO] app.logger: 日志级别: INFO
+2026-03-23 14:43:46 [INFO] app.logger: 日志格式: text
+2026-03-23 14:43:46 [INFO] app.logger: 日志目录: /home/autotrade/autotrade/backend/logs
+2026-03-23 14:43:46 [INFO] app.logger: ============================================================
+2026-03-23 14:43:46 [INFO] app.main: 🚀 AutoTrade 启动中...
+2026-03-23 14:43:47 [INFO] app.main: ✅ 数据库初始化完成
+2026-03-23 14:43:47 [INFO] app.engine.market_data: Data source switched to: binance
+2026-03-23 14:43:47 [INFO] app.main: ✅ 数据源初始化完成: binance
+2026-03-23 14:43:47 [INFO] apscheduler.scheduler: Scheduler started
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy scheduler started
+2026-03-23 14:43:47 [INFO] app.main: ✅ 调度器启动完成
+2026-03-23 14:43:47 [INFO] apscheduler.scheduler: Added job "StrategyScheduler._execute_strategy" to job store "default"
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy 'RSI 超买超卖' (ID:1) registered job for tf=1h every 3600s
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy 'RSI 超买超卖' (ID:1) started with 1 timeframe(s): 1h
+2026-03-23 14:43:47 [INFO] apscheduler.scheduler: Added job "StrategyScheduler._execute_strategy" to job store "default"
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy '双均线金叉死叉' (ID:2) registered job for tf=1h every 3600s
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy '双均线金叉死叉' (ID:2) started with 1 timeframe(s): 1h
+2026-03-23 14:43:47 [INFO] apscheduler.scheduler: Added job "StrategyScheduler._execute_strategy" to job store "default"
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy '布林带均值回归' (ID:3) registered job for tf=1h every 3600s
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy '布林带均值回归' (ID:3) started with 1 timeframe(s): 1h
+2026-03-23 14:43:47 [INFO] apscheduler.scheduler: Added job "StrategyScheduler._execute_strategy" to job store "default"
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy 'MACD 趋势跟踪' (ID:4) registered job for tf=1d every 86400s
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy 'MACD 趋势跟踪' (ID:4) started with 1 timeframe(s): 1d
+2026-03-23 14:43:47 [INFO] apscheduler.scheduler: Added job "StrategyScheduler._execute_strategy" to job store "default"
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy '全功能测试策略（1h）' (ID:12) registered job for tf=1h every 3600s
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Strategy '全功能测试策略（1h）' (ID:12) started with 1 timeframe(s): 1h
+2026-03-23 14:43:47 [INFO] app.engine.scheduler: Restored 5 running strategies
+2026-03-23 14:43:47 [INFO] app.main: ✅ 运行中策略已恢复
+2026-03-23 14:43:47 [INFO] app.main: 🚀 AutoTrade 启动完成
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:18000 (Press CTRL+C to quit)
+INFO:     223.5.241.44:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     223.5.241.44:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     223.5.241.44:0 - "GET /api/triggers HTTP/1.1" 200 OK
+2026-03-23 15:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 16:43:47 CST)" (scheduled at 2026-03-23 15:43:47.078246+08:00)
+2026-03-23 15:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 16:43:47 CST)" (scheduled at 2026-03-23 15:43:47.079356+08:00)
+2026-03-23 15:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 16:43:47 CST)" (scheduled at 2026-03-23 15:43:47.080418+08:00)
+2026-03-23 15:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 15:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 15:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 15:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 16:43:47 CST)" (scheduled at 2026-03-23 15:43:47.083417+08:00)
+2026-03-23 15:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 15:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774242000001 "HTTP/1.1 200 OK"
+2026-03-23 15:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774242000001 "HTTP/1.1 200 OK"
+2026-03-23 15:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774242000001 "HTTP/1.1 200 OK"
+2026-03-23 15:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774242000001 "HTTP/1.1 200 OK"
+2026-03-23 15:43:47 [INFO] app.engine.sandbox: Strategy 12 instance created: Strategy
+2026-03-23 15:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 16:43:47 CST)" executed successfully
+2026-03-23 15:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 16:43:47 CST)" executed successfully
+2026-03-23 15:43:47 [INFO] app.services.simulator: 模拟买入: BTCUSDT 0.014650052725539759 @ 68259.14
+2026-03-23 15:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 16:43:47 CST)" executed successfully
+2026-03-23 15:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E4%B9%B0%E5%85%A5%20BTCUSDT%20%40%2068259.14%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 15:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 15:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 11
+2026-03-23 15:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 16:43:47 CST)" executed successfully
+2026-03-23 16:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 17:43:47 CST)" (scheduled at 2026-03-23 16:43:47.078246+08:00)
+2026-03-23 16:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 17:43:47 CST)" (scheduled at 2026-03-23 16:43:47.079356+08:00)
+2026-03-23 16:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 17:43:47 CST)" (scheduled at 2026-03-23 16:43:47.080418+08:00)
+2026-03-23 16:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 16:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 16:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 17:43:47 CST)" (scheduled at 2026-03-23 16:43:47.083417+08:00)
+2026-03-23 16:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 16:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 16:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 17:43:47 CST)" executed successfully
+2026-03-23 16:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 17:43:47 CST)" executed successfully
+2026-03-23 16:43:47 [INFO] app.services.simulator: 模拟卖出: BTCUSDT 0.0147 @ 68259.14 (100.0%), PnL: 0.00
+2026-03-23 16:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 17:43:47 CST)" executed successfully
+2026-03-23 16:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%8D%96%E5%87%BA%20BTCUSDT%20%40%2068259.14%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20%2B0.00?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 16:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 16:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 12
+2026-03-23 16:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 17:43:47 CST)" executed successfully
+INFO:     223.5.241.44:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     223.5.241.44:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     223.5.241.44:0 - "GET /api/triggers HTTP/1.1" 200 OK
+2026-03-23 17:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 18:43:47 CST)" (scheduled at 2026-03-23 17:43:47.078246+08:00)
+2026-03-23 17:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 18:43:47 CST)" (scheduled at 2026-03-23 17:43:47.079356+08:00)
+2026-03-23 17:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 18:43:47 CST)" (scheduled at 2026-03-23 17:43:47.080418+08:00)
+2026-03-23 17:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 17:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 17:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 18:43:47 CST)" (scheduled at 2026-03-23 17:43:47.083417+08:00)
+2026-03-23 17:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 17:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 17:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774249200001 "HTTP/1.1 200 OK"
+2026-03-23 17:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774249200001 "HTTP/1.1 200 OK"
+2026-03-23 17:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774249200001 "HTTP/1.1 200 OK"
+2026-03-23 17:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774249200001 "HTTP/1.1 200 OK"
+2026-03-23 17:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 18:43:47 CST)" executed successfully
+2026-03-23 17:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 18:43:47 CST)" executed successfully
+2026-03-23 17:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 18:43:47 CST)" executed successfully
+2026-03-23 17:43:47 [INFO] app.services.simulator: 模拟开空: BTCUSDT 0.014676262202578207 @ 68137.24
+2026-03-23 17:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%BC%80%E7%A9%BA%20BTCUSDT%20%40%2068137.24%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 17:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 17:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 13
+2026-03-23 17:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 18:43:47 CST)" executed successfully
+INFO:     223.5.241.33:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/triggers HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/strategies HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/market/klines?symbol=BTCUSDT&timeframe=1h&limit=1000 HTTP/1.1" 200 OK
+2026-03-23 18:07:21 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT "HTTP/1.1 200 OK"
+INFO:     223.5.241.33:0 - "GET /api/market/ticker?symbol=BTCUSDT HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     223.5.241.33:0 - "GET /api/triggers HTTP/1.1" 200 OK
+2026-03-23 18:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 19:43:47 CST)" (scheduled at 2026-03-23 18:43:47.078246+08:00)
+2026-03-23 18:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 19:43:47 CST)" (scheduled at 2026-03-23 18:43:47.079356+08:00)
+2026-03-23 18:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 19:43:47 CST)" (scheduled at 2026-03-23 18:43:47.080418+08:00)
+2026-03-23 18:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 18:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 18:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 18:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 19:43:47 CST)" (scheduled at 2026-03-23 18:43:47.083417+08:00)
+2026-03-23 18:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 18:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 19:43:47 CST)" executed successfully
+2026-03-23 18:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 19:43:47 CST)" executed successfully
+2026-03-23 18:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 19:43:47 CST)" executed successfully
+2026-03-23 18:43:47 [INFO] app.services.simulator: 模拟平空: BTCUSDT 0.0147 @ 68137.24, PnL: 0.00
+2026-03-23 18:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%B9%B3%E7%A9%BA%20BTCUSDT%20%40%2068137.24%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20%2B0.00?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 18:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 18:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 14
+2026-03-23 18:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 19:43:47 CST)" executed successfully
+2026-03-23 19:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 20:43:47 CST)" (scheduled at 2026-03-23 19:43:47.078246+08:00)
+2026-03-23 19:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 20:43:47 CST)" (scheduled at 2026-03-23 19:43:47.079356+08:00)
+2026-03-23 19:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 20:43:47 CST)" (scheduled at 2026-03-23 19:43:47.080418+08:00)
+2026-03-23 19:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 19:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 19:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 19:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 20:43:47 CST)" (scheduled at 2026-03-23 19:43:47.083417+08:00)
+2026-03-23 19:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 19:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774256400001 "HTTP/1.1 200 OK"
+2026-03-23 19:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774256400001 "HTTP/1.1 200 OK"
+2026-03-23 19:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774256400001 "HTTP/1.1 200 OK"
+2026-03-23 19:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774256400001 "HTTP/1.1 200 OK"
+2026-03-23 19:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 20:43:47 CST)" executed successfully
+2026-03-23 19:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 20:43:47 CST)" executed successfully
+2026-03-23 19:43:47 [INFO] app.services.simulator: 模拟卖出: BTCUSDT 0.0015 @ 70767.69 (100.0%), PnL: 3.04
+2026-03-23 19:43:47 [INFO] app.services.simulator: 模拟买入: BTCUSDT 0.002826148486689335 @ 70767.69
+2026-03-23 19:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20RSI%20%E8%B6%85%E4%B9%B0%E8%B6%85%E5%8D%96/%E5%8D%96%E5%87%BA%20BTCUSDT%20%40%2070767.69%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20%2B3.04?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 19:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 19:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 15
+2026-03-23 19:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 20:43:47 CST)" executed successfully
+2026-03-23 19:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%8F%8C%E5%9D%87%E7%BA%BF%E9%87%91%E5%8F%89%E6%AD%BB%E5%8F%89/%E4%B9%B0%E5%85%A5%20BTCUSDT%20%40%2070767.69%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 19:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 19:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 16
+2026-03-23 19:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 20:43:47 CST)" executed successfully
+2026-03-23 20:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 21:43:47 CST)" (scheduled at 2026-03-23 20:43:47.078246+08:00)
+2026-03-23 20:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 21:43:47 CST)" (scheduled at 2026-03-23 20:43:47.079356+08:00)
+2026-03-23 20:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 21:43:47 CST)" (scheduled at 2026-03-23 20:43:47.080418+08:00)
+2026-03-23 20:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 20:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 20:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 20:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 21:43:47 CST)" (scheduled at 2026-03-23 20:43:47.083417+08:00)
+2026-03-23 20:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 20:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 21:43:47 CST)" executed successfully
+2026-03-23 20:43:47 [INFO] app.services.simulator: 模拟买入: BTCUSDT 0.014130742433446676 @ 70767.69
+2026-03-23 20:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 21:43:47 CST)" executed successfully
+2026-03-23 20:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 21:43:47 CST)" executed successfully
+2026-03-23 20:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E4%B9%B0%E5%85%A5%20BTCUSDT%20%40%2070767.69%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 20:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 20:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 17
+2026-03-23 20:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 21:43:47 CST)" executed successfully
+INFO:     67.209.188.13:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     67.209.188.13:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     67.209.188.13:0 - "GET /api/triggers HTTP/1.1" 200 OK
+2026-03-23 21:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 22:43:47 CST)" (scheduled at 2026-03-23 21:43:47.078246+08:00)
+2026-03-23 21:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 22:43:47 CST)" (scheduled at 2026-03-23 21:43:47.079356+08:00)
+2026-03-23 21:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 22:43:47 CST)" (scheduled at 2026-03-23 21:43:47.080418+08:00)
+2026-03-23 21:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 21:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 21:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 21:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 22:43:47 CST)" (scheduled at 2026-03-23 21:43:47.083417+08:00)
+2026-03-23 21:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 21:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774263600001 "HTTP/1.1 200 OK"
+2026-03-23 21:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774263600001 "HTTP/1.1 200 OK"
+2026-03-23 21:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774263600001 "HTTP/1.1 200 OK"
+2026-03-23 21:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774263600001 "HTTP/1.1 200 OK"
+2026-03-23 21:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 22:43:47 CST)" executed successfully
+2026-03-23 21:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 22:43:47 CST)" executed successfully
+2026-03-23 21:43:47 [INFO] app.services.simulator: 模拟卖出: BTCUSDT 0.0141 @ 71317.98 (100.0%), PnL: 7.78
+2026-03-23 21:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 22:43:47 CST)" executed successfully
+2026-03-23 21:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%8D%96%E5%87%BA%20BTCUSDT%20%40%2071317.98%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20%2B7.78?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 21:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 21:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 18
+2026-03-23 21:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 22:43:47 CST)" executed successfully
+2026-03-23 22:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 23:43:47 CST)" (scheduled at 2026-03-23 22:43:47.078246+08:00)
+2026-03-23 22:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 23:43:47 CST)" (scheduled at 2026-03-23 22:43:47.079356+08:00)
+2026-03-23 22:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 23:43:47 CST)" (scheduled at 2026-03-23 22:43:47.080418+08:00)
+2026-03-23 22:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 22:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 22:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 23:43:47 CST)" (scheduled at 2026-03-23 22:43:47.083417+08:00)
+2026-03-23 22:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 22:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 22:43:47 [INFO] app.services.simulator: 模拟开空: BTCUSDT 0.01402170953243488 @ 71317.98
+2026-03-23 22:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 23:43:47 CST)" executed successfully
+2026-03-23 22:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 23:43:47 CST)" executed successfully
+2026-03-23 22:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 23:43:47 CST)" executed successfully
+2026-03-23 22:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%BC%80%E7%A9%BA%20BTCUSDT%20%40%2071317.98%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 22:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 22:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 19
+2026-03-23 22:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-23 23:43:47 CST)" executed successfully
+2026-03-23 23:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 00:43:47 CST)" (scheduled at 2026-03-23 23:43:47.078246+08:00)
+2026-03-23 23:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 00:43:47 CST)" (scheduled at 2026-03-23 23:43:47.079356+08:00)
+2026-03-23 23:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 00:43:47 CST)" (scheduled at 2026-03-23 23:43:47.080418+08:00)
+2026-03-23 23:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-23 23:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-23 23:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-23 23:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 00:43:47 CST)" (scheduled at 2026-03-23 23:43:47.083417+08:00)
+2026-03-23 23:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-23 23:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774270800001 "HTTP/1.1 200 OK"
+2026-03-23 23:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774270800001 "HTTP/1.1 200 OK"
+2026-03-23 23:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774270800001 "HTTP/1.1 200 OK"
+2026-03-23 23:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774270800001 "HTTP/1.1 200 OK"
+2026-03-23 23:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 00:43:47 CST)" executed successfully
+2026-03-23 23:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 00:43:47 CST)" executed successfully
+2026-03-23 23:43:47 [INFO] app.services.simulator: 模拟平空: BTCUSDT 0.0140 @ 70594.01, PnL: 10.15
+2026-03-23 23:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 00:43:47 CST)" executed successfully
+2026-03-23 23:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%B9%B3%E7%A9%BA%20BTCUSDT%20%40%2070594.01%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20%2B10.15?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-23 23:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-23 23:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 20
+2026-03-23 23:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 00:43:47 CST)" executed successfully
+2026-03-24 00:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 01:43:47 CST)" (scheduled at 2026-03-24 00:43:47.078246+08:00)
+2026-03-24 00:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 01:43:47 CST)" (scheduled at 2026-03-24 00:43:47.079356+08:00)
+2026-03-24 00:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 01:43:47 CST)" (scheduled at 2026-03-24 00:43:47.080418+08:00)
+2026-03-24 00:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 00:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 00:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 00:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 01:43:47 CST)" (scheduled at 2026-03-24 00:43:47.083417+08:00)
+2026-03-24 00:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 00:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 01:43:47 CST)" executed successfully
+2026-03-24 00:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 01:43:47 CST)" executed successfully
+2026-03-24 00:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 01:43:47 CST)" executed successfully
+2026-03-24 00:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 01:43:47 CST)" executed successfully
+2026-03-24 01:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 02:43:47 CST)" (scheduled at 2026-03-24 01:43:47.078246+08:00)
+2026-03-24 01:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 02:43:47 CST)" (scheduled at 2026-03-24 01:43:47.079356+08:00)
+2026-03-24 01:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 02:43:47 CST)" (scheduled at 2026-03-24 01:43:47.080418+08:00)
+2026-03-24 01:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 01:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 01:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 02:43:47 CST)" (scheduled at 2026-03-24 01:43:47.083417+08:00)
+2026-03-24 01:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 01:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 01:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774278000001 "HTTP/1.1 200 OK"
+2026-03-24 01:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774278000001 "HTTP/1.1 200 OK"
+2026-03-24 01:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774278000001 "HTTP/1.1 200 OK"
+2026-03-24 01:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 02:43:47 CST)" executed successfully
+2026-03-24 01:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 02:43:47 CST)" executed successfully
+2026-03-24 01:43:47 [INFO] app.services.simulator: 模拟买入: BTCUSDT 0.014105144258952394 @ 70896.12
+2026-03-24 01:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774278000001 "HTTP/1.1 200 OK"
+2026-03-24 01:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 02:43:47 CST)" executed successfully
+2026-03-24 01:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E4%B9%B0%E5%85%A5%20BTCUSDT%20%40%2070896.12%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-24 01:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-24 01:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 21
+2026-03-24 01:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 02:43:47 CST)" executed successfully
+2026-03-24 02:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 03:43:47 CST)" (scheduled at 2026-03-24 02:43:47.078246+08:00)
+2026-03-24 02:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 03:43:47 CST)" (scheduled at 2026-03-24 02:43:47.079356+08:00)
+2026-03-24 02:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 03:43:47 CST)" (scheduled at 2026-03-24 02:43:47.080418+08:00)
+2026-03-24 02:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 02:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 02:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 03:43:47 CST)" (scheduled at 2026-03-24 02:43:47.083417+08:00)
+2026-03-24 02:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 02:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 02:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 03:43:47 CST)" executed successfully
+2026-03-24 02:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 03:43:47 CST)" executed successfully
+2026-03-24 02:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 03:43:47 CST)" executed successfully
+2026-03-24 02:43:47 [INFO] app.services.simulator: 模拟卖出: BTCUSDT 0.0141 @ 70896.12 (100.0%), PnL: 0.00
+2026-03-24 02:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%8D%96%E5%87%BA%20BTCUSDT%20%40%2070896.12%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20%2B0.00?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-24 02:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-24 02:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 22
+2026-03-24 02:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 03:43:47 CST)" executed successfully
+2026-03-24 03:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 04:43:47 CST)" (scheduled at 2026-03-24 03:43:47.078246+08:00)
+2026-03-24 03:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 04:43:47 CST)" (scheduled at 2026-03-24 03:43:47.079356+08:00)
+2026-03-24 03:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 03:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 04:43:47 CST)" (scheduled at 2026-03-24 03:43:47.080418+08:00)
+2026-03-24 03:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 03:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 04:43:47 CST)" (scheduled at 2026-03-24 03:43:47.083417+08:00)
+2026-03-24 03:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 03:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 03:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774285200001 "HTTP/1.1 200 OK"
+2026-03-24 03:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774285200001 "HTTP/1.1 200 OK"
+2026-03-24 03:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774285200001 "HTTP/1.1 200 OK"
+2026-03-24 03:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774285200001 "HTTP/1.1 200 OK"
+2026-03-24 03:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 04:43:47 CST)" executed successfully
+2026-03-24 03:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 04:43:47 CST)" executed successfully
+2026-03-24 03:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 04:43:47 CST)" executed successfully
+2026-03-24 03:43:47 [INFO] app.services.simulator: 模拟开空: BTCUSDT 0.014109534574426808 @ 70874.06
+2026-03-24 03:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%BC%80%E7%A9%BA%20BTCUSDT%20%40%2070874.06%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-24 03:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-24 03:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 23
+2026-03-24 03:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 04:43:47 CST)" executed successfully
+2026-03-24 04:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 05:43:47 CST)" (scheduled at 2026-03-24 04:43:47.078246+08:00)
+2026-03-24 04:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 05:43:47 CST)" (scheduled at 2026-03-24 04:43:47.079356+08:00)
+2026-03-24 04:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 04:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 05:43:47 CST)" (scheduled at 2026-03-24 04:43:47.080418+08:00)
+2026-03-24 04:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 04:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 04:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 05:43:47 CST)" (scheduled at 2026-03-24 04:43:47.083417+08:00)
+2026-03-24 04:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 04:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 05:43:47 CST)" executed successfully
+2026-03-24 04:43:47 [INFO] app.services.simulator: 模拟平空: BTCUSDT 0.0141 @ 70874.06, PnL: 0.00
+2026-03-24 04:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 05:43:47 CST)" executed successfully
+2026-03-24 04:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 05:43:47 CST)" executed successfully
+2026-03-24 04:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%B9%B3%E7%A9%BA%20BTCUSDT%20%40%2070874.06%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20%2B0.00?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-24 04:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-24 04:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 24
+2026-03-24 04:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 05:43:47 CST)" executed successfully
+2026-03-24 05:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 06:43:47 CST)" (scheduled at 2026-03-24 05:43:47.078246+08:00)
+2026-03-24 05:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 06:43:47 CST)" (scheduled at 2026-03-24 05:43:47.079356+08:00)
+2026-03-24 05:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 05:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 06:43:47 CST)" (scheduled at 2026-03-24 05:43:47.080418+08:00)
+2026-03-24 05:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 05:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 05:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 06:43:47 CST)" (scheduled at 2026-03-24 05:43:47.083417+08:00)
+2026-03-24 05:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 05:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774292400001 "HTTP/1.1 200 OK"
+2026-03-24 05:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774292400001 "HTTP/1.1 200 OK"
+2026-03-24 05:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774292400001 "HTTP/1.1 200 OK"
+2026-03-24 05:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774292400001 "HTTP/1.1 200 OK"
+2026-03-24 05:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 06:43:47 CST)" executed successfully
+2026-03-24 05:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 06:43:47 CST)" executed successfully
+2026-03-24 05:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 06:43:47 CST)" executed successfully
+2026-03-24 05:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 06:43:47 CST)" executed successfully
+2026-03-24 06:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 07:43:47 CST)" (scheduled at 2026-03-24 06:43:47.078246+08:00)
+2026-03-24 06:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 07:43:47 CST)" (scheduled at 2026-03-24 06:43:47.079356+08:00)
+2026-03-24 06:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 06:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 07:43:47 CST)" (scheduled at 2026-03-24 06:43:47.080418+08:00)
+2026-03-24 06:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 06:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 07:43:47 CST)" (scheduled at 2026-03-24 06:43:47.083417+08:00)
+2026-03-24 06:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 06:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 06:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 07:43:47 CST)" executed successfully
+2026-03-24 06:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 07:43:47 CST)" executed successfully
+2026-03-24 06:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 07:43:47 CST)" executed successfully
+2026-03-24 06:43:47 [INFO] app.services.simulator: 模拟买入: BTCUSDT 0.014093066098734893 @ 70956.88
+2026-03-24 06:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E4%B9%B0%E5%85%A5%20BTCUSDT%20%40%2070956.88%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-24 06:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-24 06:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 25
+2026-03-24 06:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 07:43:47 CST)" executed successfully
+INFO:     183.157.253.22:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/triggers HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/triggers HTTP/1.1" 200 OK
+2026-03-24 07:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 08:43:47 CST)" (scheduled at 2026-03-24 07:43:47.078246+08:00)
+2026-03-24 07:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 08:43:47 CST)" (scheduled at 2026-03-24 07:43:47.079356+08:00)
+2026-03-24 07:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 08:43:47 CST)" (scheduled at 2026-03-24 07:43:47.080418+08:00)
+2026-03-24 07:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 07:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 07:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 07:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 08:43:47 CST)" (scheduled at 2026-03-24 07:43:47.083417+08:00)
+2026-03-24 07:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 07:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774299600001 "HTTP/1.1 200 OK"
+2026-03-24 07:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774299600001 "HTTP/1.1 200 OK"
+2026-03-24 07:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774299600001 "HTTP/1.1 200 OK"
+2026-03-24 07:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774299600001 "HTTP/1.1 200 OK"
+2026-03-24 07:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 08:43:47 CST)" executed successfully
+2026-03-24 07:43:47 [INFO] app.services.simulator: 模拟卖出: BTCUSDT 0.0141 @ 70777.06 (100.0%), PnL: -2.53
+2026-03-24 07:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 08:43:47 CST)" executed successfully
+2026-03-24 07:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 08:43:47 CST)" executed successfully
+2026-03-24 07:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%8D%96%E5%87%BA%20BTCUSDT%20%40%2070777.06%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20-2.53?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-24 07:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-24 07:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 26
+2026-03-24 07:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 08:43:47 CST)" executed successfully
+INFO:     183.157.253.22:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/triggers HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/triggers HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "DELETE /api/triggers HTTP/1.1" 405 Method Not Allowed
+INFO:     183.157.253.22:0 - "DELETE /api/triggers HTTP/1.1" 405 Method Not Allowed
+INFO:     183.157.253.22:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/strategies HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/triggers HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "POST /api/triggers/batch-delete HTTP/1.1" 404 Not Found
+INFO:     183.157.253.22:0 - "POST /api/triggers/batch-delete HTTP/1.1" 404 Not Found
+INFO:     183.157.253.22:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/settings HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "GET /api/triggers HTTP/1.1" 200 OK
+INFO:     183.157.253.22:0 - "POST /api/triggers/batch-delete HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39258 - "POST /api/triggers/batch-delete HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39272 - "POST /api/triggers/batch-delete HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:43974 - "POST /api/triggers/batch-delete HTTP/1.1" 404 Not Found
+2026-03-24 08:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 09:43:47 CST)" (scheduled at 2026-03-24 08:43:47.078246+08:00)
+2026-03-24 08:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 09:43:47 CST)" (scheduled at 2026-03-24 08:43:47.079356+08:00)
+2026-03-24 08:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 09:43:47 CST)" (scheduled at 2026-03-24 08:43:47.080418+08:00)
+2026-03-24 08:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 08:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 08:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 08:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 09:43:47 CST)" (scheduled at 2026-03-24 08:43:47.083417+08:00)
+2026-03-24 08:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 08:43:47 [INFO] app.services.simulator: 模拟开空: BTCUSDT 0.014128871699389605 @ 70777.06
+2026-03-24 08:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 09:43:47 CST)" executed successfully
+2026-03-24 08:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 09:43:47 CST)" executed successfully
+2026-03-24 08:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 09:43:47 CST)" executed successfully
+2026-03-24 08:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%BC%80%E7%A9%BA%20BTCUSDT%20%40%2070777.06%20USDT?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-24 08:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-24 08:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 27
+2026-03-24 08:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 09:43:47 CST)" executed successfully
+2026-03-24 09:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 10:43:47 CST)" (scheduled at 2026-03-24 09:43:47.078246+08:00)
+2026-03-24 09:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 10:43:47 CST)" (scheduled at 2026-03-24 09:43:47.079356+08:00)
+2026-03-24 09:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 10:43:47 CST)" (scheduled at 2026-03-24 09:43:47.080418+08:00)
+2026-03-24 09:43:47 [INFO] app.engine.executor: Executing strategy: RSI 超买超卖 (ID: 1, tf=1h)
+2026-03-24 09:43:47 [INFO] app.engine.executor: Executing strategy: 双均线金叉死叉 (ID: 2, tf=1h)
+2026-03-24 09:43:47 [INFO] app.engine.executor: Executing strategy: 布林带均值回归 (ID: 3, tf=1h)
+2026-03-24 09:43:47 [INFO] apscheduler.executors.default: Running job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 10:43:47 CST)" (scheduled at 2026-03-24 09:43:47.083417+08:00)
+2026-03-24 09:43:47 [INFO] app.engine.executor: Executing strategy: 全功能测试策略（1h） (ID: 12, tf=1h)
+2026-03-24 09:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=100&startTime=1774306800001 "HTTP/1.1 200 OK"
+2026-03-24 09:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 10:43:47 CST)" executed successfully
+2026-03-24 09:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774306800001 "HTTP/1.1 200 OK"
+2026-03-24 09:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774306800001 "HTTP/1.1 200 OK"
+2026-03-24 09:43:47 [INFO] httpx: HTTP Request: GET https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=100&startTime=1774306800001 "HTTP/1.1 200 OK"
+2026-03-24 09:43:47 [INFO] app.services.simulator: 模拟平空: BTCUSDT 0.0141 @ 70435.32, PnL: 4.83
+2026-03-24 09:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 10:43:47 CST)" executed successfully
+2026-03-24 09:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 10:43:47 CST)" executed successfully
+2026-03-24 09:43:47 [INFO] httpx: HTTP Request: GET https://api.day.app/HYyP8LrjAXiLu74FKuJjS6/AutoTrade%3A%20%E5%85%A8%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%EF%BC%881h%EF%BC%89/%E5%B9%B3%E7%A9%BA%20BTCUSDT%20%40%2070435.32%20USDT%20%20%E7%9B%88%E4%BA%8F%3A%20%2B4.83?group=AutoTrade "HTTP/1.1 200 OK"
+2026-03-24 09:43:47 [INFO] app.services.bark: Bark notification sent successfully
+2026-03-24 09:43:47 [INFO] app.services.feishu: Bark notification sent for trigger 28
+2026-03-24 09:43:47 [INFO] apscheduler.executors.default: Job "StrategyScheduler._execute_strategy (trigger: interval[1:00:00], next run at: 2026-03-24 10:43:47 CST)" executed successfully
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-03-24 10:38:02 [INFO] app.engine.scheduler: Strategy scheduler shutdown
+2026-03-24 10:38:02 [INFO] app.main: 🛑 调度器已关闭
+2026-03-24 10:38:02 [INFO] app.main: 🛑 AutoTrade 关闭中...
+2026-03-24 10:38:02 [INFO] apscheduler.scheduler: Scheduler has been shut down
+INFO:     Application shutdown complete.
+INFO:     Finished server process [899]

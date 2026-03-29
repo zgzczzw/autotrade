@@ -1,0 +1,147 @@
+
+> frontend@0.1.0 dev
+> next dev -H 0.0.0.0 -p 13000
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:13000
+- Network:       http://0.0.0.0:13000
+
+✓ Starting...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 6.3s
+ GET /triggers 200 in 809ms (compile: 476ms, proxy.ts: 84ms, render: 249ms)
+⚠ Cross origin request detected from 47.84.94.52 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /login 200 in 215ms (compile: 136ms, proxy.ts: 3ms, render: 76ms)
+ GET /login 200 in 56ms (compile: 3ms, proxy.ts: 4ms, render: 49ms)
+ GET /login 200 in 50ms (compile: 5ms, proxy.ts: 3ms, render: 43ms)
+ GET /login 200 in 48ms (compile: 3ms, proxy.ts: 3ms, render: 43ms)
+ GET /triggers 200 in 57ms (compile: 4ms, proxy.ts: 3ms, render: 50ms)
+ GET /market 200 in 93ms (compile: 65ms, proxy.ts: 6ms, render: 22ms)
+ GET /market 200 in 23ms (compile: 3ms, proxy.ts: 3ms, render: 17ms)
+ GET /strategies 200 in 56ms (compile: 33ms, proxy.ts: 4ms, render: 19ms)
+○ Compiling /strategies/[id] ...
+ GET /strategies/12 200 in 5.1s (compile: 5.0s, proxy.ts: 3ms, render: 27ms)
+ GET /strategies/12 200 in 57ms (compile: 34ms, proxy.ts: 3ms, render: 20ms)
+ GET /strategies 200 in 58ms (compile: 4ms, proxy.ts: 3ms, render: 52ms)
+ GET /strategies/12 200 in 59ms (compile: 34ms, proxy.ts: 3ms, render: 22ms)
+ GET /strategies/12 200 in 54ms (compile: 32ms, proxy.ts: 3ms, render: 18ms)
+ GET /strategies 200 in 55ms (compile: 4ms, proxy.ts: 3ms, render: 48ms)
+ GET /strategies/12 200 in 62ms (compile: 31ms, proxy.ts: 4ms, render: 27ms)
+ GET /market 200 in 22ms (compile: 3ms, proxy.ts: 3ms, render: 17ms)
+ GET /market 200 in 22ms (compile: 3ms, proxy.ts: 4ms, render: 15ms)
+ GET /login 200 in 84ms (compile: 10ms, proxy.ts: 3ms, render: 70ms)
+ GET /login 200 in 51ms (compile: 4ms, proxy.ts: 2ms, render: 44ms)
+ GET /market 200 in 380ms (compile: 216ms, proxy.ts: 3ms, render: 161ms)
+ GET /market 200 in 57ms (compile: 3ms, proxy.ts: 2ms, render: 51ms)
+ GET /market 200 in 60ms (compile: 2ms, proxy.ts: 3ms, render: 55ms)
+✓ Compiled in 255ms
+[?25h
+
+> frontend@0.1.0 start
+> next start
+
+▲ Next.js 16.1.6
+- Local:         http://localhost:13000
+- Network:       http://172.23.226.74:13000
+
+✓ Starting...
+✓ Ready in 2.1s
+
+> frontend@0.1.0 start
+> next start
+
+▲ Next.js 16.1.6
+- Local:         http://localhost:13000
+- Network:       http://172.23.226.74:13000
+
+✓ Starting...
+✓ Ready in 513ms
+
+> frontend@0.1.0 start
+> next start
+
+▲ Next.js 16.1.6
+- Local:         http://localhost:13000
+- Network:       http://172.23.226.74:13000
+
+✓ Starting...
+✓ Ready in 533ms
+
+> frontend@0.1.0 start
+> next start
+
+▲ Next.js 16.1.6
+- Local:         http://localhost:13000
+- Network:       http://172.23.226.74:13000
+
+✓ Starting...
+✓ Ready in 1981ms
+Failed to proxy http://localhost:8000/api/auth/me AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Failed to proxy http://localhost:8000/api/auth/login AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+
+> frontend@0.1.0 start
+> next start
+
+▲ Next.js 16.1.6
+- Local:         http://localhost:13000
+- Network:       http://172.23.226.74:13000
+
+✓ Starting...
+✓ Ready in 1764ms
+Failed to proxy http://localhost:8000/api/auth/login AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Failed to proxy http://localhost:8000/api/auth/login AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Failed to proxy http://localhost:8000/api/auth/login AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+
+> frontend@0.1.0 start
+> next start
+
+▲ Next.js 16.1.6
+- Local:         http://localhost:13000
+- Network:       http://172.23.226.74:13000
+
+✓ Starting...
+✓ Ready in 2.3s
+Failed to proxy http://localhost:8000/api/auth/login AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}

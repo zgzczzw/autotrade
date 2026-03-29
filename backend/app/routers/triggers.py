@@ -23,6 +23,7 @@ async def list_triggers(
     strategy_id: Optional[int] = Query(None, description="筛选特定策略"),
     start_date: Optional[datetime] = Query(None, description="开始时间"),
     end_date: Optional[datetime] = Query(None, description="结束时间"),
+    symbol: Optional[str] = Query(None, description="筛选交易对"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -41,6 +42,8 @@ async def list_triggers(
         base_query = base_query.where(TriggerLog.triggered_at >= start_date)
     if end_date:
         base_query = base_query.where(TriggerLog.triggered_at <= end_date)
+    if symbol:
+        base_query = base_query.where(TriggerLog.symbol == symbol)
 
     count_result = await db.execute(
         select(func.count()).select_from(base_query.subquery())
