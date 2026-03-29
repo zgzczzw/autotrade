@@ -336,6 +336,7 @@ Notification message template includes symbol:
 - Search via `/api/market/symbols?q=BTC`, display candidates in dropdown
 - Selected symbols shown as removable tags
 - Minimum 1 symbol required to save
+- **Edit validation:** When removing a symbol, check for open positions on that symbol. If found, show warning dialog: "ETHUSDT 有未平仓位，确认移除？" with confirm/cancel. Confirmed removal does NOT auto-close the position — it becomes an orphaned position the user must manually manage via account page.
 
 ### Strategy List Page
 
@@ -343,26 +344,104 @@ Notification message template includes symbol:
 - Collapse when >3: `BTCUSDT +2`
 - New symbol filter dropdown
 
-### Strategy Detail Page
+### Strategy Detail Page — Overview Tab
 
-- Header shows full symbol tag list
-- Trigger history table adds `交易对` column
-- Positions table already has `symbol` column (no change)
+- **交易对** field: display as tag group (consistent with list page), not plain text
+- Other overview fields unchanged
+
+### Strategy Detail Page — Triggers Tab (Major Rework)
+
+Current: Single K-line chart + trigger table for one symbol.
+
+New layout:
+
+```
+┌─────────────────────────────────────────────┐
+│  交易对: [BTCUSDT ▼]  时间周期: [15m ▼]     │  ← symbol switcher dropdown
+├─────────────────────────────────────────────┤
+│                                             │
+│          K-line Chart (selected symbol)      │
+│                                             │
+├─────────────────────────────────────────────┤
+│  触发历史 (filtered by selected symbol)      │
+│  时间 | 交易对 | 操作 | 价格 | 数量 | 盈亏   │
+│  ...                                        │
+└─────────────────────────────────────────────┘
+```
+
+Key behaviors:
+- **Symbol switcher dropdown** at the top, defaults to the first symbol in the strategy's symbol list
+- Switching symbol reloads K-line chart data AND filters trigger table to only show that symbol's records
+- Click-to-highlight on chart only works for triggers matching the current chart symbol (naturally, since table is filtered)
+- Trigger table still has `交易对` column for clarity, but rows are filtered by selected symbol
+- Option to select "全部" (all symbols) in the dropdown — hides K-line chart, shows all triggers in table
+
+### Strategy Detail Page — Positions Tab (Rework)
+
+Current: Shows single "current position" card.
+
+New layout:
+
+```
+┌─────────────────────────────────────────────┐
+│  当前持仓 (N 个)                             │
+├─────────────────────────────────────────────┤
+│  交易对    | 方向  | 入场价 | 数量 | 未实现盈亏 │
+│  BTC/USDT | 多头  | 67500 | 0.015| +120.5   │
+│  ETH/USDT | 空头  | 3200  | 1.5  | -25.0    │
+├─────────────────────────────────────────────┤
+│  历史持仓                                    │
+│  (unchanged, already has symbol column)      │
+└─────────────────────────────────────────────┘
+```
+
+Key changes:
+- "当前持仓" from single card → table/list supporting N rows
+- Each row shows one open position with its symbol
+- If no open positions, show empty state: "暂无持仓"
+- Historical positions section unchanged (already has symbol column and pagination)
 
 ### Trigger Log Page (Global)
 
 - Table adds `交易对` column
 - New symbol filter dropdown
 
-### Backtest Results Page
+### Backtest Results Page (Rework)
 
-- Results displayed per symbol (tab or list)
-- Each symbol shows its own metrics and equity curve
+Current: Single result view with stats + equity curve + K-line chart + trade list.
+
+New layout:
+
+```
+┌─────────────────────────────────────────────┐
+│  回测历史                                    │
+├─────────────────────────────────────────────┤
+│  2026-03-29 14:00  [BTCUSDT, ETHUSDT]       │  ← batch grouped by created_at
+│  2026-03-28 10:00  [BTCUSDT]                │
+├─────────────────────────────────────────────┤
+│  选中批次的结果:                              │
+│  [BTCUSDT] [ETHUSDT]                        │  ← symbol tabs
+│                                             │
+│  ┌─ BTCUSDT 回测结果 ──────────────────┐    │
+│  │ Stats cards (PnL, win rate, etc.)   │    │
+│  │ Equity curve chart                  │    │
+│  │ K-line chart with trade markers     │    │
+│  │ Trade details table                 │    │
+│  └─────────────────────────────────────┘    │
+└─────────────────────────────────────────────┘
+```
+
+Key behaviors:
+- Backtest history list groups results by batch (same `created_at` timestamp ± a few seconds, since they run sequentially)
+- Each batch shows the list of symbols that were backtested
+- Clicking a batch shows symbol tabs below
+- Each symbol tab renders the existing backtest result view (stats, equity curve, K-line, trades)
+- Single-symbol backtests look identical to current behavior (one tab only)
 
 ### Strategy Import Dialog
 
-- After import, strategy gets default `BTCUSDT`
-- User can modify symbols before saving
+- After import, strategy gets default symbol `BTCUSDT` in `strategy_symbols`
+- User can modify symbols before starting the strategy
 
 ## Error Handling
 
@@ -370,6 +449,7 @@ Notification message template includes symbol:
 |---|---|
 | Start strategy with no symbols | Reject, return error |
 | Edit symbols while strategy running | Must stop strategy first |
+| Remove symbol with open position | Show warning dialog, require user confirmation |
 | K-line fetch fails for one symbol | Skip that symbol for this tick, log error, other symbols unaffected |
 | Delete strategy | Cascade deletes strategy_symbols, trigger_logs, positions |
 | Old trigger_logs without symbol | Frontend displays `—` for null values |
