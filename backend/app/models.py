@@ -5,8 +5,8 @@ SQLAlchemy 数据模型
 from datetime import datetime
 
 from sqlalchemy import (
-    JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text,
-    UniqueConstraint, func
+    JSON, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer,
+    PrimaryKeyConstraint, String, Text, UniqueConstraint, func
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -75,6 +75,23 @@ class Strategy(Base):
     trigger_logs = relationship("TriggerLog", back_populates="strategy", cascade="all, delete-orphan")
     positions = relationship("Position", back_populates="strategy", cascade="all, delete-orphan")
     backtest_results = relationship("BacktestResult", back_populates="strategy", cascade="all, delete-orphan")
+    symbols = relationship("StrategySymbol", back_populates="strategy", cascade="all, delete-orphan")
+
+
+class StrategySymbol(Base):
+    """策略-交易对关联表"""
+    __tablename__ = "strategy_symbols"
+
+    strategy_id = Column(Integer, ForeignKey("strategies.id"), nullable=False)
+    symbol = Column(String, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
+    __table_args__ = (
+        PrimaryKeyConstraint("strategy_id", "symbol"),
+        Index("ix_strategy_symbols_symbol", "symbol"),
+    )
+
+    strategy = relationship("Strategy", back_populates="symbols")
 
 
 class TriggerLog(Base):
@@ -91,6 +108,7 @@ class TriggerLog(Base):
     price = Column(Float, nullable=True)
     quantity = Column(Float, nullable=True)
     simulated_pnl = Column(Float, nullable=True)
+    symbol = Column(String, nullable=True)
 
     # 关系
     strategy = relationship("Strategy", back_populates="trigger_logs")
@@ -198,6 +216,7 @@ class BacktestResult(Base):
     equity_curve = Column(Text, nullable=False)
     trades = Column(Text, nullable=False)
     klines = Column(Text, nullable=True)
+    batch_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
     # 关系
