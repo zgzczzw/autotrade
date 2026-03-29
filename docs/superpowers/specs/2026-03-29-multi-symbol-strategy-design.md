@@ -56,9 +56,11 @@ Symbol is accessible via `trigger_log → symbol`. No redundant field needed.
 
 Already has a `symbol` field. Works as-is.
 
-### 6. `backtest_results` — No Changes
+### 6. `backtest_results` Table Changes
 
-Each backtest run targets one symbol and produces one record. When user triggers "backtest all", the backend runs independent backtests for each symbol in the strategy, each creating its own `backtest_results` row with that symbol.
+- **Add** `batch_id` column: `Column(String, nullable=True)` — UUID string to group results from the same backtest run
+
+Each backtest run targets one symbol and produces one record. When user triggers "backtest all", the backend generates a single `batch_id` (UUID), runs independent backtests for each symbol, and tags all resulting rows with the same `batch_id`. Frontend groups results by `batch_id` for display.
 
 ### Data Migration (Alembic)
 
@@ -66,9 +68,10 @@ Create an Alembic migration script that:
 
 1. Creates `strategy_symbols` table
 2. Adds `symbol` column (nullable) to `trigger_logs`
-3. For each existing strategy, inserts one row into `strategy_symbols` with the strategy's current `symbol` value
-4. For existing `trigger_logs`, backfills `symbol` from the associated strategy's `symbol` field (best-effort, leave null if strategy deleted)
-5. Keep `strategies.symbol` field with its current value (do NOT delete), update default to `"BTCUSDT"`
+3. Adds `batch_id` column (nullable) to `backtest_results`
+4. For each existing strategy, inserts one row into `strategy_symbols` with the strategy's current `symbol` value
+5. For existing `trigger_logs`, backfills `symbol` from the associated strategy's `symbol` field (best-effort, leave null if strategy deleted)
+6. Keep `strategies.symbol` field with its current value (do NOT delete), update default to `"BTCUSDT"`
 
 **Note:** The project uses inline migration at startup (`models.Base.metadata.create_all`). If Alembic is not set up, the migration logic should be added to the startup sequence.
 
@@ -97,10 +100,12 @@ async def _execute_strategy(self, strategy_id: int, symbol: str, timeframe: str)
 
 ```python
 async def start_strategy(self, strategy_id: int) -> bool:
-    # Load strategy with symbols
+    # Load strategy with selectinload(Strategy.symbols) to eagerly load symbols
     # Reject if strategy has no symbols
     # For each symbol × timeframe: register job
 ```
+
+**Note:** Must use `selectinload(Strategy.symbols)` or equivalent to load the symbols relationship within the async session, since lazy loading is not supported in async SQLAlchemy.
 
 ### `stop_strategy` Logic
 
@@ -177,11 +182,11 @@ data = {
 
 No change in structure — code strategies already receive `symbol` in data dict.
 
-## Simulator Changes (`simulator.py`) — No Code Changes
+## Simulator Changes (`simulator.py`)
 
-The Simulator already accepts `symbol` as an explicit parameter in all methods (`execute_buy`, `execute_sell`, `execute_short`, `execute_cover`, `check_stop_loss_take_profit`). It does NOT read `strategy.symbol` internally. The only change is that callers (StrategyContext) now pass `self.symbol` instead of `self.strategy.symbol`.
+The Simulator already accepts `symbol` as an explicit parameter in all methods (`execute_buy`, `execute_sell`, `execute_short`, `execute_cover`, `check_stop_loss_take_profit`). It does NOT read `strategy.symbol` internally. Callers (StrategyContext) now pass `self.symbol` instead of `self.strategy.symbol`.
 
-**TriggerLog symbol population:** The Simulator creates `TriggerLog` records. A new `symbol` parameter must be added to each `TriggerLog(...)` constructor call so that new trigger logs are tagged with the correct symbol. This is the ONLY change needed in `simulator.py`.
+**TriggerLog symbol population:** The Simulator creates `TriggerLog` records. The `symbol` parameter (already available in each method) must be added to each `TriggerLog(...)` constructor call so that new trigger logs are tagged with the correct symbol. This is the ONLY change needed in `simulator.py`.
 
 ## Sandbox Changes (`sandbox.py`)
 
@@ -210,15 +215,19 @@ The backtest route loops over strategy symbols and runs independent backtests:
 ```python
 @router.post("/strategies/{strategy_id}/backtest")
 async def create_backtest(strategy_id: int, req: BacktestCreate):
-    strategy = ...  # load with symbols
+    strategy = ...  # load with selectinload(Strategy.symbols)
+    batch_id = str(uuid.uuid4())
     results = []
     for sym in strategy.symbols:
         result = await run_backtest(strategy, sym.symbol, req.start_date, req.end_date, req.initial_balance)
+        result.batch_id = batch_id
         results.append(result)
     return results
 ```
 
 **Response type changes** from `BacktestResponse` to `List[BacktestResponse]`. This is a breaking change for frontend — frontend must be updated to handle the list.
+
+**`BacktestResponse` schema** adds `batch_id: Optional[str] = None`.
 
 ## API & Schema Changes
 
@@ -226,6 +235,7 @@ async def create_backtest(strategy_id: int, req: BacktestCreate):
 
 **`StrategyBase`:**
 - Remove `symbol: str` field (no longer needed in base schema)
+- **Note:** The `Strategy` ORM model still has a `symbol` column (kept for backward compat). With `symbol` removed from `StrategyBase`/`StrategyResponse`, Pydantic's `from_attributes=True` will silently ignore the ORM's `symbol` attribute — this is expected behavior, not a bug.
 
 **`StrategyCreate`:**
 ```python
@@ -401,6 +411,11 @@ Key changes:
 - If no open positions, show empty state: "暂无持仓"
 - Historical positions section unchanged (already has symbol column and pagination)
 
+### Dashboard
+
+- Recent triggers section: each trigger item now shows its `symbol` (e.g. "BTC/USDT") alongside strategy name
+- No other dashboard changes needed (stats are user-level, not symbol-level)
+
 ### Trigger Log Page (Global)
 
 - Table adds `交易对` column
@@ -432,7 +447,7 @@ New layout:
 ```
 
 Key behaviors:
-- Backtest history list groups results by batch (same `created_at` timestamp ± a few seconds, since they run sequentially)
+- Backtest history list groups results by `batch_id` (all results from the same backtest run share one UUID)
 - Each batch shows the list of symbols that were backtested
 - Clicking a batch shows symbol tabs below
 - Each symbol tab renders the existing backtest result view (stats, equity curve, K-line, trades)
@@ -454,3 +469,10 @@ Key behaviors:
 | Delete strategy | Cascade deletes strategy_symbols, trigger_logs, positions |
 | Old trigger_logs without symbol | Frontend displays `—` for null values |
 | User code accesses `strategy.symbol` | Returns default `"BTCUSDT"`, not the per-execution symbol. Users should use `ctx.symbol` or `data["symbol"]` instead. Document this in migration notes |
+
+## Known Limitations
+
+| Limitation | Detail |
+|---|---|
+| Concurrent order race condition | When `position_size_type = "percent"`, multiple symbols triggering buy signals simultaneously may each read the same balance and all place orders, potentially exceeding intended allocation. This is not new (exists in single-symbol mode) but multi-symbol amplifies the probability. Acceptable for a simulator; document for users. |
+| Lazy loading in async SQLAlchemy | The `Strategy.symbols` relationship cannot be lazy-loaded in async context. All queries loading strategies that need symbols must use `selectinload(Strategy.symbols)`. This applies to: scheduler `start_strategy`, strategy routes (list, detail, create, update), backtest route, and export. |
