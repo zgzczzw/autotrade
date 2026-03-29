@@ -2,19 +2,22 @@
 策略管理路由
 """
 
-from typing import List, Optional
+import json
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
+from fastapi.responses import JSONResponse
+from sqlalchemy import delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.deps import get_current_user
 from app.engine.scheduler import scheduler
 from app.engine.sandbox import validate_code
 from app.logger import get_logger
-from app.models import Strategy, User
+from app.models import Strategy, StrategySymbol, User
 from app.schemas import (
     CodeValidationRequest,
     CodeValidationResponse,
@@ -29,9 +32,19 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["策略管理"])
 
 
+def _strategy_to_response(strategy: Strategy, **extra) -> StrategyResponse:
+    """Convert Strategy ORM + symbols relationship to StrategyResponse."""
+    resp = StrategyResponse.model_validate(strategy)
+    resp.symbols = [s.symbol for s in strategy.symbols]
+    for k, v in extra.items():
+        setattr(resp, k, v)
+    return resp
+
+
 @router.get("/strategies", response_model=StrategyList)
 async def list_strategies(
     status: Optional[str] = Query(None, description="筛选状态: running/stopped/error"),
+    symbol: Optional[str] = Query(None, description="筛选交易对"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -43,16 +56,20 @@ async def list_strategies(
     if status:
         query = query.where(Strategy.status == status)
 
+    if symbol:
+        query = query.join(StrategySymbol).where(StrategySymbol.symbol == symbol)
+
     # 总数
     count_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = count_result.scalar()
 
     # 分页
+    query = query.options(selectinload(Strategy.symbols))
     query = query.offset((page - 1) * page_size).limit(page_size)
     query = query.order_by(Strategy.created_at.desc())
 
     result = await db.execute(query)
-    items = result.scalars().all()
+    items = result.scalars().unique().all()
 
     # 批量查询每个策略的触发次数
     from app.models import TriggerLog
@@ -69,8 +86,7 @@ async def list_strategies(
 
     response_items = []
     for item in items:
-        resp = StrategyResponse.model_validate(item)
-        resp.trigger_count = trigger_counts.get(item.id, 0)
+        resp = _strategy_to_response(item, trigger_count=trigger_counts.get(item.id, 0))
         response_items.append(resp)
 
     return StrategyList(
@@ -109,14 +125,125 @@ async def create_strategy(
                 detail=f"代码验证失败: {'; '.join(errors)}",
             )
 
-    strategy = Strategy(**data.model_dump())
+    strategy_data = data.model_dump()
+    symbols = strategy_data.pop("symbols", [])
+    strategy_data["symbol"] = symbols[0] if symbols else "BTCUSDT"
+
+    strategy = Strategy(**strategy_data)
     strategy.user_id = current_user.id
     db.add(strategy)
+    await db.flush()
+
+    for sym in symbols:
+        db.add(StrategySymbol(strategy_id=strategy.id, symbol=sym))
+
     await db.commit()
-    await db.refresh(strategy)
+
+    # Reload with symbols relationship
+    result = await db.execute(
+        select(Strategy)
+        .where(Strategy.id == strategy.id)
+        .options(selectinload(Strategy.symbols))
+    )
+    strategy = result.scalar_one()
 
     logger.info(f"创建策略: {strategy.name} (ID: {strategy.id})")
-    return StrategyResponse.model_validate(strategy)
+    return _strategy_to_response(strategy)
+
+
+# ==================== 备份 & 恢复 ====================
+
+EXPORT_FIELDS = [
+    "name", "type", "config_json", "code", "timeframe",
+    "position_size", "position_size_type", "stop_loss", "take_profit",
+    "sell_size_pct", "notify_enabled",
+]
+
+
+@router.get("/strategies/export")
+async def export_strategies(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """导出当前用户的所有策略为 JSON"""
+    result = await db.execute(
+        select(Strategy)
+        .where(Strategy.user_id == current_user.id)
+        .order_by(Strategy.created_at)
+    )
+    strategies = result.scalars().all()
+
+    data = {
+        "version": 1,
+        "count": len(strategies),
+        "strategies": [
+            {field: getattr(s, field) for field in EXPORT_FIELDS}
+            for s in strategies
+        ],
+    }
+
+    return JSONResponse(
+        content=data,
+        headers={
+            "Content-Disposition": "attachment; filename=autotrade-strategies.json",
+        },
+    )
+
+
+@router.post("/strategies/import", response_model=MessageResponse)
+async def import_strategies(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """从 JSON 文件导入策略（跳过同名策略）"""
+    try:
+        content = await file.read()
+        data = json.loads(content)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise HTTPException(status_code=400, detail="无效的 JSON 文件")
+
+    items = data.get("strategies", [])
+    if not items:
+        raise HTTPException(status_code=400, detail="文件中没有策略数据")
+
+    # 查询已有策略名，避免重复
+    existing = await db.execute(
+        select(Strategy.name).where(Strategy.user_id == current_user.id)
+    )
+    existing_names = {row[0] for row in existing.all()}
+
+    imported = 0
+    skipped = 0
+    for item in items:
+        name = item.get("name", "").strip()
+        if not name:
+            continue
+        if name in existing_names:
+            skipped += 1
+            continue
+
+        sym = item.get("symbol", "BTCUSDT")
+        strategy = Strategy(
+            user_id=current_user.id,
+            status="stopped",
+            symbol=sym,
+            **{k: item[k] for k in EXPORT_FIELDS if k in item},
+        )
+        db.add(strategy)
+        await db.flush()
+
+        db.add(StrategySymbol(strategy_id=strategy.id, symbol=sym))
+
+        existing_names.add(name)
+        imported += 1
+
+    await db.commit()
+    msg = f"导入完成：{imported} 个策略"
+    if skipped:
+        msg += f"，跳过 {skipped} 个同名策略"
+    logger.info(f"{msg} (user_id={current_user.id})")
+    return MessageResponse(message=msg)
 
 
 @router.get("/strategies/{strategy_id}", response_model=StrategyResponse)
@@ -126,7 +253,11 @@ async def get_strategy(
     current_user: User = Depends(get_current_user),
 ):
     """获取策略详情"""
-    result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
+    result = await db.execute(
+        select(Strategy)
+        .where(Strategy.id == strategy_id)
+        .options(selectinload(Strategy.symbols))
+    )
     strategy = result.scalar_one_or_none()
 
     if not strategy or strategy.user_id != current_user.id:
@@ -148,11 +279,11 @@ async def get_strategy(
         )
     )
 
-    response = StrategyResponse.model_validate(strategy)
-    response.trigger_count = trigger_count_result.scalar()
-    response.position_count = position_count_result.scalar()
-
-    return response
+    return _strategy_to_response(
+        strategy,
+        trigger_count=trigger_count_result.scalar(),
+        position_count=position_count_result.scalar(),
+    )
 
 
 @router.put("/strategies/{strategy_id}", response_model=StrategyResponse)
@@ -189,14 +320,35 @@ async def update_strategy(
 
     # 更新字段
     update_data = data.model_dump(exclude_unset=True)
+    new_symbols = update_data.pop("symbols", None)
+
     for key, value in update_data.items():
         setattr(strategy, key, value)
 
+    if new_symbols is not None:
+        # Delete existing StrategySymbol rows
+        await db.execute(
+            delete(StrategySymbol).where(StrategySymbol.strategy_id == strategy_id)
+        )
+        # Insert new ones
+        for sym in new_symbols:
+            db.add(StrategySymbol(strategy_id=strategy_id, symbol=sym))
+        # Update legacy field
+        if new_symbols:
+            strategy.symbol = new_symbols[0]
+
     await db.commit()
-    await db.refresh(strategy)
+
+    # Reload with symbols relationship
+    result = await db.execute(
+        select(Strategy)
+        .where(Strategy.id == strategy.id)
+        .options(selectinload(Strategy.symbols))
+    )
+    strategy = result.scalar_one()
 
     logger.info(f"更新策略: {strategy.name} (ID: {strategy.id})")
-    return StrategyResponse.model_validate(strategy)
+    return _strategy_to_response(strategy)
 
 
 @router.delete("/strategies/{strategy_id}", response_model=MessageResponse)
