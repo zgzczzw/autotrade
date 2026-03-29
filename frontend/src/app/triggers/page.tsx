@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice, formatDateTime } from "@/lib/utils";
 import { History, Trash2, ArrowUpRight, ArrowDownRight, ArrowDown, ArrowUp } from "lucide-react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -26,6 +27,7 @@ export default function TriggersPage() {
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const router = useRouter();
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -169,9 +171,10 @@ export default function TriggersPage() {
                   return (
                     <tr
                       key={trigger.id}
-                      className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30 transition-colors"
+                      className="border-b border-slate-800/50 last:border-0 hover:bg-slate-800/30 transition-colors cursor-pointer"
+                      onClick={() => router.push(`/strategies/${trigger.strategy_id}?tab=triggers`)}
                     >
-                      <td className="p-3 md:p-4">
+                      <td className="p-3 md:p-4" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={selectedIds.has(trigger.id)}
@@ -210,7 +213,7 @@ export default function TriggersPage() {
                           <span className="text-slate-600">-</span>
                         )}
                       </td>
-                      <td className="p-3 md:p-4">
+                      <td className="p-3 md:p-4" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => deleteTrigger(trigger.id)}
                           className="p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"

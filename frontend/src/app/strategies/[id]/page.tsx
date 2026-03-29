@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,7 +75,10 @@ interface Position {
 
 export default function StrategyDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+  const initialTab = searchParams.get("tab") || "overview";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [loading, setLoading] = useState(true);
   const [triggers, setTriggers] = useState<Trigger[]>([]);
@@ -100,6 +103,17 @@ export default function StrategyDetailPage() {
     const interval = setInterval(loadStrategy, 10000);
     return () => clearInterval(interval);
   }, [id]);
+
+  // 如果 URL 带 tab 参数，初始加载对应数据
+  useEffect(() => {
+    if (initialTab === "triggers" && !triggersLoaded) {
+      loadTriggers(1);
+    }
+    if (initialTab === "positions" && !positionsLoaded) {
+      loadPositions(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab]);
 
   const loadStrategy = async () => {
     try {
@@ -300,9 +314,10 @@ export default function StrategyDetailPage() {
       </div>
 
       <Tabs
-        defaultValue="overview"
+        value={activeTab}
         className="space-y-6"
         onValueChange={(value) => {
+          setActiveTab(value);
           if (value === "triggers" && !triggersLoaded) {
             loadTriggers(1);
             if (strategy) {

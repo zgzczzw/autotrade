@@ -57,18 +57,7 @@ class Simulator:
                 f"Insufficient balance for buy: required={required_funds}, "
                 f"balance={account.balance}"
             )
-            # 记录 hold 操作
-            trigger = TriggerLog(
-                strategy_id=strategy_id,
-                signal_type="买入",
-                signal_detail="余额不足，跳过买入",
-                action="观望",
-                price=price,
-                quantity=0,
-            )
-            db.add(trigger)
-            await db.commit()
-            return trigger
+            return None
 
         # 扣除资金
         account.balance -= required_funds
@@ -136,17 +125,7 @@ class Simulator:
 
         if not positions:
             logger.warning(f"No open position to sell for strategy {strategy_id}")
-            trigger = TriggerLog(
-                strategy_id=strategy_id,
-                signal_type="卖出",
-                signal_detail="无持仓，跳过卖出",
-                action="观望",
-                price=price,
-                quantity=0,
-            )
-            db.add(trigger)
-            await db.commit()
-            return trigger
+            return None
 
         # 返还资金
         if user_id is not None:
@@ -234,17 +213,7 @@ class Simulator:
                 f"Insufficient balance for short: required={required_margin}, "
                 f"balance={account.balance}"
             )
-            trigger = TriggerLog(
-                strategy_id=strategy_id,
-                signal_type="卖出",
-                signal_detail="余额不足，跳过开空",
-                action="观望",
-                price=price,
-                quantity=0,
-            )
-            db.add(trigger)
-            await db.commit()
-            return trigger
+            return None
 
         account.balance -= required_margin
 
@@ -306,17 +275,7 @@ class Simulator:
 
         if not positions:
             logger.warning(f"No open short position to cover for strategy {strategy_id}")
-            trigger = TriggerLog(
-                strategy_id=strategy_id,
-                signal_type="买入",
-                signal_detail="无空仓，跳过平空",
-                action="观望",
-                price=price,
-                quantity=0,
-            )
-            db.add(trigger)
-            await db.commit()
-            return trigger
+            return None
 
         if user_id is not None:
             account_result = await db.execute(

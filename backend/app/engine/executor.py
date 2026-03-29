@@ -362,15 +362,6 @@ class StrategyExecutor:
             logger.error(f"Code strategy {strategy.id} execution failed: {e}")
             # 实例出错，清除后下次重新创建
             self._strategy_instances.pop(strategy.id, None)
-            # 记录错误
-            error_trigger = TriggerLog(
-                strategy_id=strategy.id,
-                signal_type="错误",
-                signal_detail=f"代码执行错误: {str(e)}",
-                action="观望",
-            )
-            ctx.db.add(error_trigger)
-            await ctx.db.commit()
             return None
 
     def _check_conditions(

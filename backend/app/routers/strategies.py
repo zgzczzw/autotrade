@@ -54,8 +54,27 @@ async def list_strategies(
     result = await db.execute(query)
     items = result.scalars().all()
 
+    # 批量查询每个策略的触发次数
+    from app.models import TriggerLog
+    strategy_ids = [s.id for s in items]
+    if strategy_ids:
+        tc_result = await db.execute(
+            select(TriggerLog.strategy_id, func.count())
+            .where(TriggerLog.strategy_id.in_(strategy_ids))
+            .group_by(TriggerLog.strategy_id)
+        )
+        trigger_counts = dict(tc_result.all())
+    else:
+        trigger_counts = {}
+
+    response_items = []
+    for item in items:
+        resp = StrategyResponse.model_validate(item)
+        resp.trigger_count = trigger_counts.get(item.id, 0)
+        response_items.append(resp)
+
     return StrategyList(
-        items=[StrategyResponse.model_validate(item) for item in items],
+        items=response_items,
         total=total,
         page=page,
         page_size=page_size,
