@@ -1,5 +1,5 @@
 /**
- * API 客户端
+ * API 客户端（带缓存和请求去重）
  */
 
 import axios, { AxiosResponse } from "axios";
@@ -11,7 +11,8 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,  // send Cookie on every request
+  withCredentials: true,
+  timeout: 15000,
 });
 
 // 响应拦截器
@@ -19,7 +20,6 @@ api.interceptors.response.use(
   (response: AxiosResponse) => response.data,
   (error) => {
     const url: string = error.config?.url ?? "";
-    // Redirect to login on 401, but NOT for /auth/* paths (avoid redirect loop)
     if (error.response?.status === 401 && !url.startsWith("/auth/")) {
       if (typeof window !== "undefined") {
         window.location.href = "/login";
@@ -30,6 +30,56 @@ api.interceptors.response.use(
   }
 );
 
+// ---------- 简易请求缓存 & 去重 ----------
+
+interface CacheEntry {
+  data: any;
+  ts: number;
+}
+
+const cache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<any>>();
+
+/**
+ * 带缓存的 GET 请求
+ * @param url   API 路径
+ * @param ttl   缓存有效期（毫秒），默认 5 秒
+ * @param params  查询参数
+ */
+async function cachedGet<T>(url: string, ttl: number = 5000, params?: any): Promise<T> {
+  const key = url + (params ? JSON.stringify(params) : "");
+
+  // 1. 命中缓存
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.ts < ttl) {
+    return hit.data as T;
+  }
+
+  // 2. 去重：同一请求正在进行中则复用
+  const pending = inflight.get(key);
+  if (pending) return pending as Promise<T>;
+
+  // 3. 发起请求
+  const promise = api.get(url, { params }).then((data) => {
+    cache.set(key, { data, ts: Date.now() });
+    inflight.delete(key);
+    return data as T;
+  }).catch((err) => {
+    inflight.delete(key);
+    throw err;
+  });
+
+  inflight.set(key, promise);
+  return promise;
+}
+
+/** 清除指定前缀的缓存 */
+export function invalidateCache(prefix: string) {
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) cache.delete(key);
+  }
+}
+
 // Helper function to handle API calls
 async function apiCall<T>(promise: Promise<any>): Promise<T> {
   const result = await promise;
@@ -38,28 +88,28 @@ async function apiCall<T>(promise: Promise<any>): Promise<T> {
 
 // ==================== 仪表盘 ====================
 
-export const fetchDashboard = () => apiCall(api.get("/dashboard"));
+export const fetchDashboard = () => cachedGet("/dashboard", 8000);
 
 // ==================== 大盘行情 ====================
 
 export const fetchSymbols = (q: string = "") =>
-  apiCall<string[]>(api.get("/market/symbols", { params: { q } }));
+  cachedGet<string[]>("/market/symbols", 60000, { q });
 
 export const fetchMarketKlines = (symbol: string, timeframe: string, limit = 1000) =>
-  apiCall(api.get("/market/klines", { params: { symbol, timeframe, limit } }));
+  cachedGet("/market/klines", 30000, { symbol, timeframe, limit });
 
 export const fetchTicker = (symbol: string) =>
-  apiCall(api.get("/market/ticker", { params: { symbol } }));
+  cachedGet("/market/ticker", 10000, { symbol });
 
 // ==================== 系统设置 ====================
 
-export const fetchSettings = () => apiCall(api.get("/settings"));
+export const fetchSettings = () => cachedGet("/settings", 30000);
 
 export const updateSettings = (data: {
   data_source: string;
   cryptocompare_api_key?: string;
   timezone?: string;
-}) => apiCall(api.put("/settings", data));
+}) => { invalidateCache("/settings"); return apiCall(api.put("/settings", data)); };
 
 export const testConnection = (data: {
   data_source: string;
@@ -69,43 +119,59 @@ export const testConnection = (data: {
 // ==================== 策略 ====================
 
 export const fetchStrategies = (params?: { status?: string; page?: number; page_size?: number }) =>
-  apiCall(api.get("/strategies", { params }));
+  cachedGet("/strategies", 5000, params);
 
 export const fetchStrategy = (id: string | number) =>
-  apiCall(api.get(`/strategies/${id}`));
+  cachedGet(`/strategies/${id}`, 5000);
 
-export const createStrategy = (data: any) =>
-  apiCall(api.post("/strategies", data));
+export const createStrategy = (data: any) => {
+  invalidateCache("/strategies");
+  return apiCall(api.post("/strategies", data));
+};
 
-export const updateStrategy = (id: string | number, data: any) =>
-  apiCall(api.put(`/strategies/${id}`, data));
+export const updateStrategy = (id: string | number, data: any) => {
+  invalidateCache("/strategies");
+  return apiCall(api.put(`/strategies/${id}`, data));
+};
 
-export const deleteStrategy = (id: string | number) =>
-  apiCall(api.delete(`/strategies/${id}`));
+export const deleteStrategy = (id: string | number) => {
+  invalidateCache("/strategies");
+  return apiCall(api.delete(`/strategies/${id}`));
+};
 
-export const startStrategy = (id: string | number) =>
-  apiCall(api.post(`/strategies/${id}/start`));
+export const startStrategy = (id: string | number) => {
+  invalidateCache("/strategies");
+  return apiCall(api.post(`/strategies/${id}/start`));
+};
 
-export const stopStrategy = (id: string | number) =>
-  apiCall(api.post(`/strategies/${id}/stop`));
+export const stopStrategy = (id: string | number) => {
+  invalidateCache("/strategies");
+  return apiCall(api.post(`/strategies/${id}/stop`));
+};
 
 // ==================== 触发日志 ====================
 
 export const fetchTriggers = (params?: { strategy_id?: number; page?: number; page_size?: number }) =>
-  apiCall(api.get("/triggers", { params }));
+  cachedGet("/triggers", 5000, params);
 
 // ==================== 账户和持仓 ====================
 
-export const fetchAccount = () => apiCall(api.get("/account"));
+export const fetchAccount = () => cachedGet("/account", 5000);
 
-export const resetAccount = () => apiCall(api.post("/account/reset"));
+export const resetAccount = () => {
+  invalidateCache("/account");
+  invalidateCache("/dashboard");
+  invalidateCache("/positions");
+  invalidateCache("/strategies");
+  return apiCall(api.post("/account/reset"));
+};
 
 export const fetchPositions = (params?: { strategy_id?: number }) =>
-  apiCall(api.get("/positions", { params }));
+  cachedGet("/positions", 5000, params);
 
 // ==================== 认证 ====================
 
-export const authMe = () => apiCall<{ user: any | null }>(api.get("/auth/me"));
+export const authMe = () => cachedGet<{ user: any | null }>("/auth/me", 30000);
 
 export const authLogin = (data: { username: string; password: string }) =>
   apiCall<{ user: any }>(api.post("/auth/login", data));
@@ -113,17 +179,20 @@ export const authLogin = (data: { username: string; password: string }) =>
 export const authRegister = (data: { username: string; password: string }) =>
   apiCall<{ user: any }>(api.post("/auth/register", data));
 
-export const authLogout = () => apiCall(api.post("/auth/logout"));
+export const authLogout = () => {
+  cache.clear();
+  return apiCall(api.post("/auth/logout"));
+};
 
 // ==================== 通知设置 ====================
 
 export const fetchNotificationSettings = () =>
-  apiCall(api.get("/notifications/settings"));
+  cachedGet("/notifications/settings", 30000);
 
 export const updateNotificationSettings = (data: {
   bark_key?: string;
   bark_enabled?: boolean;
-}) => apiCall(api.put("/notifications/settings", data));
+}) => { invalidateCache("/notifications"); return apiCall(api.put("/notifications/settings", data)); };
 
 export const testNotification = () =>
   apiCall(api.post("/notifications/test"));

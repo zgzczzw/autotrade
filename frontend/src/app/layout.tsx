@@ -29,10 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" className="dark">
-      <head>
-        <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js" />
-        <script dangerouslySetInnerHTML={{ __html: `if(typeof VConsole!=='undefined'){new VConsole()}` }} />
-      </head>
+      <head />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-100`}
       >

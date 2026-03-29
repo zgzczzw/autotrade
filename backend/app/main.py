@@ -123,6 +123,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# GZip 压缩（对大于 500 字节的响应启用）
+from starlette.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 # 访问日志中间件（最先添加，最后执行）
 app.add_middleware(AccessLogMiddleware)
 

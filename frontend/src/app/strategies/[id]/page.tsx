@@ -100,7 +100,7 @@ export default function StrategyDetailPage() {
 
   useEffect(() => {
     loadStrategy();
-    const interval = setInterval(loadStrategy, 10000);
+    const interval = setInterval(loadStrategy, 30000);
     return () => clearInterval(interval);
   }, [id]);
 
