@@ -6,6 +6,7 @@
 
 import asyncio
 import json
+import uuid
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
@@ -77,11 +78,13 @@ class BacktestContext:
     def __init__(
         self,
         strategy: Strategy,
+        symbol: str,
         account: VirtualAccount,
         current_kline: Optional[dict],
         all_klines: List[dict],
     ):
         self.strategy = strategy
+        self.symbol = symbol
         self.account = account
         self.current_kline = current_kline
         self.all_klines = all_klines
@@ -136,7 +139,7 @@ class BacktestContext:
         self.account.balance -= cost
         position = Position(
             strategy_id=self.strategy.id,
-            symbol=self.strategy.symbol,
+            symbol=self.symbol,
             side="long",
             entry_price=price,
             quantity=qty,
@@ -204,7 +207,7 @@ class BacktestContext:
         self.account.balance -= margin
         position = Position(
             strategy_id=self.strategy.id,
-            symbol=self.strategy.symbol,
+            symbol=self.symbol,
             side="short",
             entry_price=price,
             quantity=qty,
@@ -245,6 +248,10 @@ class BacktestEngine:
 
     def __init__(self):
         self._running_tasks: Dict[int, asyncio.Event] = {}
+        self._progress: Dict[int, dict] = {}
+
+    def get_progress(self, strategy_id: int) -> Optional[dict]:
+        return self._progress.get(strategy_id)
 
     def is_running(self, strategy_id: int) -> bool:
         return strategy_id in self._running_tasks
@@ -259,6 +266,7 @@ class BacktestEngine:
     async def run_backtest(
         self,
         strategy: Strategy,
+        symbol: str,
         start_date: datetime,
         end_date: datetime,
         initial_balance: float = 100000.0,
@@ -269,7 +277,58 @@ class BacktestEngine:
 
         cancel_event = asyncio.Event()
         self._running_tasks[strategy.id] = cancel_event
+        try:
+            return await self._run_single_symbol_backtest(
+                strategy, symbol, start_date, end_date, initial_balance, cancel_event
+            )
+        finally:
+            self._running_tasks.pop(strategy.id, None)
 
+    async def run_multi_backtest(
+        self,
+        strategy: Strategy,
+        symbols: List[str],
+        start_date: datetime,
+        end_date: datetime,
+        initial_balance: float = 100000.0,
+    ) -> List[BacktestResult]:
+        """运行多品种回测"""
+        if strategy.id in self._running_tasks:
+            raise ValueError("该策略已有回测正在运行")
+
+        cancel_event = asyncio.Event()
+        self._running_tasks[strategy.id] = cancel_event
+        batch_id = str(uuid.uuid4())
+        results = []
+
+        try:
+            self._progress[strategy.id] = {"current_symbol": None, "completed": 0, "total": len(symbols)}
+            for i, symbol in enumerate(symbols):
+                if cancel_event.is_set():
+                    break
+                self._progress[strategy.id]["current_symbol"] = symbol
+                result = await self._run_single_symbol_backtest(
+                    strategy, symbol, start_date, end_date, initial_balance, cancel_event
+                )
+                result.batch_id = batch_id
+                results.append(result)
+                self._progress[strategy.id]["completed"] = i + 1
+        finally:
+            self._running_tasks.pop(strategy.id, None)
+            self._progress.pop(strategy.id, None)
+
+        return results
+
+    async def _run_single_symbol_backtest(
+        self,
+        strategy: Strategy,
+        symbol: str,
+        start_date: datetime,
+        end_date: datetime,
+        initial_balance: float,
+        cancel_event: asyncio.Event,
+    ) -> BacktestResult:
+        """运行单品种回测（内部方法，不管理 _running_tasks）"""
         # 解析时间周期
         timeframes = [tf.strip() for tf in strategy.timeframe.split(",") if tf.strip()]
         primary_tf = timeframes[0]
@@ -281,7 +340,7 @@ class BacktestEngine:
 
         # 获取主时间周期历史数据
         primary_klines = await market_data_service.fetch_historical_klines(
-            symbol=strategy.symbol,
+            symbol=symbol,
             timeframe=primary_tf,
             start_date=start_date,
             end_date=end_date,
@@ -307,7 +366,7 @@ class BacktestEngine:
                 other_klines: Dict[str, List[dict]] = {}
                 for tf in timeframes[1:]:
                     tf_data = await market_data_service.fetch_historical_klines(
-                        symbol=strategy.symbol,
+                        symbol=symbol,
                         timeframe=tf,
                         start_date=start_date,
                         end_date=end_date,
@@ -316,12 +375,12 @@ class BacktestEngine:
                     logger.info(f"Loaded {len(tf_data)} klines for tf={tf}")
 
                 equity_curve = await self._run_multitf_code_loop(
-                    strategy, primary_tf, primary_klines, other_klines,
+                    strategy, symbol, primary_tf, primary_klines, other_klines,
                     account, cancel_event,
                 )
             else:
                 equity_curve = await self._run_single_tf_loop(
-                    strategy, primary_tf, primary_klines, account, cancel_event,
+                    strategy, symbol, primary_tf, primary_klines, account, cancel_event,
                 )
 
             # 回测结束：强制平仓所有持仓
@@ -350,8 +409,6 @@ class BacktestEngine:
         except asyncio.CancelledError:
             logger.info(f"Backtest for strategy {strategy.id} was cancelled")
             raise
-        finally:
-            self._running_tasks.pop(strategy.id, None)
 
         # 计算统计指标
         stats = self._calculate_stats(account, equity_curve, initial_balance)
@@ -368,7 +425,7 @@ class BacktestEngine:
 
         result = BacktestResult(
             strategy_id=strategy.id,
-            symbol=strategy.symbol,
+            symbol=symbol,
             timeframe=primary_tf,
             start_date=start_date,
             end_date=end_date,
@@ -399,6 +456,7 @@ class BacktestEngine:
     async def _run_single_tf_loop(
         self,
         strategy: Strategy,
+        symbol: str,
         primary_tf: str,
         klines: List[dict],
         account: VirtualAccount,
@@ -414,7 +472,7 @@ class BacktestEngine:
             if cancel_event.is_set():
                 raise asyncio.CancelledError("回测已被用户取消")
 
-            ctx = BacktestContext(strategy, account, kline, klines[: i + 1])
+            ctx = BacktestContext(strategy, symbol, account, kline, klines[: i + 1])
 
             # 止盈止损
             sl_tp_triggered = await self._check_stop_loss_take_profit(ctx, strategy)
@@ -442,7 +500,7 @@ class BacktestEngine:
                     if code_instance is not None:
                         try:
                             data = {
-                                "symbol": strategy.symbol,
+                                "symbol": symbol,
                                 "timeframe": primary_tf,
                                 "price": kline["close"],
                                 "klines": klines[max(0, i - 99): i + 1],
@@ -478,6 +536,7 @@ class BacktestEngine:
     async def _run_multitf_code_loop(
         self,
         strategy: Strategy,
+        symbol: str,
         primary_tf: str,
         primary_klines: List[dict],
         other_klines: Dict[str, List[dict]],
@@ -504,7 +563,7 @@ class BacktestEngine:
                 raise asyncio.CancelledError("回测已被用户取消")
 
             current_time = kline["open_time"]
-            ctx = BacktestContext(strategy, account, kline, primary_klines[: i + 1])
+            ctx = BacktestContext(strategy, symbol, account, kline, primary_klines[: i + 1])
 
             # 创建或复用持久化实例
             if code_instance is None:
@@ -547,7 +606,7 @@ class BacktestEngine:
                         tf_price = tf_slice[-1]["close"]
                         try:
                             sig = sandbox_executor.call_on_tick(code_instance, {
-                                "symbol": strategy.symbol,
+                                "symbol": symbol,
                                 "timeframe": tf,
                                 "price": tf_price,
                                 "klines": tf_slice[-100:],
@@ -565,7 +624,7 @@ class BacktestEngine:
                 if code_instance is not None:
                     try:
                         sig = sandbox_executor.call_on_tick(code_instance, {
-                            "symbol": strategy.symbol,
+                            "symbol": symbol,
                             "timeframe": primary_tf,
                             "price": kline["close"],
                             "klines": primary_klines[max(0, i - 99): i + 1],

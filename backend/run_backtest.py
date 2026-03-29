@@ -41,7 +41,7 @@ async def run(code_path: str, timeframe: str, symbol: str,
     end_date = datetime.strptime(end_str, "%Y-%m-%d")
 
     engine = BacktestEngine()
-    result = await engine.run_backtest(strategy, start_date, end_date, initial_balance)
+    result = await engine.run_backtest(strategy, symbol, start_date, end_date, initial_balance)
 
     trades = json.loads(result.trades) if isinstance(result.trades, str) else result.trades
 

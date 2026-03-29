@@ -79,6 +79,7 @@ async def create_backtest(
     try:
         backtest_result = await backtest_engine.run_backtest(
             strategy=strategy,
+            symbol=strategy.symbol,
             start_date=start_date,
             end_date=end_date,
             initial_balance=data.initial_balance,
