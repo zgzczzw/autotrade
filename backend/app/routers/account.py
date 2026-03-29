@@ -6,14 +6,15 @@ import os
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.database import get_db
 from app.deps import get_current_user
+from app.engine.scheduler import scheduler
 from app.logger import get_logger
-from app.models import Position, SimAccount, User
+from app.models import Position, SimAccount, Strategy, User
 from app.schemas import AccountResponse, MessageResponse, PositionHistoryList, PositionList, PositionResponse
 
 logger = get_logger(__name__)
@@ -51,9 +52,40 @@ async def reset_account(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """重置当前用户的模拟账户余额"""
+    """重置当前用户的模拟账户（余额、持仓、日志、策略状态）"""
+    uid = current_user.id
+
+    # 1. 停止所有运行中的策略
+    await scheduler.stop_user_strategies(uid)
+
+    # 2. 将所有策略状态改为 stopped
+    await db.execute(
+        text("UPDATE strategies SET status = 'stopped' WHERE user_id = :uid AND status = 'running'"),
+        {"uid": uid},
+    )
+
+    # 3. 删除通知日志
+    await db.execute(text(
+        """
+        DELETE FROM notification_logs WHERE trigger_log_id IN (
+            SELECT tl.id FROM trigger_logs tl
+            JOIN strategies s ON tl.strategy_id = s.id
+            WHERE s.user_id = :uid
+        )
+        """
+    ), {"uid": uid})
+
+    # 4. 删除触发日志
+    await db.execute(text(
+        "DELETE FROM trigger_logs WHERE strategy_id IN (SELECT id FROM strategies WHERE user_id = :uid)"
+    ), {"uid": uid})
+
+    # 5. 删除所有持仓（含未平仓和已平仓）
+    await db.execute(text("DELETE FROM positions WHERE user_id = :uid"), {"uid": uid})
+
+    # 6. 重置余额和盈亏
     result = await db.execute(
-        select(SimAccount).where(SimAccount.user_id == current_user.id)
+        select(SimAccount).where(SimAccount.user_id == uid)
     )
     account = result.scalar_one_or_none()
     if account:
@@ -61,8 +93,8 @@ async def reset_account(
         account.total_pnl = 0.0
 
     await db.commit()
-    logger.info(f"模拟账户余额已重置 (user_id={current_user.id})")
-    return MessageResponse(message="账户余额已重置")
+    logger.info(f"模拟账户已完全重置 (user_id={uid})")
+    return MessageResponse(message="账户已重置")
 
 
 @router.get("/positions/history", response_model=PositionHistoryList)

@@ -269,16 +269,18 @@ export default function SettingsPage() {
             >
               <RotateCcw className="w-4 h-4" />
               <div>
-                <span>重置余额</span>
-                <p className="text-xs text-slate-500 mt-0.5">将账户余额恢复为初始值，盈亏归零，不影响策略和持仓</p>
+                <span>重置账户</span>
+                <p className="text-xs text-slate-500 mt-0.5">停止所有策略，清空持仓和交易记录，余额恢复初始值</p>
               </div>
             </button>
           ) : (
             <div className="px-6 py-4 space-y-3">
-              <p className="text-sm text-orange-300">确认重置余额？将会：</p>
+              <p className="text-sm text-orange-300">确认重置账户？此操作不可撤销，将会：</p>
               <ul className="text-xs text-slate-400 list-disc list-inside space-y-1">
-                <li>余额恢复为初始值</li>
-                <li>累计盈亏归零</li>
+                <li>停止所有运行中的策略</li>
+                <li>删除所有持仓和交易记录</li>
+                <li>删除所有触发日志</li>
+                <li>余额恢复为初始值，盈亏归零</li>
               </ul>
               <div className="flex items-center gap-3">
                 <button
@@ -287,7 +289,7 @@ export default function SettingsPage() {
                     setResetMsg(null);
                     try {
                       await resetAccount();
-                      setResetMsg({ ok: true, text: "余额已重置" });
+                      setResetMsg({ ok: true, text: "账户已重置" });
                       setShowResetConfirm(false);
                     } catch {
                       setResetMsg({ ok: false, text: "重置失败，请重试" });
