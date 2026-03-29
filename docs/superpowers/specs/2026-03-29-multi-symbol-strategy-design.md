@@ -60,11 +60,17 @@ Already has a `symbol` field. Works as-is.
 
 Each backtest run targets one symbol and produces one record. When user triggers "backtest all", the backend runs independent backtests for each symbol in the strategy, each creating its own `backtest_results` row with that symbol.
 
-### Data Migration
+### Data Migration (Alembic)
 
-1. For each existing strategy, insert one row into `strategy_symbols` with the strategy's current `symbol` value
-2. For existing `trigger_logs`, backfill `symbol` from the associated strategy's `symbol` field (best-effort, leave null if strategy deleted)
-3. Keep `strategies.symbol` field with its current value (do NOT delete)
+Create an Alembic migration script that:
+
+1. Creates `strategy_symbols` table
+2. Adds `symbol` column (nullable) to `trigger_logs`
+3. For each existing strategy, inserts one row into `strategy_symbols` with the strategy's current `symbol` value
+4. For existing `trigger_logs`, backfills `symbol` from the associated strategy's `symbol` field (best-effort, leave null if strategy deleted)
+5. Keep `strategies.symbol` field with its current value (do NOT delete), update default to `"BTCUSDT"`
+
+**Note:** The project uses inline migration at startup (`models.Base.metadata.create_all`). If Alembic is not set up, the migration logic should be added to the startup sequence.
 
 ## Scheduler Changes
 
@@ -104,7 +110,7 @@ def stop_strategy(self, strategy_id: int):
     # Release all code strategy instances for this strategy
 ```
 
-## Executor Changes
+## Executor Changes (`executor.py`)
 
 ### `execute(strategy, symbol, timeframe)`
 
@@ -129,7 +135,8 @@ class StrategyContext:
 All internal references change from `self.strategy.symbol` to `self.symbol`:
 - `get_klines()` → uses `self.symbol`
 - `get_position()` → filters by `self.symbol`
-- `buy()` / `sell()` → trades on `self.symbol`
+- `buy()` → passes `self.symbol` to `simulator.execute_buy()` / `simulator.execute_cover()`
+- `sell()` → passes `self.symbol` to `simulator.execute_sell()` / `simulator.execute_short()`
 
 ### Code Strategy Instances
 
@@ -140,6 +147,22 @@ self._strategy_instances: Dict[tuple[int, str], Any] = {}
 ```
 
 Each (strategy, symbol) pair gets its own independent instance with its own state.
+
+### `release_instance` Adaptation
+
+Must release ALL instances for a given `strategy_id` (iterate over all `(strategy_id, *)` keys):
+
+```python
+def release_instance(self, strategy_id: int) -> None:
+    keys_to_remove = [k for k in self._strategy_instances if k[0] == strategy_id]
+    for key in keys_to_remove:
+        instance = self._strategy_instances.pop(key)
+        try:
+            instance.on_stop()
+        except Exception as e:
+            logger.warning(f"Strategy {key} on_stop() error (ignored): {e}")
+    logger.info(f"Strategy {strategy_id}: released {len(keys_to_remove)} instance(s)")
+```
 
 ### `on_tick` Data
 
@@ -154,14 +177,60 @@ data = {
 
 No change in structure — code strategies already receive `symbol` in data dict.
 
+## Simulator Changes (`simulator.py`) — No Code Changes
+
+The Simulator already accepts `symbol` as an explicit parameter in all methods (`execute_buy`, `execute_sell`, `execute_short`, `execute_cover`, `check_stop_loss_take_profit`). It does NOT read `strategy.symbol` internally. The only change is that callers (StrategyContext) now pass `self.symbol` instead of `self.strategy.symbol`.
+
+**TriggerLog symbol population:** The Simulator creates `TriggerLog` records. A new `symbol` parameter must be added to each `TriggerLog(...)` constructor call so that new trigger logs are tagged with the correct symbol. This is the ONLY change needed in `simulator.py`.
+
+## Sandbox Changes (`sandbox.py`)
+
+The `SandboxExecutor.execute()` method builds `data = {"symbol": context.strategy.symbol, ...}`. This must change to `data = {"symbol": context.symbol, ...}` to use the per-execution symbol from StrategyContext.
+
+## Backtester Changes (`backtester.py`)
+
+### `run_backtest` Signature
+
+Add `symbol` parameter:
+
+```python
+async def run_backtest(strategy, symbol, start_date, end_date, initial_balance) -> BacktestResult:
+```
+
+All internal `strategy.symbol` references replaced with the passed `symbol` parameter:
+- `market_data_service.fetch_historical_klines(symbol=symbol, ...)`
+- `BacktestContext(strategy, symbol, ...)` — BacktestContext also receives explicit `symbol`
+- `Position(symbol=symbol, ...)`
+- `BacktestResult(symbol=symbol, ...)`
+
+### Route Changes (`routers/backtests.py`)
+
+The backtest route loops over strategy symbols and runs independent backtests:
+
+```python
+@router.post("/strategies/{strategy_id}/backtest")
+async def create_backtest(strategy_id: int, req: BacktestCreate):
+    strategy = ...  # load with symbols
+    results = []
+    for sym in strategy.symbols:
+        result = await run_backtest(strategy, sym.symbol, req.start_date, req.end_date, req.initial_balance)
+        results.append(result)
+    return results
+```
+
+**Response type changes** from `BacktestResponse` to `List[BacktestResponse]`. This is a breaking change for frontend — frontend must be updated to handle the list.
+
 ## API & Schema Changes
 
 ### Strategy Schemas
 
+**`StrategyBase`:**
+- Remove `symbol: str` field (no longer needed in base schema)
+
 **`StrategyCreate`:**
 ```python
 class StrategyCreate(StrategyBase):
-    symbols: List[str] = Field(..., min_length=1)  # replaces symbol in request
+    symbols: List[str] = Field(..., min_length=1)  # at least one symbol required
     config_json: Optional[str] = None
     code: Optional[str] = None
 ```
@@ -176,11 +245,31 @@ class StrategyUpdate(BaseModel):
 **`StrategyResponse`:**
 ```python
 class StrategyResponse(StrategyBase):
-    symbols: List[str]  # loaded from strategy_symbols relationship
+    symbols: List[str]  # extracted from strategy_symbols relationship
     # ... other fields unchanged
 ```
 
-Note: `StrategyBase.symbol` field is kept for model compatibility but `StrategyResponse` adds `symbols` (plural) for API consumers.
+**ORM-to-Pydantic mapping note:** The SQLAlchemy `Strategy.symbols` relationship returns `StrategySymbol` objects, not strings. The route handler must convert before returning:
+
+```python
+strategy_dict = {**strategy.__dict__}
+strategy_dict["symbols"] = [s.symbol for s in strategy.symbols]
+return StrategyResponse(**strategy_dict)
+```
+
+Or add a `@computed_field` / `@property` on the ORM model. The implementation plan should decide the approach.
+
+### Strategy Route Changes (`routers/strategies.py`)
+
+**Create:** `model_dump()` will include `symbols` key which is not an ORM column. The route must:
+1. Pop `symbols` from the dict
+2. Create the `Strategy` ORM object (with `symbol` defaulting to `"BTCUSDT"`)
+3. Create `StrategySymbol` rows for each symbol
+4. Commit
+
+**Export:** The `EXPORT_FIELDS` list should exclude `symbol` (legacy field). Exported JSON has no symbol data.
+
+**Import:** Create strategy with `symbol="BTCUSDT"` (default), then create one `StrategySymbol` row with `"BTCUSDT"`.
 
 ### Trigger Log Schema
 
@@ -284,3 +373,4 @@ Notification message template includes symbol:
 | K-line fetch fails for one symbol | Skip that symbol for this tick, log error, other symbols unaffected |
 | Delete strategy | Cascade deletes strategy_symbols, trigger_logs, positions |
 | Old trigger_logs without symbol | Frontend displays `—` for null values |
+| User code accesses `strategy.symbol` | Returns default `"BTCUSDT"`, not the per-execution symbol. Users should use `ctx.symbol` or `data["symbol"]` instead. Document this in migration notes |
