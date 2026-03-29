@@ -104,16 +104,19 @@ export default function StrategyDetailPage() {
     return () => clearInterval(interval);
   }, [id]);
 
-  // 如果 URL 带 tab 参数，初始加载对应数据
+  // 如果 URL 带 tab 参数，等 strategy 加载完后加载对应数据
   useEffect(() => {
-    if (initialTab === "triggers" && !triggersLoaded) {
+    if (!strategy) return;
+    if (activeTab === "triggers" && !triggersLoaded) {
       loadTriggers(1);
+      loadKlines(strategy.symbol, chartPeriod);
+      loadAllTriggers();
     }
-    if (initialTab === "positions" && !positionsLoaded) {
+    if (activeTab === "positions" && !positionsLoaded) {
       loadPositions(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialTab]);
+  }, [strategy, activeTab]);
 
   const loadStrategy = async () => {
     try {
