@@ -76,6 +76,7 @@ class Simulator:
         # 记录触发
         trigger = TriggerLog(
             strategy_id=strategy_id,
+            symbol=symbol,
             signal_type="买入",
             signal_detail=f"买入 {quantity} {symbol} @ {price}",
             action="买入",
@@ -160,6 +161,7 @@ class Simulator:
         # 记录触发
         trigger = TriggerLog(
             strategy_id=strategy_id,
+            symbol=symbol,
             signal_type="卖出",
             signal_detail=f"卖出 {total_sell_qty:.4f} {symbol} @ {price} ({sell_size_pct:.0f}%), 盈亏: {total_pnl:.2f} USDT",
             action="卖出",
@@ -229,6 +231,7 @@ class Simulator:
 
         trigger = TriggerLog(
             strategy_id=strategy_id,
+            symbol=symbol,
             signal_type="卖出",
             signal_detail=f"开空 {quantity} {symbol} @ {price}",
             action="卖出",
@@ -305,6 +308,7 @@ class Simulator:
 
         trigger = TriggerLog(
             strategy_id=strategy_id,
+            symbol=symbol,
             signal_type="买入",
             signal_detail=f"平空 {total_quantity:.4f} {symbol} @ {price}, 盈亏: {total_pnl:.2f} USDT",
             action="买入",
