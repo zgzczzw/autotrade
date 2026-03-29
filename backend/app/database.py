@@ -32,6 +32,9 @@ async def init_db():
             "ALTER TABLE sim_accounts ADD COLUMN user_id INTEGER REFERENCES users(id)",
             "ALTER TABLE backtest_results ADD COLUMN user_id INTEGER REFERENCES users(id)",
             "ALTER TABLE trigger_logs ADD COLUMN position_effect VARCHAR",
+            # Multi-symbol strategy support
+            "ALTER TABLE trigger_logs ADD COLUMN symbol VARCHAR",
+            "ALTER TABLE backtest_results ADD COLUMN batch_id VARCHAR",
         ]
         for sql in migrations:
             try:
@@ -80,6 +83,30 @@ async def init_db():
         await session.execute(
             text("UPDATE backtest_results SET user_id = :uid WHERE user_id IS NULL"),
             {"uid": admin_id},
+        )
+
+        # Backfill strategy_symbols from existing strategies
+        from app.models import StrategySymbol
+        existing_symbols_result = await session.execute(
+            select(StrategySymbol).limit(1)
+        )
+        if existing_symbols_result.scalar_one_or_none() is None:
+            # First run after migration: copy strategy.symbol → strategy_symbols
+            all_strategies = await session.execute(select(Strategy))
+            for s in all_strategies.scalars().all():
+                session.add(StrategySymbol(
+                    strategy_id=s.id,
+                    symbol=s.symbol or "BTCUSDT",
+                ))
+
+        # Backfill trigger_logs.symbol from strategy.symbol
+        await session.execute(
+            text("""
+                UPDATE trigger_logs SET symbol = (
+                    SELECT strategies.symbol FROM strategies
+                    WHERE strategies.id = trigger_logs.strategy_id
+                ) WHERE trigger_logs.symbol IS NULL
+            """)
         )
 
         # If no sim_account exists for admin, create one
