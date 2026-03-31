@@ -16,7 +16,7 @@ const KlineChartModule = dynamic(
   { ssr: false }
 );
 import { fetchMarketKlines } from "@/lib/api";
-import { formatPrice, formatSymbol, formatDateTime, parseUTCTimestamp } from "@/lib/utils";
+import { formatPrice, formatSymbol, baseAsset, formatDateTime, parseUTCTimestamp } from "@/lib/utils";
 import { ArrowLeft, ChevronLeft, ChevronRight, History, Pencil, Play, Square, TrendingUp } from "lucide-react";
 import axios from "axios";
 import {
@@ -627,7 +627,7 @@ export default function StrategyDetailPage() {
                               </div>
                               <div>
                                 <span className="text-slate-400 mr-2">数量</span>
-                                <span>{pos.quantity.toFixed(4)}</span>
+                                <span>{pos.quantity.toFixed(4)} {baseAsset(pos.symbol)}</span>
                               </div>
                               {pos.unrealized_pnl != null && (
                                 <div>
@@ -690,7 +690,7 @@ export default function StrategyDetailPage() {
                                   </td>
                                   <td className="p-4">{formatPrice(pos.entry_price)}</td>
                                   <td className="p-4">{pos.current_price ? formatPrice(pos.current_price) : "-"}</td>
-                                  <td className="p-4">{pos.quantity.toFixed(4)}</td>
+                                  <td className="p-4">{pos.quantity.toFixed(4)} {baseAsset(pos.symbol)}</td>
                                   <td className="p-4 text-right">
                                     {pos.pnl != null ? (
                                       <span className={pos.pnl >= 0 ? "text-green-400" : "text-red-400"}>

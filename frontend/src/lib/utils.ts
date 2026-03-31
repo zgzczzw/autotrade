@@ -14,6 +14,14 @@ export function formatSymbol(symbol: string): string {
 }
 
 /**
+ * 提取基础币种
+ * BTCUSDT -> BTC, ETHUSDT -> ETH
+ */
+export function baseAsset(symbol: string): string {
+  return symbol.replace(/USDT$/, "");
+}
+
+/**
  * 格式化价格
  */
 export function formatPrice(price: number): string {
