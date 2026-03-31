@@ -2,6 +2,7 @@
 飞书通知服务
 """
 
+import json
 import os
 from datetime import datetime
 from typing import Optional
@@ -199,10 +200,10 @@ class NotificationService:
             else:
                 logger.error(f"Feishu notification failed: {error_msg}")
 
-        # ── Bark ──
+        # ── Bark（支持多配置） ──
         if user_id is not None:
-            bark_key, bark_enabled = await self._get_bark_config(db, user_id)
-            if bark_enabled and bark_key:
+            bark_configs, bark_enabled = await self._get_bark_config(db, user_id)
+            if bark_enabled and bark_configs:
                 action_text = trigger_log.action or "观望"
                 effect_text = f"（{trigger_log.position_effect}）" if getattr(trigger_log, "position_effect", None) else ""
                 price_text = f"{trigger_log.price:.2f}" if trigger_log.price else "-"
@@ -212,39 +213,57 @@ class NotificationService:
                     pnl_sign = "+" if trigger_log.simulated_pnl >= 0 else ""
                     body += f"  盈亏: {pnl_sign}{trigger_log.simulated_pnl:.2f} USDT"
 
-                success, error_msg = await bark_client.send(
-                    key=bark_key,
-                    title=title,
-                    body=body,
-                )
-                bark_log = NotificationLog(
-                    trigger_log_id=trigger_log.id,
-                    channel="bark",
-                    status="sent" if success else "failed",
-                    error_message=error_msg,
-                )
-                db.add(bark_log)
-                if success:
-                    logger.info(f"Bark notification sent for trigger {trigger_log.id}")
-                else:
-                    logger.error(f"Bark notification failed: {error_msg}")
+                for cfg in bark_configs:
+                    if not cfg.get("enabled", True) or not cfg.get("key"):
+                        continue
+                    cfg_name = cfg.get("name", "")
+                    success, error_msg = await bark_client.send(
+                        key=cfg["key"],
+                        title=title,
+                        body=body,
+                    )
+                    bark_log = NotificationLog(
+                        trigger_log_id=trigger_log.id,
+                        channel="bark",
+                        status="sent" if success else "failed",
+                        error_message=error_msg,
+                    )
+                    db.add(bark_log)
+                    if success:
+                        logger.info(f"Bark notification sent for trigger {trigger_log.id} [{cfg_name}]")
+                    else:
+                        logger.error(f"Bark notification failed [{cfg_name}]: {error_msg}")
 
         await db.commit()
 
     async def _get_bark_config(
         self, db: AsyncSession, user_id: int
-    ) -> tuple[Optional[str], bool]:
-        """读取用户的 Bark 配置，返回 (bark_key, bark_enabled)"""
+    ) -> tuple[list, bool]:
+        """读取用户的 Bark 配置，返回 (bark_configs, bark_enabled)"""
         result = await db.execute(
             select(UserSetting).where(
                 UserSetting.user_id == user_id,
-                UserSetting.key.in_(["bark_key", "bark_enabled"]),
+                UserSetting.key.in_(["bark_configs", "bark_key", "bark_enabled"]),
             )
         )
         rows = {row.key: row.value for row in result.scalars().all()}
-        bark_key = rows.get("bark_key") or None
         bark_enabled = rows.get("bark_enabled", "false").lower() == "true"
-        return bark_key, bark_enabled
+
+        # 优先读取新格式 bark_configs
+        bark_configs = []
+        configs_json = rows.get("bark_configs")
+        if configs_json:
+            try:
+                bark_configs = json.loads(configs_json)
+            except json.JSONDecodeError:
+                pass
+        else:
+            # 兼容旧格式
+            old_key = rows.get("bark_key")
+            if old_key:
+                bark_configs = [{"id": "migrated", "name": "默认", "key": old_key, "enabled": True}]
+
+        return bark_configs, bark_enabled
 
     async def close(self):
         """关闭服务"""

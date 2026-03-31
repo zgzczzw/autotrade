@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { formatSymbol } from "@/lib/utils";
-import { Plus, Settings, Trash2, Zap, Code, Eye, Bot, Download, Upload } from "lucide-react";
+import { Plus, Settings, Trash2, Zap, Code, Eye, Bot, Download, Upload, TrendingUp, TrendingDown } from "lucide-react";
 import axios from "axios";
 import { exportStrategies, importStrategies } from "@/lib/api";
 
@@ -21,6 +21,8 @@ interface Strategy {
   timeframe: string;
   status: string;
   trigger_count?: number;
+  position_count?: number;
+  position_sides?: string[];
 }
 
 export default function StrategiesPage() {
@@ -220,6 +222,23 @@ export default function StrategiesPage() {
                         <Zap className="w-3 h-3" />
                         {strategy.trigger_count || 0}
                       </span>
+                      {(strategy.position_count ?? 0) > 0 && (
+                        <>
+                          <span className="text-slate-700">·</span>
+                          {strategy.position_sides?.includes("long") && (
+                            <span className="text-xs text-green-400 flex items-center gap-0.5 font-medium">
+                              <TrendingUp className="w-3 h-3" />
+                              多
+                            </span>
+                          )}
+                          {strategy.position_sides?.includes("short") && (
+                            <span className="text-xs text-orange-400 flex items-center gap-0.5 font-medium">
+                              <TrendingDown className="w-3 h-3" />
+                              空
+                            </span>
+                          )}
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <Link href={`/strategies/${strategy.id}`}>

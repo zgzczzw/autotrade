@@ -17,7 +17,7 @@ from app.deps import get_current_user
 from app.engine.scheduler import scheduler
 from app.engine.sandbox import validate_code
 from app.logger import get_logger
-from app.models import Strategy, StrategySymbol, User
+from app.models import Position, Strategy, StrategySymbol, User
 from app.schemas import (
     CodeValidationRequest,
     CodeValidationResponse,
@@ -80,12 +80,32 @@ async def list_strategies(
             .group_by(TriggerLog.strategy_id)
         )
         trigger_counts = dict(tc_result.all())
+
+        # 批量查询每个策略的持仓数和方向
+        pos_result = await db.execute(
+            select(Position.strategy_id, Position.side, func.count())
+            .where(Position.strategy_id.in_(strategy_ids), Position.closed_at.is_(None))
+            .group_by(Position.strategy_id, Position.side)
+        )
+        pos_info: dict[int, dict] = {}
+        for sid, side, cnt in pos_result.all():
+            if sid not in pos_info:
+                pos_info[sid] = {"count": 0, "sides": set()}
+            pos_info[sid]["count"] += cnt
+            pos_info[sid]["sides"].add(side)
     else:
         trigger_counts = {}
+        pos_info = {}
 
     response_items = []
     for item in items:
-        resp = _strategy_to_response(item, trigger_count=trigger_counts.get(item.id, 0))
+        pi = pos_info.get(item.id)
+        resp = _strategy_to_response(
+            item,
+            trigger_count=trigger_counts.get(item.id, 0),
+            position_count=pi["count"] if pi else 0,
+            position_sides=sorted(pi["sides"]) if pi else [],
+        )
         response_items.append(resp)
 
     return StrategyList(

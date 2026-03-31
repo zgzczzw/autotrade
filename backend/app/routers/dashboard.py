@@ -3,7 +3,9 @@
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+
+import zoneinfo
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
@@ -12,7 +14,7 @@ from sqlalchemy.future import select
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Position, SimAccount, Strategy, TriggerLog, User
+from app.models import Position, SimAccount, Strategy, SystemSetting, TriggerLog, User
 from app.schemas import DashboardData, TriggerLogResponse
 
 router = APIRouter(tags=["仪表盘"])
@@ -52,8 +54,20 @@ async def get_dashboard(
     )
     running_strategies = running_count_result.scalar()
 
-    # 今日触发次数（当前用户的策略）
-    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    # 读取系统时区设置
+    tz_result = await db.execute(
+        select(SystemSetting.value).where(SystemSetting.key == "timezone")
+    )
+    tz_name = tz_result.scalar() or "Asia/Shanghai"
+    try:
+        tz = zoneinfo.ZoneInfo(tz_name)
+    except Exception:
+        tz = zoneinfo.ZoneInfo("Asia/Shanghai")
+
+    # 今日触发次数（按用户时区计算"今日"）
+    now_local = datetime.now(tz)
+    today_local = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    today = today_local.astimezone(timezone.utc).replace(tzinfo=None)
     today_triggers_result = await db.execute(
         select(func.count())
         .select_from(TriggerLog)
@@ -87,18 +101,30 @@ async def get_dashboard(
         item.strategy_name = strategy_name
         recent_items.append(item)
 
-    # 未平仓持仓成本（算入余额）
-    open_cost_result = await db.execute(
+    # 未平仓持仓成本（算入余额）+ 多空策略数
+    open_pos_result = await db.execute(
+        select(Position.side, func.count(func.distinct(Position.strategy_id)))
+        .join(Strategy, Position.strategy_id == Strategy.id)
+        .where(Strategy.user_id == current_user.id, Position.closed_at.is_(None))
+        .group_by(Position.side)
+    )
+    open_position_cost_result = await db.execute(
         select(func.coalesce(func.sum(Position.entry_price * Position.quantity), 0))
         .join(Strategy, Position.strategy_id == Strategy.id)
         .where(Strategy.user_id == current_user.id, Position.closed_at.is_(None))
     )
-    open_position_cost = open_cost_result.scalar()
+    open_position_cost = open_position_cost_result.scalar()
+
+    side_counts = dict(open_pos_result.all())
+    long_strategies = side_counts.get("long", 0)
+    short_strategies = side_counts.get("short", 0)
 
     return DashboardData(
         balance=account.balance + open_position_cost,
         total_pnl=account.total_pnl,
         running_strategies=running_strategies,
+        long_strategies=long_strategies,
+        short_strategies=short_strategies,
         today_triggers=today_triggers,
         recent_triggers=recent_items,
     )

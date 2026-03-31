@@ -5,6 +5,7 @@ PUT  /api/notifications/settings  — 更新当前用户通知设置
 POST /api/notifications/test      — 发送测试 Bark 推送
 """
 
+import json
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,7 +16,12 @@ from sqlalchemy.future import select
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import User, UserSetting
-from app.schemas import MessageResponse, NotificationSettingsResponse, NotificationSettingsUpdate
+from app.schemas import (
+    BarkTestRequest,
+    MessageResponse,
+    NotificationSettingsResponse,
+    NotificationSettingsUpdate,
+)
 from app.services.bark import bark_client
 
 router = APIRouter(prefix="/notifications", tags=["通知"])
@@ -54,10 +60,23 @@ async def get_notification_settings(
     current_user: User = Depends(get_current_user),
 ):
     """获取当前用户的通知设置"""
-    bark_key = await _get_setting(db, current_user.id, "bark_key")
+    bark_configs_json = await _get_setting(db, current_user.id, "bark_configs")
     bark_enabled_str = await _get_setting(db, current_user.id, "bark_enabled")
+
+    # 兼容旧格式：如果存在 bark_key 但没有 bark_configs，迁移为新格式
+    bark_configs = []
+    if bark_configs_json:
+        try:
+            bark_configs = json.loads(bark_configs_json)
+        except json.JSONDecodeError:
+            bark_configs = []
+    else:
+        old_key = await _get_setting(db, current_user.id, "bark_key")
+        if old_key:
+            bark_configs = [{"id": "migrated", "name": "默认", "key": old_key, "enabled": True}]
+
     bark_enabled = (bark_enabled_str or "false").lower() == "true"
-    return NotificationSettingsResponse(bark_key=bark_key, bark_enabled=bark_enabled)
+    return NotificationSettingsResponse(bark_configs=bark_configs, bark_enabled=bark_enabled)
 
 
 @router.put("/settings", response_model=NotificationSettingsResponse)
@@ -67,8 +86,9 @@ async def update_notification_settings(
     current_user: User = Depends(get_current_user),
 ):
     """更新当前用户的通知设置"""
-    if payload.bark_key is not None:
-        await _upsert_setting(db, current_user.id, "bark_key", payload.bark_key)
+    if payload.bark_configs is not None:
+        configs_json = json.dumps([c.model_dump() for c in payload.bark_configs], ensure_ascii=False)
+        await _upsert_setting(db, current_user.id, "bark_configs", configs_json)
     if payload.bark_enabled is not None:
         await _upsert_setting(
             db, current_user.id, "bark_enabled", "true" if payload.bark_enabled else "false"
@@ -76,24 +96,21 @@ async def update_notification_settings(
     await db.commit()
 
     # 返回最新状态
-    bark_key = await _get_setting(db, current_user.id, "bark_key")
-    bark_enabled_str = await _get_setting(db, current_user.id, "bark_enabled")
-    bark_enabled = (bark_enabled_str or "false").lower() == "true"
-    return NotificationSettingsResponse(bark_key=bark_key, bark_enabled=bark_enabled)
+    return await get_notification_settings(db=db, current_user=current_user)
 
 
 @router.post("/test", response_model=MessageResponse)
 async def test_notification(
+    payload: BarkTestRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """发送测试 Bark 推送"""
-    bark_key = await _get_setting(db, current_user.id, "bark_key")
-    if not bark_key:
-        raise HTTPException(status_code=400, detail="Bark Key 未配置，请先保存设置")
+    """发送测试 Bark 推送（指定 key）"""
+    if not payload.bark_key:
+        raise HTTPException(status_code=400, detail="Bark Key 不能为空")
 
     success, error_msg = await bark_client.send(
-        key=bark_key,
+        key=payload.bark_key,
         title="AutoTrade 测试通知",
         body="配置成功！推送正常工作。",
     )

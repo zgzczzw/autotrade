@@ -205,12 +205,12 @@ export const fetchNotificationSettings = () =>
   cachedGet("/notifications/settings", 30000);
 
 export const updateNotificationSettings = (data: {
-  bark_key?: string;
+  bark_configs?: { id: string; name: string; key: string; enabled: boolean }[];
   bark_enabled?: boolean;
 }) => { invalidateCache("/notifications"); return apiCall(api.put("/notifications/settings", data)); };
 
-export const testNotification = () =>
-  apiCall(api.post("/notifications/test"));
+export const testBarkNotification = (barkKey: string) =>
+  apiCall(api.post("/notifications/test", { bark_key: barkKey }));
 
 // ==================== 回测 ====================
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { formatPrice, formatDateTime } from "@/lib/utils";
 import {
   Wallet,
@@ -20,6 +21,8 @@ interface DashboardData {
   balance: number;
   total_pnl: number;
   running_strategies: number;
+  long_strategies: number;
+  short_strategies: number;
   today_triggers: number;
   recent_triggers: any[];
 }
@@ -87,6 +90,11 @@ export default function DashboardPage() {
         <StatCard
           title="运行中策略"
           value={data.running_strategies.toString()}
+          subtitle={
+            data.long_strategies > 0 || data.short_strategies > 0
+              ? `${data.long_strategies} 多 / ${data.short_strategies} 空`
+              : undefined
+          }
           icon={Zap}
           accent="amber"
         />
@@ -118,9 +126,10 @@ export default function DashboardPage() {
               const isBuy = ["buy", "买入"].includes(trigger.action || "");
               const isSell = ["sell", "卖出"].includes(trigger.action || "");
               return (
-                <div
+                <Link
                   key={trigger.id}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-slate-800/30 transition-colors"
+                  href={`/strategies/${trigger.strategy_id}?tab=triggers`}
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-slate-800/30 transition-colors cursor-pointer"
                 >
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                     isBuy ? "bg-green-500/10" : isSell ? "bg-red-500/10" : "bg-slate-800"
@@ -162,7 +171,7 @@ export default function DashboardPage() {
                       </p>
                     )}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

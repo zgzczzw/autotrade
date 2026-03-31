@@ -67,6 +67,7 @@ class StrategyResponse(StrategyBase):
     # 统计信息
     trigger_count: Optional[int] = None
     position_count: Optional[int] = None
+    position_sides: Optional[List[str]] = None   # 当前持仓方向列表，如 ["long"] / ["short"]
 
 
 class StrategyList(BaseModel):
@@ -175,6 +176,8 @@ class DashboardData(BaseModel):
     balance: float
     total_pnl: float
     running_strategies: int
+    long_strategies: int = 0
+    short_strategies: int = 0
     today_triggers: int
     recent_triggers: List[TriggerLogResponse]
 
@@ -297,13 +300,26 @@ class MeResponse(BaseModel):
 
 # ==================== 通知设置 ====================
 
+class BarkConfigItem(BaseModel):
+    """单个 Bark 配置"""
+    id: str                     # 前端生成的唯一 ID
+    name: str = ""              # 备注名称（如"iPhone"、"iPad"）
+    key: str                    # Bark Key
+    enabled: bool = True
+
+
 class NotificationSettingsResponse(BaseModel):
     """通知设置响应"""
-    bark_key: Optional[str] = None
+    bark_configs: List[BarkConfigItem] = []
     bark_enabled: bool = False
 
 
 class NotificationSettingsUpdate(BaseModel):
     """通知设置更新请求"""
-    bark_key: Optional[str] = None
+    bark_configs: Optional[List[BarkConfigItem]] = None
     bark_enabled: Optional[bool] = None
+
+
+class BarkTestRequest(BaseModel):
+    """测试单个 Bark 配置"""
+    bark_key: str
