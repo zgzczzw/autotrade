@@ -26,6 +26,15 @@ export function quoteAsset(symbol: string): string {
 }
 
 /**
+ * 提取基础币种（分子）
+ * BTCUSDT -> BTC, ETHBTC -> ETH
+ */
+export function baseAsset(symbol: string): string {
+  const quote = quoteAsset(symbol);
+  return symbol.slice(0, symbol.length - quote.length) || symbol;
+}
+
+/**
  * 格式化价格
  */
 export function formatPrice(price: number): string {
