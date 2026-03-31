@@ -88,7 +88,7 @@ export default function StrategyDetailPage() {
   const [triggersPage, setTriggersPage] = useState(1);
   const [triggersLoading, setTriggersLoading] = useState(false);
   const [triggersLoaded, setTriggersLoaded] = useState(false);
-  const [currentPosition, setCurrentPosition] = useState<Position | null>(null);
+  const [currentPositions, setCurrentPositions] = useState<Position[]>([]);
   const [posHistory, setPosHistory] = useState<Position[]>([]);
   const [posHistoryTotal, setPosHistoryTotal] = useState(0);
   const [posHistoryPage, setPosHistoryPage] = useState(1);
@@ -202,7 +202,7 @@ export default function StrategyDetailPage() {
           axios.get(`${API_BASE_URL}/api/positions?strategy_id=${id}`),
           axios.get(`${API_BASE_URL}/api/positions/history?strategy_id=${id}&page=1&page_size=20`),
         ]);
-        setCurrentPosition(openRes.data.items?.[0] ?? null);
+        setCurrentPositions(openRes.data.items || []);
         setPosHistory(historyRes.data.items || []);
         setPosHistoryTotal(historyRes.data.total || 0);
         setPosHistoryPage(1);
@@ -608,35 +608,42 @@ export default function StrategyDetailPage() {
               {/* 当前持仓 */}
               <div>
                 <h3 className="text-sm font-medium text-slate-400 mb-3">当前持仓</h3>
-                {currentPosition ? (
-                  <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-4">
-                      <div className="flex flex-wrap gap-4 items-center">
-                        <Badge className={currentPosition.side === "long" ? "bg-green-600" : "bg-orange-600"}>
-                          {currentPosition.side === "long" ? "多仓" : "空仓"}
-                        </Badge>
-                        <div className="flex gap-6 text-sm">
-                          <div>
-                            <span className="text-slate-400 mr-2">开仓价</span>
-                            <span>{formatPrice(currentPosition.entry_price)}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 mr-2">数量</span>
-                            <span>{currentPosition.quantity.toFixed(4)}</span>
-                          </div>
-                          {currentPosition.unrealized_pnl != null && (
-                            <div>
-                              <span className="text-slate-400 mr-2">浮动盈亏</span>
-                              <span className={currentPosition.unrealized_pnl >= 0 ? "text-green-400" : "text-red-400"}>
-                                {currentPosition.unrealized_pnl >= 0 ? "+" : ""}
-                                {formatPrice(currentPosition.unrealized_pnl)}
-                              </span>
+                {currentPositions.length > 0 ? (
+                  <div className="space-y-2">
+                    {currentPositions.map((pos) => (
+                      <Card key={pos.id} className="bg-slate-900 border-slate-800">
+                        <CardContent className="p-4">
+                          <div className="flex flex-wrap gap-4 items-center">
+                            <span className="text-xs font-mono text-slate-300 bg-slate-800 px-2 py-0.5 rounded">
+                              {formatSymbol(pos.symbol)}
+                            </span>
+                            <Badge className={pos.side === "long" ? "bg-green-600" : "bg-orange-600"}>
+                              {pos.side === "long" ? "多仓" : "空仓"}
+                            </Badge>
+                            <div className="flex gap-6 text-sm">
+                              <div>
+                                <span className="text-slate-400 mr-2">开仓价</span>
+                                <span>{formatPrice(pos.entry_price)}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 mr-2">数量</span>
+                                <span>{pos.quantity.toFixed(4)}</span>
+                              </div>
+                              {pos.unrealized_pnl != null && (
+                                <div>
+                                  <span className="text-slate-400 mr-2">浮动盈亏</span>
+                                  <span className={pos.unrealized_pnl >= 0 ? "text-green-400" : "text-red-400"}>
+                                    {pos.unrealized_pnl >= 0 ? "+" : ""}
+                                    {formatPrice(pos.unrealized_pnl)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 ) : (
                   <p className="text-sm text-slate-500">当前无持仓</p>
                 )}
@@ -662,6 +669,7 @@ export default function StrategyDetailPage() {
                               <tr className="border-b border-slate-800">
                                 <th className="text-left p-4 text-slate-400 font-medium">开仓时间</th>
                                 <th className="text-left p-4 text-slate-400 font-medium">平仓时间</th>
+                                <th className="text-left p-4 text-slate-400 font-medium">交易对</th>
                                 <th className="text-left p-4 text-slate-400 font-medium">方向</th>
                                 <th className="text-left p-4 text-slate-400 font-medium">开仓价</th>
                                 <th className="text-left p-4 text-slate-400 font-medium">平仓价</th>
@@ -674,6 +682,7 @@ export default function StrategyDetailPage() {
                                 <tr key={pos.id} className="border-b border-slate-800 last:border-0">
                                   <td className="p-4 whitespace-nowrap">{formatDateTime(pos.opened_at)}</td>
                                   <td className="p-4 whitespace-nowrap">{pos.closed_at ? formatDateTime(pos.closed_at) : "-"}</td>
+                                  <td className="p-4 text-xs font-mono text-slate-400">{formatSymbol(pos.symbol)}</td>
                                   <td className="p-4">
                                     <Badge className={pos.side === "long" ? "bg-green-600" : "bg-orange-600"}>
                                       {pos.side === "long" ? "多仓" : "空仓"}
