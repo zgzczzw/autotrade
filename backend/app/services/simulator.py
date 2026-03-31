@@ -6,7 +6,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.logger import get_logger
@@ -59,8 +59,12 @@ class Simulator:
             )
             return None
 
-        # 扣除资金
-        account.balance -= required_funds
+        # 扣除资金（原子操作）
+        await db.execute(
+            update(SimAccount)
+            .where(SimAccount.id == account.id)
+            .values(balance=SimAccount.balance - required_funds)
+        )
 
         # 创建持仓
         position = Position(
@@ -140,13 +144,11 @@ class Simulator:
         # 平掉所有多头持仓
         total_sell_qty = 0.0
         total_pnl = 0.0
+        total_sell_value = 0.0
         for position in positions:
             sell_qty = position.quantity * min(sell_size_pct, 100.0) / 100.0
             pnl = (price - position.entry_price) * sell_qty
             sell_value = price * sell_qty
-
-            account.balance += sell_value
-            account.total_pnl += pnl
 
             if sell_size_pct >= 100.0:
                 position.pnl = pnl
@@ -157,6 +159,17 @@ class Simulator:
 
             total_sell_qty += sell_qty
             total_pnl += pnl
+            total_sell_value += sell_value
+
+        # 原子更新余额和盈亏
+        await db.execute(
+            update(SimAccount)
+            .where(SimAccount.id == account.id)
+            .values(
+                balance=SimAccount.balance + total_sell_value,
+                total_pnl=SimAccount.total_pnl + total_pnl,
+            )
+        )
 
         # 记录触发
         trigger = TriggerLog(
@@ -217,7 +230,12 @@ class Simulator:
             )
             return None
 
-        account.balance -= required_margin
+        # 原子扣除保证金
+        await db.execute(
+            update(SimAccount)
+            .where(SimAccount.id == account.id)
+            .values(balance=SimAccount.balance - required_margin)
+        )
 
         position = Position(
             strategy_id=strategy_id,
@@ -291,13 +309,11 @@ class Simulator:
         # 平掉所有空头持仓
         total_quantity = 0.0
         total_pnl = 0.0
+        total_returned = 0.0
         for position in positions:
             quantity = position.quantity
             pnl = (position.entry_price - price) * quantity
             margin_returned = position.entry_price * quantity
-
-            account.balance += margin_returned + pnl
-            account.total_pnl += pnl
 
             position.pnl = pnl
             position.current_price = price
@@ -305,6 +321,17 @@ class Simulator:
 
             total_quantity += quantity
             total_pnl += pnl
+            total_returned += margin_returned + pnl
+
+        # 原子更新余额和盈亏
+        await db.execute(
+            update(SimAccount)
+            .where(SimAccount.id == account.id)
+            .values(
+                balance=SimAccount.balance + total_returned,
+                total_pnl=SimAccount.total_pnl + total_pnl,
+            )
+        )
 
         trigger = TriggerLog(
             strategy_id=strategy_id,

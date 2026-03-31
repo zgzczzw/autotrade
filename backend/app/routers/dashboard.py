@@ -12,7 +12,7 @@ from sqlalchemy.future import select
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import SimAccount, Strategy, TriggerLog, User
+from app.models import Position, SimAccount, Strategy, TriggerLog, User
 from app.schemas import DashboardData, TriggerLogResponse
 
 router = APIRouter(tags=["仪表盘"])
@@ -87,8 +87,16 @@ async def get_dashboard(
         item.strategy_name = strategy_name
         recent_items.append(item)
 
+    # 未平仓持仓成本（算入余额）
+    open_cost_result = await db.execute(
+        select(func.coalesce(func.sum(Position.entry_price * Position.quantity), 0))
+        .join(Strategy, Position.strategy_id == Strategy.id)
+        .where(Strategy.user_id == current_user.id, Position.closed_at.is_(None))
+    )
+    open_position_cost = open_cost_result.scalar()
+
     return DashboardData(
-        balance=account.balance,
+        balance=account.balance + open_position_cost,
         total_pnl=account.total_pnl,
         running_strategies=running_strategies,
         today_triggers=today_triggers,
