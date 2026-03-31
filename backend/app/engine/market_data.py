@@ -101,14 +101,18 @@ class MarketDataService:
         try:
             since_ms: Optional[int] = None
             if cached_data and len(cached_data) >= limit:
-                # 缓存条数已足够但过期，只追加最新数据
+                # 缓存条数已足够但过期，重新拉取最后一根（可能不完整）+ 新数据
                 last_time = cached_data[-1]["open_time"]
-                since_ms = int(last_time.timestamp() * 1000) + 1
+                since_ms = int(last_time.timestamp() * 1000)
 
             # since_ms=None 时 Binance 返回最新的 limit 条，涵盖更多历史
             new_klines = await self._source.fetch_klines(symbol, primary_tf, since_ms, limit)
             await self._save_klines(symbol, primary_tf, new_klines)
 
+            # 合并时用新数据覆盖重叠的旧缓存
+            if new_klines and cached_data:
+                new_start = new_klines[0]["open_time"]
+                cached_data = [k for k in cached_data if k["open_time"] < new_start]
             all_data = cached_data + new_klines
             return all_data[-limit:]
 
@@ -191,8 +195,15 @@ class MarketDataService:
                     close=k["close"],
                     volume=k["volume"],
                 )
-                stmt = stmt.on_conflict_do_nothing(
-                    index_elements=["symbol", "timeframe", "open_time"]
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["symbol", "timeframe", "open_time"],
+                    set_={
+                        "open": k["open"],
+                        "high": k["high"],
+                        "low": k["low"],
+                        "close": k["close"],
+                        "volume": k["volume"],
+                    },
                 )
                 await session.execute(stmt)
             await session.commit()

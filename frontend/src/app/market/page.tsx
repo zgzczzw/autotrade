@@ -7,13 +7,20 @@ import { SymbolSelector } from "@/components/symbol-selector";
 import { TickerBar } from "@/components/ticker-bar";
 
 
-const DEFAULT_SYMBOL = "BTCUSDT";
-const DEFAULT_TF = "1h";
+const FALLBACK_SYMBOL = "BTCUSDT";
+const FALLBACK_TF = "1h";
 const KLINES_LIMIT = 500;
+const LS_SYMBOL_KEY = "market_symbol";
+const LS_TF_KEY = "market_timeframe";
+
+function readLS(key: string, fallback: string) {
+  if (typeof window === "undefined") return fallback;
+  return localStorage.getItem(key) || fallback;
+}
 
 export default function MarketPage() {
-  const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
-  const [timeframe, setTimeframe] = useState(DEFAULT_TF);
+  const [symbol, setSymbol] = useState(() => readLS(LS_SYMBOL_KEY, FALLBACK_SYMBOL));
+  const [timeframe, setTimeframe] = useState(() => readLS(LS_TF_KEY, FALLBACK_TF));
   const [klines, setKlines] = useState<any[]>([]);
   const [ticker, setTicker] = useState<any>(null);
   const [klinesLoading, setKlinesLoading] = useState(false);
@@ -80,7 +87,7 @@ export default function MarketPage() {
     <div className="flex flex-col gap-4 h-full">
       {/* 顶栏：交易对选择 */}
       <div className="flex items-center gap-4">
-        <SymbolSelector value={symbol} onChange={setSymbol} />
+        <SymbolSelector value={symbol} onChange={(s) => { setSymbol(s); localStorage.setItem(LS_SYMBOL_KEY, s); }} />
       </div>
 
       {/* 行情摘要 */}
@@ -100,7 +107,7 @@ export default function MarketPage() {
             title={symbol}
             subtitle={timeframe}
             activePeriod={timeframe}
-            onPeriodChange={setTimeframe}
+            onPeriodChange={(tf) => { setTimeframe(tf); localStorage.setItem(LS_TF_KEY, tf); }}
           />
         )}
       </div>
