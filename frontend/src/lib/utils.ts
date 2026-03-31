@@ -14,11 +14,15 @@ export function formatSymbol(symbol: string): string {
 }
 
 /**
- * 提取基础币种
- * BTCUSDT -> BTC, ETHUSDT -> ETH
+ * 提取计价币种（分母）
+ * BTCUSDT -> USDT, ETHBTC -> BTC
  */
-export function baseAsset(symbol: string): string {
-  return symbol.replace(/USDT$/, "");
+export function quoteAsset(symbol: string): string {
+  const quotes = ["USDT", "BUSD", "BTC", "ETH", "BNB"];
+  for (const q of quotes) {
+    if (symbol.endsWith(q) && symbol.length > q.length) return q;
+  }
+  return "USDT";
 }
 
 /**
