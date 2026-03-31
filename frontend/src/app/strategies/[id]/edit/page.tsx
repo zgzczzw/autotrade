@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import { MultiSymbolSelector } from "@/components/symbol-selector";
 import {
   ConditionGroupEditor,
   StrategyPreview,
@@ -29,6 +30,7 @@ interface Strategy {
   name: string;
   type: string;
   symbol: string;
+  symbols?: string[];
   timeframe: string;
   status: string;
   position_size: number;
@@ -51,6 +53,7 @@ export default function EditStrategyPage() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+    symbols: ["BTCUSDT"] as string[],
     position_size: 100,
     position_size_type: "fixed",
     sell_size_pct: 100,
@@ -72,6 +75,7 @@ export default function EditStrategyPage() {
       setStrategy(s);
       setFormData({
         name: s.name,
+        symbols: s.symbols || (s.symbol ? [s.symbol] : ["BTCUSDT"]),
         position_size: s.position_size,
         position_size_type: s.position_size_type,
         sell_size_pct: s.sell_size_pct ?? 100,
@@ -97,6 +101,7 @@ export default function EditStrategyPage() {
     try {
       const payload: Record<string, unknown> = {
         name: formData.name,
+        symbols: formData.symbols,
         position_size: formData.position_size,
         position_size_type: formData.position_size_type,
         sell_size_pct: formData.sell_size_pct,
@@ -147,11 +152,10 @@ export default function EditStrategyPage() {
         <div>
           <h1 className="text-3xl font-bold">编辑策略</h1>
           <p className="text-slate-400 text-sm mt-1">
-            {strategy.symbol} · {strategy.timeframe} ·{" "}
+            {strategy.timeframe} ·{" "}
             <Badge variant="outline" className="text-xs">
               {strategy.type === "visual" ? "可视化" : "代码"}
             </Badge>
-            <span className="ml-2 text-slate-500 text-xs">交易对和时间周期不可更改</span>
           </p>
         </div>
       </div>
@@ -172,6 +176,15 @@ export default function EditStrategyPage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 className="bg-slate-800 border-slate-700"
+              />
+            </div>
+
+            {/* 交易对 */}
+            <div className="space-y-2">
+              <Label>交易对</Label>
+              <MultiSymbolSelector
+                value={formData.symbols}
+                onChange={(symbols) => setFormData({ ...formData, symbols })}
               />
             </div>
 

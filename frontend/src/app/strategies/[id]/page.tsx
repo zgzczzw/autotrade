@@ -31,6 +31,7 @@ interface Strategy {
   name: string;
   type: string;
   symbol: string;
+  symbols?: string[];
   timeframe: string;
   status: string;
   position_size: number;
@@ -50,6 +51,7 @@ interface Strategy {
 interface Trigger {
   id: number;
   strategy_id: number;
+  symbol?: string;
   triggered_at: string;
   signal_type: string;
   signal_detail?: string;
@@ -104,12 +106,15 @@ export default function StrategyDetailPage() {
     return () => clearInterval(interval);
   }, [id]);
 
+  const strategySymbols = strategy?.symbols || (strategy?.symbol ? [strategy.symbol] : []);
+
   // 如果 URL 带 tab 参数，等 strategy 加载完后加载对应数据
   useEffect(() => {
     if (!strategy) return;
     if (activeTab === "triggers" && !triggersLoaded) {
       loadTriggers(1);
-      loadKlines(strategy.symbol, chartPeriod);
+      const firstSymbol = strategySymbols[0];
+      if (firstSymbol) loadKlines(firstSymbol, chartPeriod);
       loadAllTriggers();
     }
     if (activeTab === "positions" && !positionsLoaded) {
@@ -171,8 +176,9 @@ export default function StrategyDetailPage() {
 
   const handleChartPeriodChange = (period: string) => {
     setChartPeriod(period);
-    if (strategy) {
-      loadKlines(strategy.symbol, period);
+    const firstSymbol = strategySymbols[0];
+    if (firstSymbol) {
+      loadKlines(firstSymbol, period);
     }
   };
 
@@ -283,9 +289,15 @@ export default function StrategyDetailPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold">{strategy.name}</h1>
-            <p className="text-slate-400">
-              {formatSymbol(strategy.symbol)} · {strategy.timeframe}
-            </p>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {(strategy.symbols || (strategy.symbol ? [strategy.symbol] : [])).map((s) => (
+                <span key={s} className="text-xs text-slate-400 font-mono bg-slate-800 px-1.5 py-0.5 rounded">
+                  {formatSymbol(s)}
+                </span>
+              ))}
+              <span className="text-slate-600">·</span>
+              <span className="text-xs text-slate-400">{strategy.timeframe}</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -323,10 +335,11 @@ export default function StrategyDetailPage() {
           setActiveTab(value);
           if (value === "triggers" && !triggersLoaded) {
             loadTriggers(1);
-            if (strategy) {
-              loadKlines(strategy.symbol, chartPeriod);
-              loadAllTriggers();
+            const firstSym = strategySymbols[0];
+            if (firstSym) {
+              loadKlines(firstSym, chartPeriod);
             }
+            loadAllTriggers();
           }
           if (value === "positions" && !positionsLoaded) {
             loadPositions(1);
@@ -355,9 +368,15 @@ export default function StrategyDetailPage() {
                   <span className="text-slate-400">类型</span>
                   <span>{strategy.type === "visual" ? "可视化" : "代码"}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-start">
                   <span className="text-slate-400">交易对</span>
-                  <span>{formatSymbol(strategy.symbol)}</span>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {(strategy.symbols || (strategy.symbol ? [strategy.symbol] : [])).map((s) => (
+                      <span key={s} className="text-xs font-mono bg-slate-800 px-1.5 py-0.5 rounded">
+                        {formatSymbol(s)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">时间周期</span>
@@ -456,7 +475,7 @@ export default function StrategyDetailPage() {
                 indicators={{ ma: true, volume: true }}
                 height={400}
                 title={strategy.name}
-                subtitle={`${strategy.symbol} · ${chartPeriod}`}
+                subtitle={`${strategySymbols[0] || ""} · ${chartPeriod}`}
                 activePeriod={chartPeriod}
                 onPeriodChange={handleChartPeriodChange}
                 focusTimestamp={focusTimestamp}
@@ -486,6 +505,9 @@ export default function StrategyDetailPage() {
                       <thead>
                         <tr className="border-b border-slate-800">
                           <th className="text-left p-4 text-slate-400 font-medium">时间</th>
+                          {strategySymbols.length > 1 && (
+                            <th className="text-left p-4 text-slate-400 font-medium">交易对</th>
+                          )}
                           <th className="text-left p-4 text-slate-400 font-medium">操作</th>
                           <th className="text-left p-4 text-slate-400 font-medium">价格</th>
                           <th className="text-left p-4 text-slate-400 font-medium">数量</th>
@@ -507,6 +529,11 @@ export default function StrategyDetailPage() {
                             <td className="p-4 whitespace-nowrap">
                               {formatDateTime(trigger.triggered_at)}
                             </td>
+                            {strategySymbols.length > 1 && (
+                              <td className="p-4 text-xs font-mono text-slate-400">
+                                {trigger.symbol ? formatSymbol(trigger.symbol) : "-"}
+                              </td>
+                            )}
                             <td className="p-4">{getActionBadge(trigger.action)}</td>
                             <td className="p-4">
                               {trigger.price ? formatPrice(trigger.price) : "-"}

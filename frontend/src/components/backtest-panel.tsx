@@ -39,7 +39,15 @@ interface BacktestResult {
   equity_curve: string;
   trades: string;
   klines?: string;
+  batch_id?: string;
   created_at: string;
+}
+
+interface BacktestProgress {
+  running: boolean;
+  current_symbol: string | null;
+  completed: number;
+  total: number;
 }
 
 interface BacktestPanelProps {
@@ -51,6 +59,7 @@ export function BacktestPanel({ strategyId }: BacktestPanelProps) {
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [progress, setProgress] = useState<BacktestProgress | null>(null);
   const [selectedBacktest, setSelectedBacktest] = useState<BacktestResult | null>(null);
   const [focusTimestamp, setFocusTimestamp] = useState<number | undefined>(undefined);
 
@@ -105,8 +114,10 @@ export function BacktestPanel({ strategyId }: BacktestPanelProps) {
         const response = await axios.get(
           `${API_BASE_URL}/api/strategies/${strategyId}/backtest/status`
         );
+        setProgress(response.data);
         if (!response.data.running) {
           setRunning(false);
+          setProgress(null);
           loadBacktests();
         }
       } catch (error) {
@@ -244,6 +255,15 @@ export function BacktestPanel({ strategyId }: BacktestPanelProps) {
                 </>
               )}
             </Button>
+            {running && progress && progress.total > 0 && (
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>
+                  {progress.current_symbol && `${progress.current_symbol} · `}
+                  {progress.completed}/{progress.total}
+                </span>
+              </div>
+            )}
             {running && (
               <Button
                 variant="destructive"
@@ -279,6 +299,7 @@ export function BacktestPanel({ strategyId }: BacktestPanelProps) {
                 <thead>
                   <tr className="border-b border-slate-800">
                     <th className="text-left p-3 text-slate-400">时间</th>
+                    <th className="text-left p-3 text-slate-400">交易对</th>
                     <th className="text-left p-3 text-slate-400">总盈亏</th>
                     <th className="text-left p-3 text-slate-400">胜率</th>
                     <th className="text-left p-3 text-slate-400">最大回撤</th>
@@ -297,6 +318,9 @@ export function BacktestPanel({ strategyId }: BacktestPanelProps) {
                     >
                       <td className="p-3">
                         {new Date(bt.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="p-3 text-xs font-mono text-slate-400">
+                        {bt.symbol}
                       </td>
                       <td
                         className={`p-3 font-medium ${

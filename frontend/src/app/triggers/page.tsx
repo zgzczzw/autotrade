@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatPrice, formatDateTime } from "@/lib/utils";
+import { formatPrice, formatDateTime, formatSymbol } from "@/lib/utils";
 import { History, Trash2, ArrowUpRight, ArrowDownRight, ArrowDown, ArrowUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -14,6 +14,7 @@ interface Trigger {
   id: number;
   strategy_id: number;
   strategy_name?: string;
+  symbol?: string;
   triggered_at: string;
   signal_type: string;
   signal_detail?: string;
@@ -158,6 +159,7 @@ export default function TriggersPage() {
                   </th>
                   <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">时间</th>
                   <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">策略</th>
+                  <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">交易对</th>
                   <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">操作</th>
                   <th className="text-left p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">价格</th>
                   <th className="text-right p-3 md:p-4 text-[11px] text-slate-500 font-medium uppercase tracking-wider">盈亏</th>
@@ -187,6 +189,9 @@ export default function TriggersPage() {
                       </td>
                       <td className="p-3 md:p-4 text-sm text-slate-200 font-medium">
                         {trigger.strategy_name || `策略 #${trigger.strategy_id}`}
+                      </td>
+                      <td className="p-3 md:p-4 text-xs font-mono text-slate-400">
+                        {trigger.symbol ? formatSymbol(trigger.symbol) : "-"}
                       </td>
                       <td className="p-3 md:p-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${actionStyle.class}`}>

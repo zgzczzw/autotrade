@@ -136,6 +136,9 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-200 truncate">
                       {trigger.strategy_name || `策略 #${trigger.strategy_id}`}
+                      {trigger.symbol && (
+                        <span className="ml-1.5 text-[11px] font-mono text-slate-500">{trigger.symbol}</span>
+                      )}
                     </p>
                     <p className="text-xs text-slate-500">
                       {formatDateTime(trigger.triggered_at)}

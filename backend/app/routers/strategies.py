@@ -34,11 +34,10 @@ router = APIRouter(tags=["策略管理"])
 
 def _strategy_to_response(strategy: Strategy, **extra) -> StrategyResponse:
     """Convert Strategy ORM + symbols relationship to StrategyResponse."""
-    resp = StrategyResponse.model_validate(strategy)
-    resp.symbols = [s.symbol for s in strategy.symbols]
-    for k, v in extra.items():
-        setattr(resp, k, v)
-    return resp
+    data = {c.name: getattr(strategy, c.name) for c in strategy.__table__.columns}
+    data["symbols"] = [s.symbol for s in strategy.symbols]
+    data.update(extra)
+    return StrategyResponse.model_validate(data)
 
 
 @router.get("/strategies", response_model=StrategyList)
@@ -169,6 +168,7 @@ async def export_strategies(
     result = await db.execute(
         select(Strategy)
         .where(Strategy.user_id == current_user.id)
+        .options(selectinload(Strategy.symbols))
         .order_by(Strategy.created_at)
     )
     strategies = result.scalars().all()
@@ -177,7 +177,10 @@ async def export_strategies(
         "version": 1,
         "count": len(strategies),
         "strategies": [
-            {field: getattr(s, field) for field in EXPORT_FIELDS}
+            {
+                **{field: getattr(s, field) for field in EXPORT_FIELDS},
+                "symbols": [sym.symbol for sym in s.symbols],
+            }
             for s in strategies
         ],
     }
@@ -223,17 +226,18 @@ async def import_strategies(
             skipped += 1
             continue
 
-        sym = item.get("symbol", "BTCUSDT")
+        syms = item.get("symbols") or [item.get("symbol", "BTCUSDT")]
         strategy = Strategy(
             user_id=current_user.id,
             status="stopped",
-            symbol=sym,
+            symbol=syms[0],
             **{k: item[k] for k in EXPORT_FIELDS if k in item},
         )
         db.add(strategy)
         await db.flush()
 
-        db.add(StrategySymbol(strategy_id=strategy.id, symbol=sym))
+        for sym in syms:
+            db.add(StrategySymbol(strategy_id=strategy.id, symbol=sym))
 
         existing_names.add(name)
         imported += 1

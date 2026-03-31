@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import { MultiSymbolSelector } from "@/components/symbol-selector";
 import {
   ConditionGroupEditor,
   StrategyPreview,
@@ -29,7 +30,7 @@ export default function NewStrategyPage() {
   const [formData, setFormData] = useState({
     name: "",
     type: "visual",
-    symbol: "BTCUSDT",
+    symbols: ["BTCUSDT"],
     timeframe: "1h",
     position_size: 100,
     position_size_type: "fixed",
@@ -220,25 +221,17 @@ export default function NewStrategyPage() {
               </TabsContent>
             </Tabs>
 
-            {/* 交易对和时间周期 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="symbol">交易对</Label>
-                <Select
-                  value={formData.symbol}
-                  onValueChange={(v) => setFormData({ ...formData, symbol: v || "BTCUSDT" })}
-                >
-                  <SelectTrigger className="bg-slate-800 border-slate-700">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BTCUSDT">BTC/USDT</SelectItem>
-                    <SelectItem value="ETHUSDT">ETH/USDT</SelectItem>
-                    <SelectItem value="SOLUSDT">SOL/USDT</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* 交易对 */}
+            <div className="space-y-2">
+              <Label>交易对</Label>
+              <MultiSymbolSelector
+                value={formData.symbols}
+                onChange={(symbols) => setFormData({ ...formData, symbols })}
+              />
+            </div>
 
+            {/* 时间周期 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="timeframe">时间周期</Label>
                 <Select

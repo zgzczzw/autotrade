@@ -17,6 +17,7 @@ interface Strategy {
   name: string;
   type: string;
   symbol: string;
+  symbols?: string[];
   timeframe: string;
   status: string;
   trigger_count?: number;
@@ -173,10 +174,17 @@ export default function StrategiesPage() {
                           {strategy.name}
                         </h3>
                       </Link>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-slate-500 font-mono">
-                          {formatSymbol(strategy.symbol)}
-                        </span>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {(strategy.symbols || (strategy.symbol ? [strategy.symbol] : [])).slice(0, 3).map((s) => (
+                          <span key={s} className="text-[11px] text-slate-400 font-mono bg-slate-800 px-1.5 py-0.5 rounded">
+                            {formatSymbol(s)}
+                          </span>
+                        ))}
+                        {(strategy.symbols || []).length > 3 && (
+                          <span className="text-[11px] text-slate-500">
+                            +{(strategy.symbols || []).length - 3}
+                          </span>
+                        )}
                         <span className="text-slate-700">·</span>
                         <span className="text-xs text-slate-500">{strategy.timeframe}</span>
                       </div>
