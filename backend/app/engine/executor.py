@@ -37,6 +37,24 @@ class StrategyContext:
         self.db = db
         self.symbol = symbol
         self.current_kline = current_kline
+        # 预取缓存，供同步策略代码使用
+        self._cached_position = None
+        self._cached_balance = None
+        self._cache_ready = False
+
+    async def prefetch_for_sync(self):
+        """预取 position 和 balance，缓存供同步 on_tick 使用"""
+        self._cached_position = await self._get_position_async()
+        self._cached_balance = await self._get_balance_async()
+        self._cache_ready = True
+
+    def get_position_sync(self) -> Optional["Position"]:
+        """同步版 get_position（需先调用 prefetch_for_sync）"""
+        return self._cached_position
+
+    def get_balance_sync(self) -> float:
+        """同步版 get_balance（需先调用 prefetch_for_sync）"""
+        return self._cached_balance or 0.0
 
     async def get_klines(self, limit: int = 100) -> List[dict]:
         """获取 K 线数据（使用策略主时间周期）"""
@@ -56,7 +74,7 @@ class StrategyContext:
             return None
 
         price = self.current_kline["close"] if self.current_kline else klines[-1]["close"]
-        position = await self.get_position()
+        position = await self._get_position_async()
 
         if position and position.side == "long":
             # 已持多，跳过
@@ -76,7 +94,7 @@ class StrategyContext:
         if quantity is not None:
             qty = quantity
         elif self.strategy.position_size_type == "percent":
-            balance = await self.get_balance()
+            balance = await self._get_balance_async()
             qty = balance * self.strategy.position_size / 100.0 / price
         else:
             qty = self.strategy.position_size / price
@@ -98,7 +116,7 @@ class StrategyContext:
             return None
 
         price = self.current_kline["close"] if self.current_kline else klines[-1]["close"]
-        position = await self.get_position()
+        position = await self._get_position_async()
 
         if position and position.side == "short":
             # 已持空，跳过
@@ -120,7 +138,7 @@ class StrategyContext:
         if quantity is not None:
             qty = quantity
         elif self.strategy.position_size_type == "percent":
-            balance = await self.get_balance()
+            balance = await self._get_balance_async()
             qty = balance * self.strategy.position_size / 100.0 / price
         else:
             qty = self.strategy.position_size / price
@@ -134,7 +152,18 @@ class StrategyContext:
             user_id=getattr(self.strategy, "user_id", None),
         )
 
-    async def get_position(self) -> Optional[Position]:
+    def get_position(self):
+        """
+        获取当前持仓。
+
+        如果 prefetch 缓存已就绪（同步调用场景），直接返回缓存值；
+        否则返回 coroutine（异步调用场景）。
+        """
+        if self._cache_ready:
+            return self._cached_position
+        return self._get_position_async()
+
+    async def _get_position_async(self) -> Optional[Position]:
         """获取当前持仓（任意方向），如有多条取最新一条"""
         result = await self.db.execute(
             select(Position).where(
@@ -145,7 +174,18 @@ class StrategyContext:
         )
         return result.scalars().first()
 
-    async def get_balance(self) -> float:
+    def get_balance(self):
+        """
+        获取账户余额。
+
+        如果 prefetch 缓存已就绪（同步调用场景），直接返回缓存值；
+        否则返回 coroutine（异步调用场景）。
+        """
+        if self._cache_ready:
+            return self._cached_balance or 0.0
+        return self._get_balance_async()
+
+    async def _get_balance_async(self) -> float:
         """获取账户余额（当前用户的 SimAccount）"""
         from app.models import SimAccount
 
@@ -294,7 +334,7 @@ class StrategyExecutor:
             return None
 
         calculator = IndicatorCalculator(klines)
-        position = await ctx.get_position()
+        position = await ctx._get_position_async()
 
         buy_conditions = config.get("buy_conditions", {})
         sell_conditions = config.get("sell_conditions", {})
@@ -352,6 +392,9 @@ class StrategyExecutor:
             else:
                 # 更新 ctx（db session 每次都是新的，必须注入最新的）
                 instance.ctx = ctx
+
+            # 预取 position/balance 供同步 on_tick 使用
+            await ctx.prefetch_for_sync()
 
             # 调用 on_tick，传入当前触发周期的数据
             data = {
