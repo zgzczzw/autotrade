@@ -310,6 +310,109 @@ async def get_strategy(
     )
 
 
+@router.get("/strategies/{strategy_id}/stats")
+async def get_strategy_stats(
+    strategy_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取策略绩效统计"""
+    from app.models import TriggerLog
+
+    result = await db.execute(select(Strategy).where(Strategy.id == strategy_id))
+    strategy = result.scalar_one_or_none()
+    if not strategy or strategy.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="策略不存在")
+
+    # 当前持仓
+    open_result = await db.execute(
+        select(Position).where(
+            Position.strategy_id == strategy_id,
+            Position.closed_at.is_(None),
+        )
+    )
+    open_positions = open_result.scalars().all()
+
+    open_count = len(open_positions)
+    open_value = 0.0
+    unrealized_pnl = 0.0
+    for pos in open_positions:
+        open_value += pos.quantity * pos.entry_price
+        if pos.current_price:
+            if pos.side == "long":
+                unrealized_pnl += (pos.current_price - pos.entry_price) * pos.quantity
+            else:
+                unrealized_pnl += (pos.entry_price - pos.current_price) * pos.quantity
+    unrealized_pnl_pct = (unrealized_pnl / open_value * 100) if open_value > 0 else 0.0
+
+    # 历史平仓记录
+    closed_result = await db.execute(
+        select(Position).where(
+            Position.strategy_id == strategy_id,
+            Position.closed_at.is_not(None),
+        ).order_by(Position.closed_at.asc())
+    )
+    closed_positions = closed_result.scalars().all()
+
+    total_trades = len(closed_positions)
+    total_realized_pnl = 0.0
+    win_count = 0
+    loss_count = 0
+    total_cost = 0.0  # 累计投入成本，用于算收益率
+
+    # 用于最大回撤计算的累计盈亏序列
+    cumulative_pnl = 0.0
+    peak_pnl = 0.0
+    max_drawdown = 0.0
+    max_drawdown_pct = 0.0
+
+    for pos in closed_positions:
+        pnl = pos.pnl or 0.0
+        cost = pos.quantity * pos.entry_price
+        total_cost += cost
+        total_realized_pnl += pnl
+        if pnl > 0:
+            win_count += 1
+        elif pnl < 0:
+            loss_count += 1
+
+        # 最大回撤（基于累计盈亏）
+        cumulative_pnl += pnl
+        if cumulative_pnl > peak_pnl:
+            peak_pnl = cumulative_pnl
+        drawdown = peak_pnl - cumulative_pnl
+        if drawdown > max_drawdown:
+            max_drawdown = drawdown
+            max_drawdown_pct = (drawdown / peak_pnl * 100) if peak_pnl > 0 else 0.0
+
+    win_rate = (win_count / total_trades * 100) if total_trades > 0 else 0.0
+    realized_pnl_pct = (total_realized_pnl / total_cost * 100) if total_cost > 0 else 0.0
+    avg_pnl = (total_realized_pnl / total_trades) if total_trades > 0 else 0.0
+
+    # 触发次数
+    trigger_result = await db.execute(
+        select(func.count()).where(TriggerLog.strategy_id == strategy_id)
+    )
+    trigger_count = trigger_result.scalar()
+
+    return {
+        "open_position_count": open_count,
+        "open_value": round(open_value, 2),
+        "unrealized_pnl": round(unrealized_pnl, 2),
+        "unrealized_pnl_pct": round(unrealized_pnl_pct, 2),
+        "total_trades": total_trades,
+        "total_realized_pnl": round(total_realized_pnl, 2),
+        "realized_pnl_pct": round(realized_pnl_pct, 2),
+        "win_count": win_count,
+        "loss_count": loss_count,
+        "win_rate": round(win_rate, 2),
+        "avg_pnl": round(avg_pnl, 2),
+        "max_drawdown": round(max_drawdown, 2),
+        "max_drawdown_pct": round(max_drawdown_pct, 2),
+        "trigger_count": trigger_count,
+    }
+
+
 @router.put("/strategies/{strategy_id}", response_model=StrategyResponse)
 async def update_strategy(
     strategy_id: int,

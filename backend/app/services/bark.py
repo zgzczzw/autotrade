@@ -24,11 +24,12 @@ class BarkClient:
         title: str,
         body: str,
         group: str = "AutoTrade",
+        url: Optional[str] = None,
     ) -> tuple[bool, Optional[str]]:
         """
         发送 Bark 推送通知
 
-        URL: https://api.day.app/{key}/{title}/{body}?group={group}
+        URL: https://api.day.app/{key}/{title}/{body}?group={group}&url={url}
 
         Returns:
             (success, error_message)
@@ -36,11 +37,14 @@ class BarkClient:
         if not key:
             return False, "Bark key is empty"
 
-        url = f"{self.BASE_URL}/{quote(key)}/{quote(title)}/{quote(body)}"
+        api_url = f"{self.BASE_URL}/{quote(key)}/{quote(title)}/{quote(body)}"
+        params = {"group": group}
+        if url:
+            params["url"] = url
 
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.get(url, params={"group": group})
+                response = await client.get(api_url, params=params)
                 response.raise_for_status()
                 result = response.json()
 

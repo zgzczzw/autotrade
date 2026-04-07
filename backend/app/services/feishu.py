@@ -38,6 +38,7 @@ class FeishuClient:
         price: Optional[float],
         pnl: Optional[float],
         position_effect: Optional[str] = None,
+        detail_url: Optional[str] = None,
     ) -> tuple[bool, Optional[str]]:
         """
         发送交易信号通知
@@ -51,7 +52,7 @@ class FeishuClient:
 
         # 构建富文本卡片
         card = self._build_trade_card(
-            strategy_name, signal_type, signal_detail, action, symbol, price, pnl, position_effect
+            strategy_name, signal_type, signal_detail, action, symbol, price, pnl, position_effect, detail_url
         )
 
         try:
@@ -90,6 +91,7 @@ class FeishuClient:
         price: Optional[float],
         pnl: Optional[float],
         position_effect: Optional[str] = None,
+        detail_url: Optional[str] = None,
     ) -> dict:
         """构建交易通知卡片"""
         # 颜色配置
@@ -145,6 +147,19 @@ class FeishuClient:
             ],
         }
 
+        if detail_url:
+            card["elements"].append({
+                "tag": "action",
+                "actions": [
+                    {
+                        "tag": "button",
+                        "text": {"tag": "plain_text", "content": "📊 查看详情"},
+                        "type": "primary",
+                        "url": detail_url,
+                    }
+                ],
+            })
+
         return card
 
     async def close(self):
@@ -165,6 +180,7 @@ class NotificationService:
         symbol: str,
         db: AsyncSession,
         user_id: Optional[int] = None,
+        strategy_id: Optional[int] = None,
     ) -> None:
         """
         发送策略通知（飞书 + Bark，各自独立判断是否发送）
@@ -175,7 +191,15 @@ class NotificationService:
             symbol: 交易对
             db: 数据库会话
             user_id: 策略所属用户 ID（用于查询 Bark 配置）
+            strategy_id: 策略 ID（用于构建详情链接）
         """
+        # 构建策略详情链接
+        detail_url = None
+        if strategy_id is not None:
+            site_url = await self._get_site_url(db)
+            if site_url:
+                detail_url = f"{site_url.rstrip('/')}/strategies/{strategy_id}"
+
         # ── Feishu ──
         if self.feishu.webhook_url:
             success, error_msg = await self.feishu.send_trade_signal(
@@ -187,6 +211,7 @@ class NotificationService:
                 price=trigger_log.price,
                 pnl=trigger_log.simulated_pnl,
                 position_effect=getattr(trigger_log, "position_effect", None),
+                detail_url=detail_url,
             )
             notification = NotificationLog(
                 trigger_log_id=trigger_log.id,
@@ -221,6 +246,7 @@ class NotificationService:
                         key=cfg["key"],
                         title=title,
                         body=body,
+                        url=detail_url,
                     )
                     bark_log = NotificationLog(
                         trigger_log_id=trigger_log.id,
@@ -235,6 +261,16 @@ class NotificationService:
                         logger.error(f"Bark notification failed [{cfg_name}]: {error_msg}")
 
         await db.commit()
+
+    async def _get_site_url(self, db: AsyncSession) -> Optional[str]:
+        """从 system_settings 读取 site_url"""
+        from app.models import SystemSetting
+
+        result = await db.execute(
+            select(SystemSetting).where(SystemSetting.key == "site_url")
+        )
+        setting = result.scalar_one_or_none()
+        return setting.value if setting and setting.value else None
 
     async def _get_bark_config(
         self, db: AsyncSession, user_id: int

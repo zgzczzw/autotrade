@@ -17,7 +17,7 @@ const KlineChartModule = dynamic(
 );
 import { fetchMarketKlines } from "@/lib/api";
 import { formatPrice, formatSymbol, formatDateTime, parseUTCTimestamp } from "@/lib/utils";
-import { ArrowLeft, ChevronLeft, ChevronRight, History, Pencil, Play, Square, TrendingUp } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, History, Pencil, Play, Square, TrendingUp, TrendingDown, Activity, Target, BarChart3 } from "lucide-react";
 import axios from "axios";
 import {
   StrategyPreview,
@@ -99,10 +99,25 @@ export default function StrategyDetailPage() {
   const [chartPeriod, setChartPeriod] = useState("1h");
   const [focusTimestamp, setFocusTimestamp] = useState<number | undefined>();
   const [allTriggers, setAllTriggers] = useState<Trigger[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const loadStats = async () => {
+    setStatsLoading(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/strategies/${id}/stats`);
+      setStats(response.data);
+    } catch (error) {
+      console.error("Failed to load stats:", error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadStrategy();
-    const interval = setInterval(loadStrategy, 30000);
+    loadStats();
+    const interval = setInterval(() => { loadStrategy(); loadStats(); }, 30000);
     return () => clearInterval(interval);
   }, [id]);
 
@@ -440,27 +455,119 @@ export default function StrategyDetailPage() {
               </Card>
             )}
 
-            <Card className="bg-slate-900 border-slate-800">
+            {/* 绩效统计 */}
+            <Card className="bg-slate-900 border-slate-800 md:col-span-2">
               <CardHeader>
-                <CardTitle>统计数据</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  绩效统计
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">触发次数</span>
-                  <span className="text-xl font-bold">{strategy.trigger_count || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">当前持仓</span>
-                  <span className="text-xl font-bold">{strategy.position_count || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">创建时间</span>
-                  <span>{formatDateTime(strategy.created_at)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">更新时间</span>
-                  <span>{formatDateTime(strategy.updated_at)}</span>
-                </div>
+              <CardContent>
+                {statsLoading && !stats ? (
+                  <div className="text-center py-6 text-slate-400">加载中...</div>
+                ) : stats ? (
+                  <div className="space-y-6">
+                    {/* 当前持仓 */}
+                    <div>
+                      <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">当前持仓</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">持仓数</p>
+                          <p className="text-xl font-bold">{stats.open_position_count}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">持仓价值</p>
+                          <p className="text-xl font-bold">{formatPrice(stats.open_value)}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">浮动盈亏</p>
+                          <p className={`text-xl font-bold ${stats.unrealized_pnl >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {stats.unrealized_pnl >= 0 ? "+" : ""}{formatPrice(stats.unrealized_pnl)}
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">浮动盈亏率</p>
+                          <p className={`text-xl font-bold ${stats.unrealized_pnl_pct >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {stats.unrealized_pnl_pct >= 0 ? "+" : ""}{stats.unrealized_pnl_pct}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 历史业绩 */}
+                    <div>
+                      <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">历史业绩</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">累计盈亏</p>
+                          <p className={`text-xl font-bold ${stats.total_realized_pnl >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {stats.total_realized_pnl >= 0 ? "+" : ""}{formatPrice(stats.total_realized_pnl)}
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">累计收益率</p>
+                          <p className={`text-xl font-bold ${stats.realized_pnl_pct >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {stats.realized_pnl_pct >= 0 ? "+" : ""}{stats.realized_pnl_pct}%
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">最大回撤</p>
+                          <p className="text-xl font-bold text-orange-400">
+                            {stats.max_drawdown > 0 ? `-${formatPrice(stats.max_drawdown)}` : "0"}
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">最大回撤率</p>
+                          <p className="text-xl font-bold text-orange-400">
+                            {stats.max_drawdown_pct > 0 ? `-${stats.max_drawdown_pct}%` : "0%"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 交易统计 */}
+                    <div>
+                      <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">交易统计</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">总交易数</p>
+                          <p className="text-xl font-bold">{stats.total_trades}</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">盈利 / 亏损</p>
+                          <p className="text-xl font-bold">
+                            <span className="text-green-400">{stats.win_count}</span>
+                            <span className="text-slate-500"> / </span>
+                            <span className="text-red-400">{stats.loss_count}</span>
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">胜率</p>
+                          <p className="text-xl font-bold">{stats.win_rate}%</p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">平均盈亏</p>
+                          <p className={`text-xl font-bold ${stats.avg_pnl >= 0 ? "text-green-400" : "text-red-400"}`}>
+                            {stats.avg_pnl >= 0 ? "+" : ""}{formatPrice(stats.avg_pnl)}
+                          </p>
+                        </div>
+                        <div className="bg-slate-800/50 rounded-lg p-3">
+                          <p className="text-xs text-slate-400 mb-1">触发次数</p>
+                          <p className="text-xl font-bold">{stats.trigger_count}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 时间信息 */}
+                    <div className="flex gap-6 text-sm text-slate-500 pt-2 border-t border-slate-800">
+                      <span>创建: {formatDateTime(strategy.created_at)}</span>
+                      <span>更新: {formatDateTime(strategy.updated_at)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-slate-500">暂无统计数据</div>
+                )}
               </CardContent>
             </Card>
           </div>

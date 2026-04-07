@@ -310,6 +310,7 @@ class StrategyExecutor:
                 symbol=symbol,
                 db=db,
                 user_id=getattr(strategy, "user_id", None),
+                strategy_id=strategy.id,
             )
         except Exception as e:
             logger.error(f"Failed to send notification: {e}")

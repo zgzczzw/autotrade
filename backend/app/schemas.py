@@ -231,6 +231,7 @@ class SettingsResponse(BaseModel):
     data_source: str  # binance | cryptocompare | mock
     cryptocompare_api_key: str = ""
     timezone: str = "Asia/Shanghai"
+    site_url: str = ""
 
 
 class SettingsUpdate(BaseModel):
@@ -238,6 +239,7 @@ class SettingsUpdate(BaseModel):
     data_source: str = Field(..., pattern="^(binance|cryptocompare|mock)$")
     cryptocompare_api_key: Optional[str] = None
     timezone: Optional[str] = None
+    site_url: Optional[str] = None
 
 
 class TestConnectionRequest(BaseModel):

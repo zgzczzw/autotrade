@@ -29,6 +29,7 @@ export default function SettingsPage() {
   const [dataSource, setDataSource] = useState<DataSource>("binance");
   const [apiKey, setApiKey] = useState("");
   const [timezone, setTimezoneState] = useState("Asia/Shanghai");
+  const [siteUrl, setSiteUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -46,6 +47,7 @@ export default function SettingsPage() {
         const tz = data.timezone || "Asia/Shanghai";
         setTimezoneState(tz);
         setTimezone(tz);
+        setSiteUrl(data.site_url || "");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -58,6 +60,7 @@ export default function SettingsPage() {
         data_source: dataSource,
         cryptocompare_api_key: apiKey,
         timezone,
+        site_url: siteUrl,
       });
       setTimezone(timezone);
       setSaveMsg({ ok: true, text: "保存成功" });
@@ -189,6 +192,23 @@ export default function SettingsPage() {
           <option value="America/Los_Angeles">UTC-8/-7 美西时间（洛杉矶）</option>
           <option value="UTC">UTC+0 协调世界时</option>
         </select>
+      </section>
+
+      {/* 站点地址 */}
+      <section className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
+          站点地址
+        </h2>
+        <p className="text-sm text-slate-400 mb-3">
+          用于通知消息中的"查看详情"链接，例如 <code className="text-slate-300">https://your-domain.com</code>
+        </p>
+        <input
+          type="url"
+          value={siteUrl}
+          onChange={(e) => setSiteUrl(e.target.value)}
+          placeholder="https://your-domain.com"
+          className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+        />
       </section>
 
       {/* 测试连接 */}

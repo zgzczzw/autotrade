@@ -40,7 +40,8 @@ async def get_settings(db: AsyncSession = Depends(get_db)):
     data_source = await _get_setting("data_source", "binance", db)
     api_key = await _get_setting("cryptocompare_api_key", "", db)
     timezone = await _get_setting("timezone", "Asia/Shanghai", db)
-    return SettingsResponse(data_source=data_source, cryptocompare_api_key=api_key, timezone=timezone)
+    site_url = await _get_setting("site_url", "", db)
+    return SettingsResponse(data_source=data_source, cryptocompare_api_key=api_key, timezone=timezone, site_url=site_url)
 
 
 @router.put("", response_model=SettingsResponse)
@@ -61,6 +62,10 @@ async def update_settings(
     timezone = payload.timezone or "Asia/Shanghai"
     await _upsert_setting("timezone", timezone, db)
 
+    if payload.site_url is not None:
+        await _upsert_setting("site_url", payload.site_url, db)
+    site_url = await _get_setting("site_url", "", db)
+
     # 数据源切换时清空 KlineData 缓存，避免旧数据污染新数据源
     if source_changed:
         await db.execute(delete(KlineData))
@@ -71,7 +76,7 @@ async def update_settings(
     from app.engine.market_data import market_data_service
     market_data_service.set_source(payload.data_source, api_key)
 
-    return SettingsResponse(data_source=payload.data_source, cryptocompare_api_key=api_key, timezone=timezone)
+    return SettingsResponse(data_source=payload.data_source, cryptocompare_api_key=api_key, timezone=timezone, site_url=site_url)
 
 
 @router.post("/test", response_model=TestConnectionResponse)

@@ -109,6 +109,7 @@ export const updateSettings = (data: {
   data_source: string;
   cryptocompare_api_key?: string;
   timezone?: string;
+  site_url?: string;
 }) => { invalidateCache("/settings"); return apiCall(api.put("/settings", data)); };
 
 export const testConnection = (data: {
