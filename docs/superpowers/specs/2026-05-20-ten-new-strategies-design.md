@@ -43,7 +43,7 @@
 | 标的多样化 | BTC×5 / ETH×3 / SOL×2 |
 | 周期多样化 | 15m×1 / 1h×4 / 4h×3 / 1d×2 |
 | 风控基线 | 5% 硬止损 + ATR(14)×2.5 移动止损 + 平仓 3 根 K 线冷却 |
-| 仓位 | percent 模式 10–15%（网格策略例外，单格 2%） |
+| 仓位 | percent 模式 10–15%（网格策略例外，每格 1% 总仓） |
 
 ## Data Model
 
@@ -187,6 +187,21 @@ class Strategy(BaseStrategy):
 
 `_manage_position`、`_atr`、`_enter`、`_exit`、`_clear_state` 在 10 个策略文件里各自实现（避免引入跨文件依赖；sync 目录只接受单文件策略）。
 
+**每个策略 `on_tick` 入口最小 K 线数：**
+
+| 策略 | 最小 K 线数 | 决定因素 |
+|---|---|---|
+| 1 海龟 | 25 | Donchian 20 + ATR(14) |
+| 2 SuperTrend | 30 | ATR(10) + 上下轨 ratchet 需要历史 |
+| 3 VWAP 日内回归 | 当日 5 根 | UTC 重置；当日数据不足按 hold |
+| 4 区间网格 | 60 | EMA(50) 锚点 |
+| 5 MTF 共振 | 1h 40 + daily 50 | MACD(26+9) + 日 EMA50 |
+| 6 Squeeze | 30 | BB(20) + KC(20) + 5 根挤压窗口 |
+| 7 ADX 通道 | 40 | ADX(14) 需要平滑期 + KC(20) |
+| 8 StochRSI | 40 | RSI(14) + Stoch 窗口(14) + SMA(3) |
+| 9 Heikin Ashi | 5 | 仅需 3 根 HA + 上一根 ha_open/close |
+| 10 Z-score | 25 | window=20 + 一个 ATR(14) |
+
 ## Strategies Detail
 
 ### 策略 1：海龟突破策略
@@ -299,7 +314,7 @@ class Strategy(BaseStrategy):
   ha_high  = max(high, ha_open, ha_close)
   ha_low   = min(low,  ha_open, ha_close)
   ```
-- **入场**：`HA[t-2..t] 三根阳线 ∧ HA[t-2..t].low == HA[t-2..t].open`（无下影线） → 买；对称做空
+- **入场**：`HA[t-2..t] 三根阳线 ∧ HA[t-2..t] 无下影线（low >= min(open, close) − tol，tol = 0.05% × price）` → 买；对称做空（HA 三根阴线 ∧ 无上影线）
 - **出场**：出现反色 HA 蜡烛或带长对侧影线 + 统一风控
 - **风控**：`position_size=10%`
 - **预期场景**：SOL 趋势平滑捕捉，过滤插针
@@ -362,7 +377,12 @@ import asyncio
 from sqlalchemy import update
 from app.database import async_session
 from app.models import Strategy
-NAMES = ['海龟突破策略', 'SuperTrend 趋势策略', ...]
+NAMES = [
+    '海龟突破策略', 'SuperTrend 趋势策略', 'VWAP 日内回归策略',
+    '区间网格策略', 'MTF 双周期共振策略', 'Squeeze 波动率突破策略',
+    'ADX 强趋势通道策略', 'StochRSI 反转策略',
+    'Heikin Ashi 趋势骑乘策略', 'Z-score 均值回归策略',
+]
 async def stop():
     async with async_session() as db:
         await db.execute(update(Strategy).where(Strategy.name.in_(NAMES)).values(status='stopped'))
