@@ -8,6 +8,8 @@
                            每次触发时把当前周期传给 executor
 """
 
+import random
+from datetime import datetime, timedelta
 from typing import Dict, List
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -105,9 +107,14 @@ class StrategyScheduler:
                     interval = self._timeframe_to_seconds(tf)
                     job_id = f"strategy_{strategy_id}_{sym}_{tf}"
 
+                    # 错峰抖动：每个 job 在首次触发前加 0-30s 偏移，
+                    # 避免多个相同周期策略同时撞同一秒（耗尽 DB 连接池）
+                    jitter_seconds = random.uniform(0.0, 30.0)
+                    start_date = datetime.now() + timedelta(seconds=jitter_seconds)
+
                     self.scheduler.add_job(
                         func=self._execute_strategy,
-                        trigger=IntervalTrigger(seconds=interval),
+                        trigger=IntervalTrigger(seconds=interval, start_date=start_date),
                         id=job_id,
                         args=[strategy_id, sym, tf],
                         replace_existing=True,
@@ -115,7 +122,8 @@ class StrategyScheduler:
                     job_ids.append(job_id)
                     logger.info(
                         f"Strategy '{strategy.name}' (ID:{strategy_id}) "
-                        f"registered job for symbol={sym}, tf={tf} every {interval}s"
+                        f"registered job for symbol={sym}, tf={tf} every {interval}s "
+                        f"(jitter +{jitter_seconds:.1f}s)"
                     )
 
             self.running_jobs[strategy_id] = job_ids

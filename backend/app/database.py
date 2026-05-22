@@ -8,7 +8,14 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./autotrade.db")
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_size=int(os.getenv("DB_POOL_SIZE", "20")),
+    max_overflow=int(os.getenv("DB_POOL_MAX_OVERFLOW", "40")),
+    pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "30")),
+    pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "3600")),
+)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
