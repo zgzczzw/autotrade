@@ -29,6 +29,7 @@ export interface IndicatorsConfig {
   rsi?: boolean;              // RSI开关
   boll?: boolean;             // BOLL开关
   atr?: boolean;              // ATR 通道(SMA20±2×ATR14)开关，叠加在主图
+  dc?: boolean;               // Donchian 通道(20日高低轨)开关，叠加在主图
   volume?: boolean;           // 成交量开关，默认true
 }
 

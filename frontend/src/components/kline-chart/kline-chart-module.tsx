@@ -68,6 +68,40 @@ function ensureAtrIndicator() {
   } as any);
 }
 
+// 注册自定义 Donchian 通道指标（叠加在主图）
+// 海龟交易系统经典版：N 日高低轨 + 中线
+// 默认参数 [period=20]：上轨=过去20根最高 high，下轨=过去20根最低 low
+let _donchianRegistered = false;
+function ensureDonchianIndicator() {
+  if (_donchianRegistered) return;
+  _donchianRegistered = true;
+  registerIndicator({
+    name: "DC",
+    shortName: "DC",
+    calcParams: [20],
+    figures: [
+      { key: "upper", title: "UP: ", type: "line" },
+      { key: "middle", title: "MID: ", type: "line" },
+      { key: "lower", title: "LOW: ", type: "line" },
+    ],
+    calc: (dataList: any[], indicator: any) => {
+      const period = (indicator.calcParams?.[0] as number) || 20;
+      return dataList.map((_: any, i: number) => {
+        if (i < period - 1) {
+          return { upper: undefined, middle: undefined, lower: undefined };
+        }
+        let hi = -Infinity;
+        let lo = Infinity;
+        for (let j = i - period + 1; j <= i; j++) {
+          if (dataList[j].high > hi) hi = dataList[j].high;
+          if (dataList[j].low < lo) lo = dataList[j].low;
+        }
+        return { upper: hi, middle: (hi + lo) / 2, lower: lo };
+      });
+    },
+  } as any);
+}
+
 // 注册自定义买卖点 overlay — 虚线 + 文字标签
 // 锚点已经是 candle low(买) / high(卖)，绘制时只需向外延伸
 let _overlayRegistered = false;
@@ -168,6 +202,7 @@ export function KlineChartModule({
     rsi: !!indicators.rsi,
     boll: indicators.boll !== false,
     atr: !!indicators.atr,
+    dc: !!indicators.dc,
     volume: indicators.volume !== false,
   });
   const [internalPeriod, setInternalPeriod] = useState("1h");
@@ -285,6 +320,7 @@ export function KlineChartModule({
 
     ensureTradeMarkerOverlay();
     ensureAtrIndicator();
+    ensureDonchianIndicator();
 
     if (chartInstance.current) {
       dispose(chartInstance.current);
@@ -498,7 +534,7 @@ export function KlineChartModule({
 
             {/* 指标切换 */}
             <div className="flex items-center gap-0.5">
-              {(["ma", "macd", "kdj", "rsi", "boll", "atr"] as const).map((name) => (
+              {(["ma", "macd", "kdj", "rsi", "boll", "atr", "dc"] as const).map((name) => (
                 <Button
                   key={name}
                   variant={activeIndicators[name] ? "default" : "outline"}
@@ -666,6 +702,14 @@ function applyIndicators(chart: Chart, config: Record<string, boolean>) {
   if (config.atr) {
     chart.createIndicator(
       { name: "ATR", calcParams: [20, 14, 2] } as IndicatorCreate,
+      true,
+      { id: "candle_pane" }
+    );
+  }
+
+  if (config.dc) {
+    chart.createIndicator(
+      { name: "DC", calcParams: [20] } as IndicatorCreate,
       true,
       { id: "candle_pane" }
     );
