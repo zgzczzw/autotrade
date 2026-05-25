@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { TrendingUp, TrendingDown, Maximize2, X } from "lucide-react";
 
-// 注册自定义 ATR 指标（klinecharts 10 没有内置）
+// 注册自定义 ATR 通道指标（叠加在主图）
+// 形式：SMA(close, smaPeriod) ± multiplier × ATR(atrPeriod)
+// 默认参数 [smaPeriod=20, atrPeriod=14, multiplier=2]，跟 BOLL 一样三条线
 let _atrRegistered = false;
 function ensureAtrIndicator() {
   if (_atrRegistered) return;
@@ -22,27 +24,45 @@ function ensureAtrIndicator() {
   registerIndicator({
     name: "ATR",
     shortName: "ATR",
-    calcParams: [14],
-    figures: [{ key: "atr", title: "ATR: ", type: "line" }],
+    calcParams: [20, 14, 2],
+    figures: [
+      { key: "upper", title: "UP: ", type: "line" },
+      { key: "middle", title: "MID: ", type: "line" },
+      { key: "lower", title: "LOW: ", type: "line" },
+    ],
     calc: (dataList: any[], indicator: any) => {
-      const period = (indicator.calcParams?.[0] as number) || 14;
+      const [smaPeriod, atrPeriod, mult] = indicator.calcParams ?? [20, 14, 2];
       const trs: number[] = [];
       return dataList.map((k: any, i: number) => {
+        // True Range 累积
         if (i === 0) {
           trs.push(k.high - k.low);
-          return { atr: undefined };
+        } else {
+          const prevClose = dataList[i - 1].close;
+          trs.push(
+            Math.max(
+              k.high - k.low,
+              Math.abs(k.high - prevClose),
+              Math.abs(k.low - prevClose),
+            ),
+          );
         }
-        const prevClose = dataList[i - 1].close;
-        const tr = Math.max(
-          k.high - k.low,
-          Math.abs(k.high - prevClose),
-          Math.abs(k.low - prevClose),
-        );
-        trs.push(tr);
-        if (i < period) return { atr: undefined };
-        let sum = 0;
-        for (let j = i - period + 1; j <= i; j++) sum += trs[j];
-        return { atr: sum / period };
+        if (i < Math.max(smaPeriod, atrPeriod)) {
+          return { upper: undefined, middle: undefined, lower: undefined };
+        }
+        // SMA(close, smaPeriod)
+        let smaSum = 0;
+        for (let j = i - smaPeriod + 1; j <= i; j++) smaSum += dataList[j].close;
+        const middle = smaSum / smaPeriod;
+        // ATR(atrPeriod) — 最近 atrPeriod 根 TR 的平均
+        let trSum = 0;
+        for (let j = i - atrPeriod + 1; j <= i; j++) trSum += trs[j];
+        const atr = trSum / atrPeriod;
+        return {
+          upper: middle + mult * atr,
+          middle,
+          lower: middle - mult * atr,
+        };
       });
     },
   } as any);
@@ -163,7 +183,7 @@ export function KlineChartModule({
 
   // 动态计算图表总高度：主图固定高度 + 各子图 100px
   const totalHeight = useMemo(() => {
-    const subCount = (["macd", "kdj", "rsi", "atr", "volume"] as const).filter(
+    const subCount = (["macd", "kdj", "rsi", "volume"] as const).filter(
       (k) => activeIndicators[k]
     ).length;
     return height + subCount * 100;
@@ -645,9 +665,9 @@ function applyIndicators(chart: Chart, config: Record<string, boolean>) {
 
   if (config.atr) {
     chart.createIndicator(
-      { name: "ATR", calcParams: [14] } as IndicatorCreate,
-      false,
-      { height: SUB_PANE_HEIGHT, minHeight: SUB_PANE_HEIGHT }
+      { name: "ATR", calcParams: [20, 14, 2] } as IndicatorCreate,
+      true,
+      { id: "candle_pane" }
     );
   }
 

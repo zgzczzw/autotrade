@@ -28,7 +28,7 @@ export interface IndicatorsConfig {
   kdj?: boolean;              // KDJ开关
   rsi?: boolean;              // RSI开关
   boll?: boolean;             // BOLL开关
-  atr?: boolean;              // ATR(14)开关，子图
+  atr?: boolean;              // ATR 通道(SMA20±2×ATR14)开关，叠加在主图
   volume?: boolean;           // 成交量开关，默认true
 }
 
