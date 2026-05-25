@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { init, dispose, Chart, IndicatorCreate, KLineData, registerOverlay } from "klinecharts";
+import { init, dispose, Chart, IndicatorCreate, KLineData, registerOverlay, registerIndicator } from "klinecharts";
 import { KlineChartModuleProps, TradeMarker } from "./types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,40 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TrendingUp, TrendingDown, Maximize2, X } from "lucide-react";
+
+// 注册自定义 ATR 指标（klinecharts 10 没有内置）
+let _atrRegistered = false;
+function ensureAtrIndicator() {
+  if (_atrRegistered) return;
+  _atrRegistered = true;
+  registerIndicator({
+    name: "ATR",
+    shortName: "ATR",
+    calcParams: [14],
+    figures: [{ key: "atr", title: "ATR: ", type: "line" }],
+    calc: (dataList: any[], indicator: any) => {
+      const period = (indicator.calcParams?.[0] as number) || 14;
+      const trs: number[] = [];
+      return dataList.map((k: any, i: number) => {
+        if (i === 0) {
+          trs.push(k.high - k.low);
+          return { atr: undefined };
+        }
+        const prevClose = dataList[i - 1].close;
+        const tr = Math.max(
+          k.high - k.low,
+          Math.abs(k.high - prevClose),
+          Math.abs(k.low - prevClose),
+        );
+        trs.push(tr);
+        if (i < period) return { atr: undefined };
+        let sum = 0;
+        for (let j = i - period + 1; j <= i; j++) sum += trs[j];
+        return { atr: sum / period };
+      });
+    },
+  } as any);
+}
 
 // 注册自定义买卖点 overlay — 虚线 + 文字标签
 // 锚点已经是 candle low(买) / high(卖)，绘制时只需向外延伸
@@ -113,6 +147,7 @@ export function KlineChartModule({
     kdj: !!indicators.kdj,
     rsi: !!indicators.rsi,
     boll: indicators.boll !== false,
+    atr: !!indicators.atr,
     volume: indicators.volume !== false,
   });
   const [internalPeriod, setInternalPeriod] = useState("1h");
@@ -128,7 +163,7 @@ export function KlineChartModule({
 
   // 动态计算图表总高度：主图固定高度 + 各子图 100px
   const totalHeight = useMemo(() => {
-    const subCount = (["macd", "kdj", "rsi", "volume"] as const).filter(
+    const subCount = (["macd", "kdj", "rsi", "atr", "volume"] as const).filter(
       (k) => activeIndicators[k]
     ).length;
     return height + subCount * 100;
@@ -229,6 +264,7 @@ export function KlineChartModule({
     if (!chartRef.current) return;
 
     ensureTradeMarkerOverlay();
+    ensureAtrIndicator();
 
     if (chartInstance.current) {
       dispose(chartInstance.current);
@@ -442,7 +478,7 @@ export function KlineChartModule({
 
             {/* 指标切换 */}
             <div className="flex items-center gap-0.5">
-              {(["ma", "macd", "kdj", "rsi", "boll"] as const).map((name) => (
+              {(["ma", "macd", "kdj", "rsi", "boll", "atr"] as const).map((name) => (
                 <Button
                   key={name}
                   variant={activeIndicators[name] ? "default" : "outline"}
@@ -602,6 +638,14 @@ function applyIndicators(chart: Chart, config: Record<string, boolean>) {
   if (config.rsi) {
     chart.createIndicator(
       { name: "RSI", calcParams: [14] } as IndicatorCreate,
+      false,
+      { height: SUB_PANE_HEIGHT, minHeight: SUB_PANE_HEIGHT }
+    );
+  }
+
+  if (config.atr) {
+    chart.createIndicator(
+      { name: "ATR", calcParams: [14] } as IndicatorCreate,
       false,
       { height: SUB_PANE_HEIGHT, minHeight: SUB_PANE_HEIGHT }
     );
