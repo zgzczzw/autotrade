@@ -351,6 +351,33 @@ class BacktestEngine:
 
         logger.info(f"Loaded {len(primary_klines)} klines for primary tf={primary_tf}")
 
+        # 获取日线数据（供策略使用 daily_klines）
+        daily_klines: List[dict] = []
+        if primary_tf != "1d" and strategy.type == "code":
+            try:
+                daily_klines = await market_data_service.fetch_historical_klines(
+                    symbol=symbol,
+                    timeframe="1d",
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+                logger.info(f"Loaded {len(daily_klines)} daily klines for backtest")
+            except Exception as e:
+                logger.warning(f"Failed to fetch daily klines for backtest: {e}")
+
+        # 获取历史 Fear & Greed 数据
+        fear_greed_history: Dict[str, int] = {}
+        if strategy.type == "code":
+            try:
+                fear_greed_history = await self._fetch_fear_greed_history(
+                    start_date, end_date
+                )
+                logger.info(
+                    f"Loaded {len(fear_greed_history)} days of Fear & Greed data"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to fetch Fear & Greed history: {e}")
+
         account = VirtualAccount(initial_balance)
         equity_curve: List[dict] = []
 
@@ -377,10 +404,14 @@ class BacktestEngine:
                 equity_curve = await self._run_multitf_code_loop(
                     strategy, symbol, primary_tf, primary_klines, other_klines,
                     account, cancel_event,
+                    daily_klines=daily_klines,
+                    fear_greed_history=fear_greed_history,
                 )
             else:
                 equity_curve = await self._run_single_tf_loop(
                     strategy, symbol, primary_tf, primary_klines, account, cancel_event,
+                    daily_klines=daily_klines,
+                    fear_greed_history=fear_greed_history,
                 )
 
             # 回测结束：强制平仓所有持仓
@@ -461,6 +492,8 @@ class BacktestEngine:
         klines: List[dict],
         account: VirtualAccount,
         cancel_event: asyncio.Event,
+        daily_klines: Optional[List[dict]] = None,
+        fear_greed_history: Optional[Dict[str, int]] = None,
     ) -> List[dict]:
         """单时间周期回测主循环"""
         from app.engine.sandbox import sandbox_executor
@@ -505,6 +538,28 @@ class BacktestEngine:
                                 "price": kline["close"],
                                 "klines": klines[max(0, i - 99): i + 1],
                             }
+                            # 注入额外数据供高级策略使用
+                            if daily_klines is not None:
+                                # 筛选出当前 bar 时间之前的日线
+                                current_time = kline["open_time"]
+                                dk = [
+                                    d for d in daily_klines
+                                    if d["open_time"] <= current_time
+                                ]
+                                data["daily_klines"] = dk[-250:] if dk else []
+                            else:
+                                data["daily_klines"] = []
+
+                            if fear_greed_history:
+                                date_key = kline["open_time"].strftime("%Y-%m-%d")
+                                fg_val = fear_greed_history.get(date_key)
+                                if fg_val is not None:
+                                    data["fear_greed"] = {"value": fg_val}
+                                else:
+                                    data["fear_greed"] = None
+                            else:
+                                data["fear_greed"] = None
+
                             signal = sandbox_executor.call_on_tick(code_instance, data)
                             if signal == "buy":
                                 ctx.buy(trigger_reason="代码策略买入")
@@ -542,6 +597,8 @@ class BacktestEngine:
         other_klines: Dict[str, List[dict]],
         account: VirtualAccount,
         cancel_event: asyncio.Event,
+        daily_klines: Optional[List[dict]] = None,
+        fear_greed_history: Optional[Dict[str, int]] = None,
     ) -> List[dict]:
         """
         多时间周期代码策略回测主循环。
@@ -623,12 +680,29 @@ class BacktestEngine:
                 # ② 主时间周期 on_tick（策略在此更新 klines_3m 并评估信号）
                 if code_instance is not None:
                     try:
-                        sig = sandbox_executor.call_on_tick(code_instance, {
+                        main_data = {
                             "symbol": symbol,
                             "timeframe": primary_tf,
                             "price": kline["close"],
                             "klines": primary_klines[max(0, i - 99): i + 1],
-                        })
+                        }
+                        # 注入额外数据
+                        if daily_klines is not None:
+                            dk = [
+                                d for d in daily_klines
+                                if d["open_time"] <= current_time
+                            ]
+                            main_data["daily_klines"] = dk[-250:] if dk else []
+                        else:
+                            main_data["daily_klines"] = []
+                        if fear_greed_history:
+                            date_key = current_time.strftime("%Y-%m-%d")
+                            fg_val = fear_greed_history.get(date_key)
+                            main_data["fear_greed"] = {"value": fg_val} if fg_val is not None else None
+                        else:
+                            main_data["fear_greed"] = None
+
+                        sig = sandbox_executor.call_on_tick(code_instance, main_data)
                         if sig == "buy":
                             ctx.buy(trigger_reason=f"代码策略买入(tf={primary_tf})")
                         elif sig == "sell":
@@ -827,6 +901,37 @@ class BacktestEngine:
     # ------------------------------------------------------------------
     # 统计指标计算
     # ------------------------------------------------------------------
+
+    async def _fetch_fear_greed_history(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, int]:
+        """获取历史 Fear & Greed 数据，返回 {date_str: value} 映射"""
+        import httpx
+
+        days = (end_date - start_date).days + 1
+        if days <= 0:
+            return {}
+
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(
+                    "https://api.alternative.me/fng/",
+                    params={"limit": min(days, 1000), "format": "json"},
+                )
+                resp.raise_for_status()
+                data = resp.json()
+
+            result: Dict[str, int] = {}
+            for item in data.get("data", []):
+                ts = int(item.get("timestamp", 0))
+                val = int(item.get("value", 50))
+                date_str = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+                result[date_str] = val
+
+            return result
+        except Exception as e:
+            logger.warning(f"Failed to fetch Fear & Greed history: {e}")
+            return {}
 
     def _calculate_stats(
         self,

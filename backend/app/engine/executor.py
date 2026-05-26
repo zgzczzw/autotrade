@@ -18,6 +18,7 @@ from app.engine.market_data import market_data_service
 from app.engine.sandbox import sandbox_executor
 from app.logger import get_logger
 from app.models import Position, Strategy, TriggerLog
+from app.services.fear_greed import fear_greed_service
 from app.services.feishu import notification_service
 from app.services.simulator import simulator
 
@@ -397,13 +398,32 @@ class StrategyExecutor:
             # 预取 position/balance 供同步 on_tick 使用
             await ctx.prefetch_for_sync()
 
-            # 调用 on_tick，传入当前触发周期的数据
+            # 构建 on_tick 数据
             data = {
                 "symbol": symbol,
                 "timeframe": active_tf,
                 "price": current_kline["close"] if current_kline else 0,
                 "klines": klines,
             }
+
+            # 注入额外数据（Fear & Greed、日线 K 线），供高级策略使用
+            try:
+                fg = await fear_greed_service.get_index()
+                data["fear_greed"] = fg
+            except Exception:
+                data["fear_greed"] = None
+
+            if active_tf != "1d":
+                try:
+                    daily_klines = await market_data_service.get_klines(
+                        symbol=symbol, timeframe="1d", limit=250, db=ctx.db,
+                    )
+                    data["daily_klines"] = daily_klines
+                except Exception:
+                    data["daily_klines"] = []
+            else:
+                data["daily_klines"] = klines
+
             signal = sandbox_executor.call_on_tick(instance, data)
             return signal
 
