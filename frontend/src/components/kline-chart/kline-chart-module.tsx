@@ -102,6 +102,81 @@ function ensureDonchianIndicator() {
   } as any);
 }
 
+// 注册自定义 SuperTrend 轨道线（叠加在主图）
+// ATR(period) ± mult × ATR 的动态翻转轨道；trend=1 时画下轨(绿)，trend=-1 时画上轨(红)
+// 算法与 scripts/new_strategies/supertrend.py 一致；默认参数 [period=10, multiplier=3]
+let _supertrendRegistered = false;
+function ensureSupertrendIndicator() {
+  if (_supertrendRegistered) return;
+  _supertrendRegistered = true;
+  registerIndicator({
+    name: "ST",
+    shortName: "ST",
+    calcParams: [10, 3],
+    figures: [
+      { key: "up", title: "UP: ", type: "line", styles: () => ({ color: "#22c55e" }) },
+      { key: "dn", title: "DN: ", type: "line", styles: () => ({ color: "#ef4444" }) },
+    ],
+    calc: (dataList: any[], indicator: any) => {
+      const [period, mult] = indicator.calcParams ?? [10, 3];
+      const n = dataList.length;
+      const result: { up?: number; dn?: number }[] = new Array(n);
+      if (n < period + 2) {
+        for (let i = 0; i < n; i++) result[i] = {};
+        return result;
+      }
+      // True Range
+      const trs: number[] = new Array(n);
+      trs[0] = dataList[0].high - dataList[0].low;
+      for (let i = 1; i < n; i++) {
+        const prevClose = dataList[i - 1].close;
+        trs[i] = Math.max(
+          dataList[i].high - dataList[i].low,
+          Math.abs(dataList[i].high - prevClose),
+          Math.abs(dataList[i].low - prevClose),
+        );
+      }
+      // 起始索引：第一个有 ATR 的位置 = period（基于 trs[1..period]）
+      const start = period;
+      const finalUpper: number[] = new Array(n);
+      const finalLower: number[] = new Array(n);
+      const trend: number[] = new Array(n);
+      for (let i = 0; i < start; i++) result[i] = {};
+      for (let i = start; i < n; i++) {
+        // ATR：最近 period 根 TR 平均（trs 从 index 1 开始有效，故取 i-period+1..i）
+        let trSum = 0;
+        for (let j = i - period + 1; j <= i; j++) trSum += trs[j];
+        const atr = trSum / period;
+        const hl2 = (dataList[i].high + dataList[i].low) / 2;
+        const basicUpper = hl2 + mult * atr;
+        const basicLower = hl2 - mult * atr;
+        if (i === start) {
+          finalUpper[i] = basicUpper;
+          finalLower[i] = basicLower;
+          trend[i] = dataList[i].close > basicUpper ? 1 : -1;
+        } else {
+          finalUpper[i] =
+            basicUpper < finalUpper[i - 1] || dataList[i - 1].close > finalUpper[i - 1]
+              ? basicUpper
+              : finalUpper[i - 1];
+          finalLower[i] =
+            basicLower > finalLower[i - 1] || dataList[i - 1].close < finalLower[i - 1]
+              ? basicLower
+              : finalLower[i - 1];
+          if (trend[i - 1] === 1) {
+            trend[i] = dataList[i].close < finalLower[i] ? -1 : 1;
+          } else {
+            trend[i] = dataList[i].close > finalUpper[i] ? 1 : -1;
+          }
+        }
+        result[i] =
+          trend[i] === 1 ? { up: finalLower[i] } : { dn: finalUpper[i] };
+      }
+      return result;
+    },
+  } as any);
+}
+
 // 注册自定义买卖点 overlay — 虚线 + 文字标签
 // 锚点已经是 candle low(买) / high(卖)，绘制时只需向外延伸
 let _overlayRegistered = false;
@@ -203,6 +278,7 @@ export function KlineChartModule({
     boll: indicators.boll !== false,
     atr: !!indicators.atr,
     dc: !!indicators.dc,
+    st: !!indicators.st,
     volume: indicators.volume !== false,
   });
   const [internalPeriod, setInternalPeriod] = useState("1h");
@@ -321,6 +397,7 @@ export function KlineChartModule({
     ensureTradeMarkerOverlay();
     ensureAtrIndicator();
     ensureDonchianIndicator();
+    ensureSupertrendIndicator();
 
     if (chartInstance.current) {
       dispose(chartInstance.current);
@@ -534,7 +611,7 @@ export function KlineChartModule({
 
             {/* 指标切换 */}
             <div className="flex items-center gap-0.5">
-              {(["ma", "macd", "kdj", "rsi", "boll", "atr", "dc"] as const).map((name) => (
+              {(["ma", "macd", "kdj", "rsi", "boll", "atr", "dc", "st"] as const).map((name) => (
                 <Button
                   key={name}
                   variant={activeIndicators[name] ? "default" : "outline"}
@@ -710,6 +787,14 @@ function applyIndicators(chart: Chart, config: Record<string, boolean>) {
   if (config.dc) {
     chart.createIndicator(
       { name: "DC", calcParams: [20] } as IndicatorCreate,
+      true,
+      { id: "candle_pane" }
+    );
+  }
+
+  if (config.st) {
+    chart.createIndicator(
+      { name: "ST", calcParams: [10, 3] } as IndicatorCreate,
       true,
       { id: "candle_pane" }
     );
