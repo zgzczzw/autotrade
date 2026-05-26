@@ -264,10 +264,16 @@ class StrategyExecutor:
             ctx = StrategyContext(strategy, db, symbol, current_kline)
 
             try:
+                # 0. 更新持仓当前价格
+                if current_kline:
+                    current_price = current_kline["close"]
+                    await self._update_position_price(
+                        db, strategy.id, symbol, current_price
+                    )
+
                 sl_tp_trigger = None
                 # 1. 检查止盈止损
                 if current_kline:
-                    current_price = current_kline["close"]
                     sl_tp_trigger = await simulator.check_stop_loss_take_profit(
                         strategy_id=strategy.id,
                         symbol=symbol,
@@ -305,6 +311,22 @@ class StrategyExecutor:
                 strategy.status = "error"
                 await db.commit()
                 raise
+
+    @staticmethod
+    async def _update_position_price(
+        db: AsyncSession, strategy_id: int, symbol: str, price: float
+    ):
+        """更新该策略+交易对的未平仓持仓当前价格"""
+        result = await db.execute(
+            select(Position).where(
+                Position.strategy_id == strategy_id,
+                Position.symbol == symbol,
+                Position.closed_at.is_(None),
+            )
+        )
+        for pos in result.scalars().all():
+            pos.current_price = price
+        await db.commit()
 
     async def _send_notification(
         self,
