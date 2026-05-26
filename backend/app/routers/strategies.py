@@ -389,6 +389,11 @@ async def get_strategy_stats(
     realized_pnl_pct = (total_realized_pnl / total_cost * 100) if total_cost > 0 else 0.0
     avg_pnl = (total_realized_pnl / total_trades) if total_trades > 0 else 0.0
 
+    # 总盈亏 = 已实现 + 未实现
+    total_pnl = total_realized_pnl + unrealized_pnl
+    total_invested = total_cost + open_value
+    total_pnl_pct = (total_pnl / total_invested * 100) if total_invested > 0 else 0.0
+
     # 触发次数
     trigger_result = await db.execute(
         select(func.count()).where(TriggerLog.strategy_id == strategy_id)
@@ -403,6 +408,8 @@ async def get_strategy_stats(
         "total_trades": total_trades,
         "total_realized_pnl": round(total_realized_pnl, 2),
         "realized_pnl_pct": round(realized_pnl_pct, 2),
+        "total_pnl": round(total_pnl, 2),
+        "total_pnl_pct": round(total_pnl_pct, 2),
         "win_count": win_count,
         "loss_count": loss_count,
         "win_rate": round(win_rate, 2),
