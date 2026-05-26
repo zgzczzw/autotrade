@@ -45,8 +45,16 @@ class StrategyContext:
 
     async def prefetch_for_sync(self):
         """预取 position 和 balance，缓存供同步 on_tick 使用"""
-        self._cached_position = await self._get_position_async()
-        self._cached_balance = await self._get_balance_async()
+        try:
+            self._cached_position = await self._get_position_async()
+        except Exception as e:
+            logger.warning(f"prefetch position failed (strategy {self.strategy.id}): {e}")
+            self._cached_position = None
+        try:
+            self._cached_balance = await self._get_balance_async()
+        except Exception as e:
+            logger.warning(f"prefetch balance failed (strategy {self.strategy.id}): {e}")
+            self._cached_balance = 0.0
         self._cache_ready = True
 
     def get_position_sync(self) -> Optional["Position"]:
@@ -162,7 +170,8 @@ class StrategyContext:
         """
         if self._cache_ready:
             return self._cached_position
-        return self._get_position_async()
+        logger.error(f"get_position called before prefetch_for_sync (strategy {self.strategy.id}), returning None")
+        return None
 
     async def _get_position_async(self) -> Optional[Position]:
         """获取当前持仓（任意方向），如有多条取最新一条"""
@@ -184,7 +193,8 @@ class StrategyContext:
         """
         if self._cache_ready:
             return self._cached_balance or 0.0
-        return self._get_balance_async()
+        logger.error(f"get_balance called before prefetch_for_sync (strategy {self.strategy.id}), returning 0")
+        return 0.0
 
     async def _get_balance_async(self) -> float:
         """获取账户余额（当前用户的 SimAccount）"""
