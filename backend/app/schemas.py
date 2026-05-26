@@ -171,15 +171,32 @@ class AccountResponse(BaseModel):
 
 # ==================== 仪表盘相关 ====================
 
+class StrategyRankingItem(BaseModel):
+    """策略绩效排名条目（仅运行中策略）"""
+    id: int
+    name: str
+    symbols: List[str]
+    timeframe: str
+    realized_pnl: float
+    unrealized_pnl: float
+    total_pnl: float
+    closed_trades: int
+    win_rate: Optional[float] = None
+    open_positions: int
+    locked_capital: float
+
+
 class DashboardData(BaseModel):
     """仪表盘数据"""
     balance: float
     total_pnl: float
+    unrealized_pnl: float = 0.0
     running_strategies: int
     long_strategies: int = 0
     short_strategies: int = 0
     today_triggers: int
     recent_triggers: List[TriggerLogResponse]
+    strategy_rankings: List[StrategyRankingItem] = []
 
 
 # ==================== 回测相关 ====================

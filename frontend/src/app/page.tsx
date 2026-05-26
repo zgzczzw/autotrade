@@ -12,19 +12,36 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Clock,
+  Trophy,
 } from "lucide-react";
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
+interface StrategyRankingItem {
+  id: number;
+  name: string;
+  symbols: string[];
+  timeframe: string;
+  realized_pnl: number;
+  unrealized_pnl: number;
+  total_pnl: number;
+  closed_trades: number;
+  win_rate: number | null;
+  open_positions: number;
+  locked_capital: number;
+}
+
 interface DashboardData {
   balance: number;
   total_pnl: number;
+  unrealized_pnl: number;
   running_strategies: number;
   long_strategies: number;
   short_strategies: number;
   today_triggers: number;
   recent_triggers: any[];
+  strategy_rankings: StrategyRankingItem[];
 }
 
 export default function DashboardPage() {
@@ -83,7 +100,7 @@ export default function DashboardPage() {
         <StatCard
           title="总盈亏"
           value={`${data.total_pnl >= 0 ? "+" : ""}${formatPrice(data.total_pnl)}`}
-          subtitle={`${pnlPercent >= 0 ? "+" : ""}${pnlPercent.toFixed(2)}%`}
+          subtitle={`${pnlPercent >= 0 ? "+" : ""}${pnlPercent.toFixed(2)}%${data.unrealized_pnl ? `  浮动 ${data.unrealized_pnl >= 0 ? "+" : ""}${formatPrice(data.unrealized_pnl)}` : ""}`}
           icon={data.total_pnl >= 0 ? TrendingUp : TrendingDown}
           accent={data.total_pnl >= 0 ? "green" : "red"}
         />
@@ -105,6 +122,9 @@ export default function DashboardPage() {
           accent="purple"
         />
       </div>
+
+      {/* 策略排名（仅运行中） */}
+      <StrategyRankings rankings={data.strategy_rankings || []} />
 
       {/* 最近触发记录 */}
       <div className="bg-slate-900 rounded-xl border border-slate-800">
@@ -195,6 +215,91 @@ interface StatCardProps {
   subtitle?: string;
   icon: React.ElementType;
   accent: keyof typeof ACCENT_STYLES;
+}
+
+function StrategyRankings({ rankings }: { rankings: StrategyRankingItem[] }) {
+  return (
+    <div className="bg-slate-900 rounded-xl border border-slate-800">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+        <h2 className="font-semibold text-white flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-amber-400" />
+          策略绩效排名
+          <span className="text-xs font-normal text-slate-500">仅运行中 · 按总盈亏排序</span>
+        </h2>
+        <span className="text-xs text-slate-500">{rankings.length} 个</span>
+      </div>
+      {rankings.length === 0 ? (
+        <div className="py-12 text-center">
+          <Trophy className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+          <p className="text-slate-500 text-sm">暂无运行中策略</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-slate-500 uppercase tracking-wide">
+                <th className="text-left px-5 py-2 font-medium">#</th>
+                <th className="text-left px-3 py-2 font-medium">策略</th>
+                <th className="text-left px-3 py-2 font-medium">周期</th>
+                <th className="text-right px-3 py-2 font-medium">已平仓</th>
+                <th className="text-right px-3 py-2 font-medium">胜率</th>
+                <th className="text-right px-3 py-2 font-medium">已实现</th>
+                <th className="text-right px-3 py-2 font-medium">浮动</th>
+                <th className="text-right px-3 py-2 font-medium">持仓</th>
+                <th className="text-right px-5 py-2 font-medium">总盈亏</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/50">
+              {rankings.map((r, i) => {
+                const totalSign = r.total_pnl > 0 ? "+" : "";
+                const realizedSign = r.realized_pnl > 0 ? "+" : "";
+                const unrealSign = r.unrealized_pnl > 0 ? "+" : "";
+                const totalColor = r.total_pnl > 0 ? "text-green-400" : r.total_pnl < 0 ? "text-red-400" : "text-slate-400";
+                const realizedColor = r.realized_pnl > 0 ? "text-green-400" : r.realized_pnl < 0 ? "text-red-400" : "text-slate-500";
+                const unrealColor = r.unrealized_pnl > 0 ? "text-green-400" : r.unrealized_pnl < 0 ? "text-red-400" : "text-slate-500";
+                const winColor = r.win_rate == null ? "text-slate-500" : r.win_rate >= 50 ? "text-green-400" : "text-red-400";
+                return (
+                  <tr key={r.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="px-5 py-3 text-slate-400 font-mono">{i + 1}</td>
+                    <td className="px-3 py-3">
+                      <Link
+                        href={`/strategies/${r.id}`}
+                        className="font-medium text-slate-200 hover:text-blue-400 transition-colors"
+                      >
+                        {r.name}
+                      </Link>
+                      {r.symbols.length > 0 && (
+                        <div className="text-[11px] font-mono text-slate-500 mt-0.5">
+                          {r.symbols.join(", ")}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-slate-400 font-mono text-xs">{r.timeframe || "-"}</td>
+                    <td className="px-3 py-3 text-right text-slate-300 font-mono">{r.closed_trades}</td>
+                    <td className={`px-3 py-3 text-right font-mono ${winColor}`}>
+                      {r.win_rate == null ? "-" : `${r.win_rate.toFixed(1)}%`}
+                    </td>
+                    <td className={`px-3 py-3 text-right font-mono ${realizedColor}`}>
+                      {realizedSign}{formatPrice(r.realized_pnl)}
+                    </td>
+                    <td className={`px-3 py-3 text-right font-mono ${unrealColor}`}>
+                      {r.unrealized_pnl === 0 ? "—" : `${unrealSign}${formatPrice(r.unrealized_pnl)}`}
+                    </td>
+                    <td className="px-3 py-3 text-right text-slate-400 font-mono text-xs">
+                      {r.open_positions === 0 ? "—" : `${r.open_positions} / ${formatPrice(r.locked_capital)}`}
+                    </td>
+                    <td className={`px-5 py-3 text-right font-mono font-semibold ${totalColor}`}>
+                      {totalSign}{formatPrice(r.total_pnl)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function StatCard({ title, value, subtitle, icon: Icon, accent }: StatCardProps) {
