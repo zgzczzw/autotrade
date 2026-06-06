@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import async_session
 from app.engine.base_strategy import BaseStrategy
 from app.engine.indicators import IndicatorCalculator
-from app.engine.market_data import market_data_service
+from app.engine.market_data import market_data_service, session_window
 from app.engine.sandbox import sandbox_executor
 from app.logger import get_logger
 from app.models import Position, Strategy, TriggerLog
@@ -253,10 +253,12 @@ class StrategyExecutor:
 
         async with async_session() as db:
             # 拉取当前时间周期的 K 线（ASC 顺序，[-1] 为最新）
+            # 窗口按周期放大到能覆盖整个 UTC 自然日，否则细周期（<15m）上
+            # 日内 session 指标（如 VWAP）锚点会偏离午夜。
             klines = await market_data_service.get_klines(
                 symbol=symbol,
                 timeframe=active_tf,
-                limit=100,
+                limit=session_window(active_tf),
                 db=db,
             )
             current_kline = klines[-1] if klines else None

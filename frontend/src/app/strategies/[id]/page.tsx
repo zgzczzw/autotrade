@@ -97,6 +97,7 @@ export default function StrategyDetailPage() {
   const [klines, setKlines] = useState<any[]>([]);
   const [klinesLoading, setKlinesLoading] = useState(false);
   const [chartPeriod, setChartPeriod] = useState("1h");
+  const [chartSymbol, setChartSymbol] = useState("");
   const [focusTimestamp, setFocusTimestamp] = useState<number | undefined>();
   const [allTriggers, setAllTriggers] = useState<Trigger[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -129,7 +130,10 @@ export default function StrategyDetailPage() {
     if (activeTab === "triggers" && !triggersLoaded) {
       loadTriggers(1);
       const firstSymbol = strategySymbols[0];
-      if (firstSymbol) loadKlines(firstSymbol, chartPeriod);
+      if (firstSymbol) {
+        setChartSymbol(firstSymbol);
+        loadKlines(firstSymbol, chartPeriod);
+      }
       loadAllTriggers();
     }
     if (activeTab === "positions" && !positionsLoaded) {
@@ -191,15 +195,24 @@ export default function StrategyDetailPage() {
 
   const handleChartPeriodChange = (period: string) => {
     setChartPeriod(period);
-    const firstSymbol = strategySymbols[0];
-    if (firstSymbol) {
-      loadKlines(firstSymbol, period);
+    const sym = chartSymbol || strategySymbols[0];
+    if (sym) {
+      loadKlines(sym, period);
     }
+  };
+
+  const handleChartSymbolChange = (sym: string) => {
+    if (sym === chartSymbol) return;
+    setChartSymbol(sym);
+    setFocusTimestamp(undefined);
+    loadKlines(sym, chartPeriod);
   };
 
   const tradeMarkers: TradeMarker[] = useMemo(() => {
     return allTriggers
       .filter((t) => t.action && t.action !== "观望" && t.price)
+      // 多交易对时只显示当前选中交易对的买卖标记，避免把其它交易对的成交价画到当前价轴上
+      .filter((t) => strategySymbols.length <= 1 || t.symbol === chartSymbol)
       .map((t) => ({
         timestamp: parseUTCTimestamp(t.triggered_at),
         price: t.price!,
@@ -207,7 +220,7 @@ export default function StrategyDetailPage() {
         quantity: t.quantity,
         pnl: t.simulated_pnl,
       }));
-  }, [allTriggers]);
+  }, [allTriggers, chartSymbol, strategySymbols.length]);
 
   const loadPositions = async (page = 1) => {
     setPositionsLoading(true);
@@ -352,6 +365,7 @@ export default function StrategyDetailPage() {
             loadTriggers(1);
             const firstSym = strategySymbols[0];
             if (firstSym) {
+              setChartSymbol(firstSym);
               loadKlines(firstSym, chartPeriod);
             }
             loadAllTriggers();
@@ -583,13 +597,31 @@ export default function StrategyDetailPage() {
         <TabsContent value="triggers">
           {strategy && triggersLoaded && (
             <div className="mb-4">
+              {strategySymbols.length > 1 && (
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <span className="text-xs text-slate-500">交易对</span>
+                  {strategySymbols.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleChartSymbolChange(s)}
+                      className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
+                        chartSymbol === s
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                      }`}
+                    >
+                      {formatSymbol(s)}
+                    </button>
+                  ))}
+                </div>
+              )}
               <KlineChartModule
                 data={klines}
                 markers={tradeMarkers}
                 indicators={{ ma: true, volume: true }}
                 height={400}
                 title={strategy.name}
-                subtitle={`${strategySymbols[0] || ""} · ${chartPeriod}`}
+                subtitle={`${formatSymbol(chartSymbol || strategySymbols[0] || "")} · ${chartPeriod}`}
                 activePeriod={chartPeriod}
                 onPeriodChange={handleChartPeriodChange}
                 focusTimestamp={focusTimestamp}
@@ -635,6 +667,13 @@ export default function StrategyDetailPage() {
                             key={trigger.id}
                             className="border-b border-slate-800 last:border-0 cursor-pointer hover:bg-slate-800/50 transition-colors"
                             onClick={() => {
+                              if (
+                                trigger.symbol &&
+                                strategySymbols.length > 1 &&
+                                trigger.symbol !== chartSymbol
+                              ) {
+                                handleChartSymbolChange(trigger.symbol);
+                              }
                               if (trigger.triggered_at) {
                                 setFocusTimestamp(new Date(trigger.triggered_at).getTime());
                               }

@@ -80,6 +80,23 @@ export function invalidateCache(prefix: string) {
   }
 }
 
+/**
+ * 将任意 API 错误归一化为可显示的字符串。
+ * FastAPI 在 4xx (HTTPException) 时 detail 为字符串，
+ * 但在 422 (校验失败) 时 detail 为 [{msg, loc, ...}] 数组对象——
+ * 直接渲染对象会触发 React error #31，因此必须在此处提取 msg。
+ */
+export function getApiErrorMessage(err: any, fallback = "请求失败，请重试"): string {
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const msgs = detail.map((d) => d?.msg).filter(Boolean);
+    if (msgs.length) return msgs.join("；");
+  }
+  if (typeof err?.message === "string" && err.message) return err.message;
+  return fallback;
+}
+
 // Helper function to handle API calls
 async function apiCall<T>(promise: Promise<any>): Promise<T> {
   const result = await promise;

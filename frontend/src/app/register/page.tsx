@@ -7,7 +7,7 @@ import { Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authRegister } from "@/lib/api";
+import { authRegister, getApiErrorMessage } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function RegisterPage() {
       await authRegister({ username, password });
       router.push("/");
     } catch (err: any) {
-      setError(err.response?.data?.detail ?? "注册失败，请重试");
+      setError(getApiErrorMessage(err, "注册失败，请重试"));
     } finally {
       setLoading(false);
     }

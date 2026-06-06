@@ -302,9 +302,15 @@ class UserResponse(BaseModel):
 
 
 class AuthRequest(BaseModel):
-    """登录/注册请求"""
+    """注册请求（强制密码最小长度）"""
     username: str = Field(..., min_length=1, max_length=50)
     password: str = Field(..., min_length=6)
+
+
+class LoginRequest(BaseModel):
+    """登录请求：仅要求非空，不强制密码长度，避免短密码触发 422 而非 401"""
+    username: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=1)
 
 
 class AuthResponse(BaseModel):

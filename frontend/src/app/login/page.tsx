@@ -7,7 +7,7 @@ import { Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authLogin } from "@/lib/api";
+import { authLogin, getApiErrorMessage } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function LoginPage() {
       await authLogin({ username, password });
       router.push("/");
     } catch (err: any) {
-      setError(err.response?.data?.detail ?? "登录失败，请检查用户名和密码");
+      setError(getApiErrorMessage(err, "登录失败，请检查用户名和密码"));
     } finally {
       setLoading(false);
     }

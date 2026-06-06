@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.engine.indicators import IndicatorCalculator
-from app.engine.market_data import market_data_service
+from app.engine.market_data import market_data_service, session_window
 from app.logger import get_logger
 from app.models import BacktestResult, Position, Strategy
 
@@ -500,6 +500,7 @@ class BacktestEngine:
 
         equity_curve: List[dict] = []
         code_instance = None  # 代码策略持久化实例
+        win = session_window(primary_tf)  # 覆盖整个 UTC 日，供日内 session 指标使用
 
         for i, kline in enumerate(klines):
             if cancel_event.is_set():
@@ -536,7 +537,7 @@ class BacktestEngine:
                                 "symbol": symbol,
                                 "timeframe": primary_tf,
                                 "price": kline["close"],
-                                "klines": klines[max(0, i - 99): i + 1],
+                                "klines": klines[max(0, i - (win - 1)): i + 1],
                             }
                             # 注入额外数据供高级策略使用
                             if daily_klines is not None:
@@ -615,6 +616,10 @@ class BacktestEngine:
         # 跟踪各非主周期已处理到的 kline 索引
         tf_cursor: Dict[str, int] = {tf: 0 for tf in other_klines}
 
+        # 各周期覆盖整个 UTC 日所需窗口（供日内 session 指标使用）
+        primary_win = session_window(primary_tf)
+        tf_win: Dict[str, int] = {tf: session_window(tf) for tf in other_klines}
+
         for i, kline in enumerate(primary_klines):
             if cancel_event.is_set():
                 raise asyncio.CancelledError("回测已被用户取消")
@@ -666,7 +671,7 @@ class BacktestEngine:
                                 "symbol": symbol,
                                 "timeframe": tf,
                                 "price": tf_price,
-                                "klines": tf_slice[-100:],
+                                "klines": tf_slice[-tf_win[tf]:],
                             })
                             if sig == "buy":
                                 ctx.buy(trigger_reason=f"代码策略买入(tf={tf})")
@@ -684,7 +689,7 @@ class BacktestEngine:
                             "symbol": symbol,
                             "timeframe": primary_tf,
                             "price": kline["close"],
-                            "klines": primary_klines[max(0, i - 99): i + 1],
+                            "klines": primary_klines[max(0, i - (primary_win - 1)): i + 1],
                         }
                         # 注入额外数据
                         if daily_klines is not None:

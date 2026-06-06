@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
+import { DisableZoom } from "@/components/disable-zoom";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,8 +19,11 @@ export const metadata: Metadata = {
   description: "支持可视化配置和代码编写的策略交易平台",
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   viewportFit: "cover",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -33,6 +37,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-100`}
       >
+        <DisableZoom />
         <AppShell>{children}</AppShell>
       </body>
     </html>

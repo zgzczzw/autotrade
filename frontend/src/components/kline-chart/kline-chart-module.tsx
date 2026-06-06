@@ -177,6 +177,73 @@ function ensureSupertrendIndicator() {
   } as any);
 }
 
+// 注册自定义 VWAP + 偏差带（叠加在主图，每个 UTC 日 00:00 重置）
+// 中线：累计 Σ((H+L+C)/3 × volume) / Σ(volume) = 当日 volume-weighted 典型价
+// 偏差带：VWAP ± k × σ，σ = sqrt(E[typical²] − VWAP²)（同样 volume-weighted、按 UTC 日累计）
+// 默认参数 [k=2]；带子开盘极窄、随当日成交累积逐步张开（喇叭口形状）
+// 仅在分钟/小时级别有意义；1d 周期下每根 K 线就是一个新"日"，VWAP 退化为典型价
+let _vwapRegistered = false;
+function ensureVwapIndicator() {
+  if (_vwapRegistered) return;
+  _vwapRegistered = true;
+  registerIndicator({
+    name: "VWAP",
+    shortName: "VWAP",
+    calcParams: [2],
+    figures: [
+      { key: "vwap", title: "VWAP: ", type: "line", styles: () => ({ color: "#a855f7" }) },
+      {
+        key: "upper",
+        title: "UP: ",
+        type: "line",
+        styles: () => ({ color: "#a855f7", style: "dashed", dashedValue: [4, 3] }),
+      },
+      {
+        key: "lower",
+        title: "LOW: ",
+        type: "line",
+        styles: () => ({ color: "#a855f7", style: "dashed", dashedValue: [4, 3] }),
+      },
+    ],
+    calc: (dataList: any[], indicator: any) => {
+      const k = (indicator.calcParams?.[0] as number) ?? 2;
+      const result: { vwap?: number; upper?: number; lower?: number }[] = new Array(dataList.length);
+      let cumPV = 0;
+      let cumP2V = 0;
+      let cumV = 0;
+      let lastDayIdx = -1;
+      for (let i = 0; i < dataList.length; i++) {
+        const candle = dataList[i];
+        const dayIdx = Math.floor(candle.timestamp / 86400000); // UTC 日索引
+        if (dayIdx !== lastDayIdx) {
+          cumPV = 0;
+          cumP2V = 0;
+          cumV = 0;
+          lastDayIdx = dayIdx;
+        }
+        const typical = (candle.high + candle.low + candle.close) / 3;
+        const v = Number(candle.volume) || 0;
+        cumPV += typical * v;
+        cumP2V += typical * typical * v;
+        cumV += v;
+        if (cumV > 0) {
+          const vwap = cumPV / cumV;
+          const variance = Math.max(0, cumP2V / cumV - vwap * vwap);
+          const sigma = Math.sqrt(variance);
+          result[i] = {
+            vwap,
+            upper: vwap + k * sigma,
+            lower: vwap - k * sigma,
+          };
+        } else {
+          result[i] = {};
+        }
+      }
+      return result;
+    },
+  } as any);
+}
+
 // 注册自定义买卖点 overlay — 虚线 + 文字标签
 // 锚点已经是 candle low(买) / high(卖)，绘制时只需向外延伸
 let _overlayRegistered = false;
@@ -279,6 +346,7 @@ export function KlineChartModule({
     atr: !!indicators.atr,
     dc: !!indicators.dc,
     st: !!indicators.st,
+    vwap: !!indicators.vwap,
     volume: indicators.volume !== false,
   });
   const [internalPeriod, setInternalPeriod] = useState("1h");
@@ -398,6 +466,7 @@ export function KlineChartModule({
     ensureAtrIndicator();
     ensureDonchianIndicator();
     ensureSupertrendIndicator();
+    ensureVwapIndicator();
 
     if (chartInstance.current) {
       dispose(chartInstance.current);
@@ -611,7 +680,7 @@ export function KlineChartModule({
 
             {/* 指标切换 */}
             <div className="flex items-center gap-0.5">
-              {(["ma", "macd", "kdj", "rsi", "boll", "atr", "dc", "st"] as const).map((name) => (
+              {(["ma", "macd", "kdj", "rsi", "boll", "atr", "dc", "st", "vwap"] as const).map((name) => (
                 <Button
                   key={name}
                   variant={activeIndicators[name] ? "default" : "outline"}
@@ -795,6 +864,14 @@ function applyIndicators(chart: Chart, config: Record<string, boolean>) {
   if (config.st) {
     chart.createIndicator(
       { name: "ST", calcParams: [10, 3] } as IndicatorCreate,
+      true,
+      { id: "candle_pane" }
+    );
+  }
+
+  if (config.vwap) {
+    chart.createIndicator(
+      { name: "VWAP", calcParams: [2] } as IndicatorCreate,
       true,
       { id: "candle_pane" }
     );

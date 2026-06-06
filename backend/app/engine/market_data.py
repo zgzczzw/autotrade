@@ -27,6 +27,20 @@ _TF_SECONDS: Dict[str, int] = {
 logger = get_logger(__name__)
 
 
+def session_window(timeframe: str, base: int = 100, margin: int = 12) -> int:
+    """请求多少根 K 线才能让窗口始终覆盖当前 UTC 自然日（00:00 至今）。
+
+    日内 session 锚定指标（如当日 VWAP）需要回溯到最近一个 UTC 00:00。
+    在比 15m 更细的周期上，一个 UTC 日的 bar 数超过 `base`，固定窗口会丢掉
+    当日早段的 bar，导致 VWAP 锚点偏离午夜。>=15m 的周期一天 <=96 根，仍返回 `base`。
+    上限 1000：Binance 单次请求最大条数，避免实盘分页。
+    """
+    tf = timeframe.split(",")[0].strip()
+    tf_sec = _TF_SECONDS.get(tf, 3600)
+    bars_per_day = 86400 // tf_sec
+    return min(max(base, bars_per_day + margin), 1000)
+
+
 class MarketDataService:
     """市场数据服务（数据源可全局切换）"""
 
